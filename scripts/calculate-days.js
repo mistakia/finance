@@ -11,6 +11,12 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-days')
 debug.enable('calculate-days')
 
+const median = arr => {
+  let middle = Math.floor(arr.length / 2);
+    arr = [...arr].sort((a, b) => a - b);
+  return arr.length % 2 !== 0 ? arr[middle] : (arr[middle - 1] + arr[middle]) / 2;
+};
+
 const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
   log({ rate, start, adjusted })
   const cpi = await db('cpi')
@@ -96,6 +102,7 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
     }
     if (valid) filter.push(sorted[i])
   }
+  log(`median: ${median(sorted.map(s => s.days))}`)
   printTable(filter.splice(0, limit))
 }
 
