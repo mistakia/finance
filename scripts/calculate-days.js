@@ -37,7 +37,7 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
     process.stdout.write(`${i} / ${data.length}\r`)
 
     const entry_cpi = cpi_map[data[i].cpi_d]
-    let days = 0
+    let days = Infinity
     let date
     let price
 
@@ -60,7 +60,7 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
       // lower than entry
       if (data[j].c < target_value) {
         date = null
-        days = 0
+        days = Infinity
       }
     }
 
