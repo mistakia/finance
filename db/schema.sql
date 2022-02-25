@@ -10,3 +10,11 @@ CREATE TABLE `adjusted_daily_prices` (
   `v` bigint unsigned NOT NULL,
   UNIQUE KEY `symbol` (`symbol`,`d`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cpi`;
+
+CREATE TABLE `cpi` (
+  `d` datetime NOT NULL,
+  `v` int unsigned NOT NULL,
+  UNIQUE KEY `date` (`d`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
