@@ -1,0 +1,26 @@
+{
+  "scripts": {
+    "lint": "eslint .",
+    "prettier": "prettier --write ."
+  },
+  "type": "module",
+  "dependencies": {
+    "dayjs": "^1.10.7",
+    "debug": "^4.3.3",
+    "knex": "^1.0.3",
+    "mysql2": "^2.3.3",
+    "node-fetch": "^3.2.0",
+    "yahoo-stock-prices": "^1.1.0",
+    "yargs": "^17.3.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.17.5",
+    "@babel/eslint-parser": "^7.17.0",
+    "eslint": "^8.9.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "prettier": "^2.5.1"
+  }
+}
