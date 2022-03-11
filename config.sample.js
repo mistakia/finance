@@ -14,6 +14,11 @@ export default {
       max: 10
     }
   },
+  koinly: {
+    auth_token: '',
+    portfolio_token: '',
+    cookie: ''
+  },
   links: {
     ally: {
       consumer_key: '',

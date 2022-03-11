@@ -77,7 +77,7 @@ const run = async ({ start, adjusted = true }) => {
   for (let i = 0; i < data.length; i++) {
     process.stdout.write(`${i} / ${data.length}\r`)
 
-    const entry_cpi = cpi_map[data[i].cpi_d]
+    // const entry_cpi = cpi_map[data[i].cpi_d]
     const future_closes = {}
     return_years.forEach((years) => {
       future_closes[`return${years}_close`] = getFutureClose({
