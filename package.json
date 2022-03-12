@@ -11,6 +11,7 @@
     "knex": "^1.0.3",
     "mysql2": "^2.3.3",
     "node-fetch": "^3.2.0",
+    "oauth-1.0a": "^2.2.6",
     "percentile": "^1.6.0",
     "yahoo-stock-prices": "^1.1.0",
     "yargs": "^17.3.1"

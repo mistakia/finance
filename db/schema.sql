@@ -11,6 +11,17 @@ CREATE TABLE `adjusted_daily_prices` (
   UNIQUE KEY `symbol` (`symbol`,`d`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `assets`;
+
+CREATE TABLE `assets` (
+  `link` varchar(200) NOT NULL,
+  `name` varchar(200) NOT NULL,
+  `cost_basis` decimal(65,30) NOT NULL,
+  `quantity` decimal(65,30) NOT NULL,
+  `symbol` varchar(20) DEFAULT NULL,
+  UNIQUE KEY `link` (`link`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `cpi`;
 
 CREATE TABLE `cpi` (

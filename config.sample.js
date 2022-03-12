@@ -13,5 +13,13 @@ export default {
       min: 2,
       max: 10
     }
+  },
+  links: {
+    ally: {
+      consumer_key: '',
+      consumer_secret: '',
+      oauth_key: '',
+      oauth_secret: ''
+    }
   }
 }
