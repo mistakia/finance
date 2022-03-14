@@ -25,6 +25,10 @@ export default {
       consumer_secret: '',
       oauth_key: '',
       oauth_secret: ''
+    },
+    ally_bank: {
+      username: '',
+      password: ''
     }
   }
 }

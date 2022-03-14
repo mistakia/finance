@@ -13,7 +13,14 @@ const log = debug('import-transactions-koinly')
 debug.enable('import-transactions-koinly')
 
 const getType = (item) => {
-  const income = ['staking', 'other_income', 'airdrop', 'mining', 'loan_interest', 'fork']
+  const income = [
+    'staking',
+    'other_income',
+    'airdrop',
+    'mining',
+    'loan_interest',
+    'fork'
+  ]
   switch (item.type) {
     // either purchase, transfer, cost, or gift
     case 'crypto_withdrawal':
