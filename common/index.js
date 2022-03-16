@@ -1,4 +1,9 @@
+import fs from 'fs-extra'
+import path, { dirname } from 'path'
 import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const session_path = path.join(__dirname, '../session.json')
 
 export const isMain = () => process.argv[1] === fileURLToPath(import.meta.url)
 export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -9,4 +14,19 @@ export const median = (arr) => {
   return arr.length % 2 !== 0
     ? arr[middle]
     : (arr[middle - 1] + arr[middle]) / 2
+}
+
+export const getSession = async () => {
+  let session
+  try {
+    session = await fs.readJson(session_path)
+  } catch (err) {
+    console.log(err)
+  }
+
+  return session || {}
+}
+
+export const saveSession = async (session) => {
+  await fs.writeJson(session_path, session)
 }

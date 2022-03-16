@@ -8,6 +8,7 @@
     "console-table-printer": "^2.10.0",
     "dayjs": "^1.10.7",
     "debug": "^4.3.3",
+    "fs-extra": "^10.0.1",
     "knex": "^1.0.3",
     "mysql2": "^2.3.3",
     "node-fetch": "^3.2.0",

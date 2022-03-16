@@ -29,6 +29,10 @@ export default {
     ally_bank: {
       username: '',
       password: ''
+    },
+    robinhood: {
+      username: '',
+      password: ''
     }
   }
 }
