@@ -14,7 +14,7 @@ CREATE TABLE `adjusted_daily_prices` (
 DROP TABLE IF EXISTS `assets`;
 
 CREATE TABLE `assets` (
-  `link` varchar(200) NOT NULL,
+  `link` varchar(200) NOT NULL comment '/[user]/[custodian]/[symbol]',
   `name` varchar(200) NOT NULL,
   `cost_basis` decimal(65,30) NOT NULL,
   `quantity` decimal(65,30) NOT NULL,

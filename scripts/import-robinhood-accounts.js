@@ -95,14 +95,33 @@ const getAccount = async ({ token, url }) => {
 }
 
 const getAccountPositions = async ({ token, url }) => {
-  const response = await fetch('https://api.robinhood.com/positions/', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`
+  const response = await fetch(
+    'https://api.robinhood.com/positions/?nonzero=true',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  })
+  )
   const data = await response.json()
   return data
+}
+
+const formatPosition = async (position) => {
+  const position_info_res = await fetch(position.instrument)
+  const position_info = await position_info_res.json()
+
+  const quantity = parseFloat(position.quantity)
+  const avg_buy = parseFloat(position.average_buy_price)
+  const symbol = position_info.symbol
+  return {
+    link: `/user/robinhood/${symbol}`,
+    name: `${position_info.simple_name}`,
+    cost_basis: quantity * avg_buy,
+    quantity,
+    symbol
+  }
 }
 
 const run = async () => {
@@ -117,10 +136,17 @@ const run = async () => {
 
   const accounts = await getAccounts({ token })
   log(accounts)
+  const items = []
   for (const account of accounts.results) {
     // log(await getAccount({ token, url: account.url }))
-    log(await getAccountPositions({ token, url: account.url }))
+    const positions = await getAccountPositions({ token, url: account.url })
+    for (const position of positions.results) {
+      const formatted = await formatPosition(position)
+      items.push(formatted)
+    }
   }
+
+  log(items)
 }
 
 export default run
