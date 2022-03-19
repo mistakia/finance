@@ -50,11 +50,12 @@ const getAccounts = async () => {
 
 const run = async () => {
   const data = await getAccounts()
-  log(data)
   const inserts =
     data.response.accounts.accountsummary.accountholdings.holding.map((i) =>
       formatAsset(i)
     )
+
+  // add cash balance
   const cash = parseFloat(
     data.response.accounts.accountsummary.accountbalance.money.cash
   )
@@ -65,10 +66,13 @@ const run = async () => {
     quantity: cash,
     symbol: 'USD'
   })
-  // add cash balance
-  log(inserts)
 
-  await db('assets').insert(inserts).onConflict().merge()
+  // log(inserts)
+
+  if (inserts.length) {
+    log(`saving ${inserts.length} holdings`)
+    await db('assets').insert(inserts).onConflict().merge()
+  }
 }
 
 export default run

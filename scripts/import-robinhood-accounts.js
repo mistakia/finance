@@ -4,7 +4,7 @@ import fetch from 'node-fetch'
 // import yargs from 'yargs'
 // import { hideBin } from 'yargs/helpers'
 
-// import db from '../db/index.js'
+import db from '../db/index.js'
 import config from '../config.js'
 import { isMain, getSession, saveSession } from '../common/index.js'
 
@@ -135,7 +135,7 @@ const run = async () => {
   await saveSession(session)
 
   const accounts = await getAccounts({ token })
-  log(accounts)
+  // log(accounts)
   const items = []
   for (const account of accounts.results) {
     // log(await getAccount({ token, url: account.url }))
@@ -146,7 +146,10 @@ const run = async () => {
     }
   }
 
-  log(items)
+  if (items.length) {
+    log(`Saving ${items.length} holdings`)
+    await db('assets').insert(items).onConflict().merge()
+  }
 }
 
 export default run

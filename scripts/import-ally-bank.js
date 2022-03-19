@@ -7,7 +7,7 @@ import puppeteer from 'puppeteer'
 
 // import db from '../db/index.js'
 import config from '../config.js'
-import { isMain, wait } from '../common/index.js'
+import { isMain } from '../common/index.js'
 
 // const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-bank')
