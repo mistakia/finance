@@ -10,5 +10,6 @@ yarn-error.log
 
 # App specific
 #
-config.js
+build/*
+config.mjs
 session.json

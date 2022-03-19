@@ -4,7 +4,12 @@
     "browser": true,
     "es2021": true
   },
-  "extends": ["standard", "eslint:recommended"],
+  "extends": ["standard", "eslint:recommended", "plugin:react/recommended"],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true

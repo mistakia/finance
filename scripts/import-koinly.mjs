@@ -4,9 +4,9 @@ import fetch from 'node-fetch'
 // import yargs from 'yargs'
 // import { hideBin } from 'yargs/helpers'
 
-import db from '../db/index.js'
-import config from '../config.js'
-import { isMain, wait } from '../common/index.js'
+import db from '../db/index.mjs'
+import config from '../config.mjs'
+import { isMain, wait } from '../common/index.mjs'
 
 // const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-transactions-koinly')

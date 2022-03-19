@@ -5,9 +5,8 @@ import percentile from 'percentile'
 import { hideBin } from 'yargs/helpers'
 import { Table } from 'console-table-printer'
 
-import db from '../db/index.js'
-// import config from '../config.js'
-import { isMain, average, median } from '../common/index.js'
+import db from '../db/index.mjs'
+import { isMain, average, median } from '../common/index.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-returns')
