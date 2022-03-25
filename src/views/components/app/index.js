@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
 
@@ -6,14 +5,12 @@ import { getApp, appActions } from '@core/app'
 
 import App from './app'
 
-App.propTypes = {
-  children: PropTypes.element
-}
-
-const mapStateToProps = createSelector(getApp, (app) => ({ app }))
+const mapStateToProps = createSelector(getApp, (app) => ({
+  isLoaded: app.isLoaded
+}))
 
 const mapDispatchToProps = {
-  init: appActions.init
+  load: appActions.load
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(App)

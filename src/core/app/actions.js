@@ -1,11 +1,31 @@
 export const appActions = {
-  INIT_APP: 'INIT_APP',
+  APP_LOAD: 'APP_LOAD',
+  APP_LOADED: 'APP_LOADED',
 
-  init: ({ token, key }) => ({
-    type: appActions.INIT_APP,
+  SAVE_KEY: 'SAVE_KEY',
+  SET_KEY: 'SET_KEY',
+
+  load: () => ({
+    type: appActions.APP_LOAD
+  }),
+
+  loaded: () => ({
+    type: appActions.APP_LOADED
+  }),
+
+  saveKey: ({ privateKey, publicKey }) => ({
+    type: appActions.SAVE_KEY,
     payload: {
-      token,
-      key
+      privateKey,
+      publicKey
+    }
+  }),
+
+  setKey: ({ privateKey, publicKey }) => ({
+    type: appActions.SET_KEY,
+    payload: {
+      privateKey,
+      publicKey
     }
   })
 }

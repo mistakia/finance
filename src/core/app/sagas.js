@@ -1,10 +1,10 @@
 /* global gtag */
-import { takeLatest, fork, select } from 'redux-saga/effects'
-import { LOCATION_CHANGE } from 'connected-react-router'
+import { takeLatest, fork, call, put, delay } from 'redux-saga/effects'
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
+import { LOCATION_CHANGE, push } from 'redux-first-history'
 
+import { localStorageAdapter } from '@core/utils'
 import history from '@core/history'
-import { getApp } from './selectors'
 import { appActions } from './actions'
 
 const fpPromise = FingerprintJS.load()
@@ -18,7 +18,7 @@ async function pageView() {
   const fp = await fpPromise
   const result = await fp.get()
 
-  gtag('config', 'G-CV3N29BMWR', {
+  gtag('config', '', {
     page_path: history.location.pathname,
     client_storage: 'none',
     anonymize_ip: true,
@@ -26,11 +26,38 @@ async function pageView() {
   })
 }
 
-export function* init() {
-  const { token, key } = yield select(getApp)
-  if (token && key) {
-    // yield call(fetchAuth)
+async function loadKeys() {
+  const privateKey = await localStorageAdapter.getItem('privateKey')
+  const publicKey = await localStorageAdapter.getItem('publicKey')
+  return {
+    privateKey,
+    publicKey
   }
+}
+
+export function* load() {
+  const { privateKey, publicKey } = yield call(loadKeys)
+
+  yield delay(1500)
+
+  if (privateKey && publicKey) {
+    if (history.location.pathname === '/init') {
+      yield put(push('/'))
+    }
+    yield put(appActions.setKey({ privateKey, publicKey }))
+  } else {
+    yield put(push('/init'))
+  }
+
+  yield put(appActions.loaded())
+}
+
+export function* save({ payload }) {
+  const { privateKey, publicKey } = payload
+  localStorageAdapter.setItem('privateKey', privateKey)
+  localStorageAdapter.setItem('publicKey', publicKey)
+
+  yield put(push('/seed'))
 }
 
 export function reset() {
@@ -43,15 +70,23 @@ export function reset() {
 // -------------------------------------
 
 export function* watchInitApp() {
-  yield takeLatest(appActions.INIT_APP, init)
+  yield takeLatest(appActions.APP_LOAD, load)
 }
 
 export function* watchLocationChange() {
   yield takeLatest(LOCATION_CHANGE, reset)
 }
 
+export function* watchSetKey() {
+  yield takeLatest(appActions.SAVE_KEY, save)
+}
+
 //= ====================================
 //  ROOT
 // -------------------------------------
 
-export const appSagas = [fork(watchInitApp), fork(watchLocationChange)]
+export const appSagas = [
+  fork(watchInitApp),
+  fork(watchLocationChange),
+  fork(watchSetKey)
+]
