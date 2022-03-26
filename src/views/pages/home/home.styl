@@ -1,0 +1,33 @@
+.home__container
+  padding-top 30px
+
+.home__header
+  background rgba(0,0,0,0.02)
+
+.balance__box
+  background black
+  font-size 18px
+  color white
+  text-shadow 1px 1px #333
+  display flex
+  justify-content center
+  align-items center
+
+.performance__box
+  font-family 'IBM Plex Mono', monospace
+  text-transform uppercase
+  padding 4px
+  .performance__value
+    color rgb(0, 167, 7)
+  &.negative
+    .performance__value
+      color #FF0000
+
+  .performance__label
+    color #9598a1
+    letter-spacing 0.4px
+    text-transform uppercase
+    font-size 11px
+
+.assets__container
+  padding-top 35px

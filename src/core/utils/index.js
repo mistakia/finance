@@ -1,6 +1,7 @@
 import eccrypto from 'eccrypto'
 
 export { localStorageAdapter } from './local-storage'
+export { fuzzySearch } from './fuzzy-search'
 
 export async function encrypt(publicKey, data) {
   const msg = JSON.stringify(data)
