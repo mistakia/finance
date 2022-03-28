@@ -65,6 +65,7 @@ export default class Connections extends React.Component {
               ),
               NoRowsOverlay: () => (
                 <Stack
+                  className='empty'
                   height='100%'
                   alignItems='center'
                   justifyContent='center'>

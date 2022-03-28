@@ -91,7 +91,7 @@ export default class HomePage extends React.Component {
         </Grid>
         <div className='assets__container'>
           <Divider textAlign='left'>Assets</Divider>
-          <div className='assets__table empty'></div>
+          <div className='assets__table'></div>
         </div>
         <Connections />
       </Container>

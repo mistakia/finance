@@ -3,6 +3,7 @@ import http from 'http'
 import fs, { promises as fsPromise } from 'fs'
 import url, { fileURLToPath } from 'url'
 import path, { dirname } from 'path'
+import PQueue from 'p-queue'
 
 import { WebSocketServer } from 'ws'
 import express from 'express'
@@ -26,7 +27,7 @@ import db from '../db/index.mjs'
 // import './cron.mjs'
 // import sockets from './sockets.mjs'
 
-const logger = debug('api')
+const log = debug('api')
 const defaults = {}
 const options = extend(defaults, config)
 const IS_DEV = process.env.NODE_ENV === 'development'
@@ -42,8 +43,9 @@ if (IS_DEV) {
 const api = express()
 
 api.locals.db = db
-api.locals.logger = logger
+api.locals.log = log
 api.locals.cache = cache
+api.locals.queue = new PQueue({ concurrency: 10 })
 
 api.enable('etag')
 api.disable('x-powered-by')
@@ -76,7 +78,7 @@ api.use('/api/*', expressJwt(config.jwt), (err, req, res, next) => {
 })
 
 // unprotected api routes
-// api.use('/api/node', routes.node)
+api.use('/api/jobs', routes.jobs)
 
 // protected api routes
 api.use('/api/*', (err, req, res, next) => {
@@ -103,7 +105,7 @@ if (IS_DEV) {
       }
       next()
     } catch (error) {
-      logger(error)
+      log(error)
       next()
     }
   })
@@ -139,7 +141,7 @@ server.on('upgrade', async (request, socket, head) => {
     const decoded = await jwt.verify(token, config.jwt.secret)
     request.user = decoded
   } catch (error) {
-    logger(error)
+    log(error)
     return socket.destroy()
   }
 

@@ -4,8 +4,9 @@ import { appActions } from '@core/app'
 import { connectionActions } from './actions'
 import { getConnections } from './selectors'
 import { localStorageAdapter } from '@core/utils'
+import { postJob } from '@core/api'
 
-export function* save() {
+export function* save({ payload }) {
   const state = yield select(getConnections)
   const value = JSON.stringify(state.toJS())
   localStorageAdapter.setItem('connections', value)
@@ -14,6 +15,9 @@ export function* save() {
   // backup to tint.finance server
 
   // create jobs
+  // get jobs
+  console.log(payload)
+  yield call(postJob, payload)
 }
 
 async function loadConnections() {
