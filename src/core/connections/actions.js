@@ -3,9 +3,15 @@ export const connectionActions = {
 
   SET_CONNECTIONS: 'SET_CONNECTIONS',
 
-  addConnection: ({ connection, params }) => ({
+  SET_CONNECTION_SESSION: 'SET_CONNECTION_SESSION',
+
+  CONNECTION_PROMPT_REQUEST: 'CONNECTION_PROMPT_REQUEST',
+  CONNECTION_PROMPT_RESPONSE: 'CONNECTION_PROMPT_RESPONSE',
+
+  addConnection: ({ id, connection, params }) => ({
     type: connectionActions.ADD_CONNECTION,
     payload: {
+      id,
       connection,
       params
     }
@@ -15,6 +21,13 @@ export const connectionActions = {
     type: connectionActions.SET_CONNECTIONS,
     payload: {
       connections
+    }
+  }),
+
+  connectionPromptResponse: (params) => ({
+    type: connectionActions.CONNECTION_PROMPT_RESPONSE,
+    payload: {
+      params
     }
   })
 }

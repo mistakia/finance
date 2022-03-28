@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom'
 import LinearProgress from '@mui/material/LinearProgress'
 import Box from '@mui/material/Box'
 
+import Dialog from '@components/dialog'
 import HomePage from '@pages/home'
 import InitPage from '@pages/init'
 import SeedPage from '@pages/seed'
@@ -33,11 +34,14 @@ export default class App extends React.Component {
     }
 
     return (
-      <Routes>
-        <Route path='/' element={<HomePage />} />
-        <Route path='/init' element={<InitPage />} />
-        <Route path='/seed' element={<SeedPage />} />
-      </Routes>
+      <>
+        <Routes>
+          <Route path='/' element={<HomePage />} />
+          <Route path='/init' element={<InitPage />} />
+          <Route path='/seed' element={<SeedPage />} />
+        </Routes>
+        <Dialog />
+      </>
     )
   }
 }

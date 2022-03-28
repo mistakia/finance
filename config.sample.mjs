@@ -1,12 +1,7 @@
 export default {
   port: 8080, // api port
 
-  // jwt token config
-  jwt: {
-    secret: 'xxxxx',
-    algorithms: ['HS256'],
-    credentialsRequired: false
-  },
+  url: 'http://localhost:8081',
 
   alphavantage: '',
   mysql: {

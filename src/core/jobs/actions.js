@@ -12,7 +12,7 @@ export const jobActions = {
 
   postJobPending: (params) => ({
     type: jobActions.POST_JOB_PENDING,
-    paylaod: {
+    payload: {
       params
     }
   }),

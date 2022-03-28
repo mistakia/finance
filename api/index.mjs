@@ -5,13 +5,10 @@ import url, { fileURLToPath } from 'url'
 import path, { dirname } from 'path'
 import PQueue from 'p-queue'
 
-import { WebSocketServer } from 'ws'
 import express from 'express'
 import morgan from 'morgan-debug'
 import extend from 'deep-extend'
 import bodyParser from 'body-parser'
-import jwt from 'jsonwebtoken'
-import expressJwt from 'express-jwt'
 import compression from 'compression'
 import debug from 'debug'
 import serveStatic from 'serve-static'
@@ -23,22 +20,16 @@ import config from '../config.mjs'
 import routes from './routes/index.mjs'
 import cache from './cache.mjs'
 import db from '../db/index.mjs'
+import wss from './websocket.mjs'
 
 // import './cron.mjs'
-// import sockets from './sockets.mjs'
 
 const log = debug('api')
 const defaults = {}
 const options = extend(defaults, config)
 const IS_DEV = process.env.NODE_ENV === 'development'
-const IS_PROD = process.env.NODE_ENV === 'production'
+// const IS_PROD = process.env.NODE_ENV === 'production'
 const __dirname = dirname(fileURLToPath(import.meta.url))
-
-if (IS_DEV) {
-  debug.enable('server,api*,knex:*')
-} else if (IS_PROD) {
-  debug.enable('server,api*')
-}
 
 const api = express()
 
@@ -68,25 +59,7 @@ api.use((req, res, next) => {
 
 const resourcesPath = path.join(__dirname, '..', 'resources')
 api.use('/resources', serveStatic(resourcesPath))
-
-api.use('/api/*', expressJwt(config.jwt), (err, req, res, next) => {
-  res.set('Expires', '0')
-  res.set('Pragma', 'no-cache')
-  res.set('Surrogate-Control', 'no-store')
-  if (err.code === 'invalid_token') return next()
-  return next(err)
-})
-
-// unprotected api routes
 api.use('/api/jobs', routes.jobs)
-
-// protected api routes
-api.use('/api/*', (err, req, res, next) => {
-  if (err.name === 'UnauthorizedError') {
-    return res.status(401).send({ error: 'invalid token' })
-  }
-  next()
-})
 
 if (IS_DEV) {
   api.get('*', (req, res) => {
@@ -132,25 +105,22 @@ const createServer = () => {
 }
 
 const server = createServer()
-const wss = new WebSocketServer({ noServer: true })
 
 server.on('upgrade', async (request, socket, head) => {
   const parsed = new url.URL(request.url, config.url)
   try {
-    const token = parsed.searchParams.get('token')
-    const decoded = await jwt.verify(token, config.jwt.secret)
-    request.user = decoded
+    const publicKey = parsed.searchParams.get('publicKey')
+    request.user = { publicKey }
   } catch (error) {
     log(error)
     return socket.destroy()
   }
 
   wss.handleUpgrade(request, socket, head, function (ws) {
-    ws.userId = request.user.userId
+    ws.publicKey = request.user.publicKey
+    log(`websocket connected: ${ws.publicKey}`)
     wss.emit('connection', ws, request)
   })
 })
-
-// sockets(wss)
 
 export default server

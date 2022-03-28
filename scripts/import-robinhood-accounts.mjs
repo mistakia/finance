@@ -1,9 +1,10 @@
 import debug from 'debug'
-import prompt from 'prompt'
+import cli_prompt from 'prompt'
 import fetch from 'node-fetch'
 // import yargs from 'yargs'
 // import { hideBin } from 'yargs/helpers'
 
+import websocket_prompt from '../api/prompt.mjs'
 import db from '../db/index.mjs'
 import config from '../config.mjs'
 import { isMain, getSession, saveSession } from '../common/index.mjs'
@@ -58,7 +59,7 @@ const postChallenge = async ({ code, challenge_id }) => {
   return data
 }
 
-const login = async ({ device_id, username, password }) => {
+const login = async ({ device_id, username, password, publicKey }) => {
   const response = await postAuth({ username, password, device_id })
   log(response)
 
@@ -66,7 +67,8 @@ const login = async ({ device_id, username, password }) => {
     return response
   }
 
-  const { code } = await prompt.get(['code'])
+  const inputs = ['code']
+  const { code } = await websocket_prompt({ publicKey, inputs })
   const challenge_id = response.challenge.id
   await postChallenge({ code, challenge_id })
   return postAuth({ username, password, device_id, challenge_id })
@@ -108,7 +110,7 @@ const getAccountPositions = async ({ token, url }) => {
   return data
 }
 
-const formatPosition = async (position) => {
+const formatPosition = async ({ position, publicKey }) => {
   const position_info_res = await fetch(position.instrument)
   const position_info = await position_info_res.json()
 
@@ -116,7 +118,7 @@ const formatPosition = async (position) => {
   const avg_buy = parseFloat(position.average_buy_price)
   const symbol = position_info.symbol
   return {
-    link: `/user/robinhood/${symbol}`,
+    link: `/${publicKey}/robinhood/${symbol}`,
     name: `${position_info.simple_name}`,
     cost_basis: quantity * avg_buy,
     quantity,
@@ -124,15 +126,13 @@ const formatPosition = async (position) => {
   }
 }
 
-const run = async () => {
-  const session = await getSession()
-  const device_id = session.robinhood_device_id || (await getDeviceId())
-  const response = await login({ device_id, ...config.links.robinhood })
+const run = async ({ session = {}, credentials, publicKey }) => {
+  const device_id = session.device_id || (await getDeviceId())
+  const response = await login({ device_id, publicKey, ...credentials })
   log(response)
   const token = response.access_token
 
-  session.robinhood_device_id = device_id
-  await saveSession(session)
+  session.device_id = device_id
 
   const accounts = await getAccounts({ token })
   // log(accounts)
@@ -141,7 +141,7 @@ const run = async () => {
     // log(await getAccount({ token, url: account.url }))
     const positions = await getAccountPositions({ token, url: account.url })
     for (const position of positions.results) {
-      const formatted = await formatPosition(position)
+      const formatted = await formatPosition({ position, publicKey })
       items.push(formatted)
     }
   }
@@ -150,6 +150,8 @@ const run = async () => {
     log(`Saving ${items.length} holdings`)
     await db('assets').insert(items).onConflict().merge()
   }
+
+  return session
 }
 
 export default run

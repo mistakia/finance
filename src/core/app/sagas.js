@@ -77,7 +77,7 @@ export function* watchLocationChange() {
   yield takeLatest(LOCATION_CHANGE, reset)
 }
 
-export function* watchSetKey() {
+export function* watchSaveKey() {
   yield takeLatest(appActions.SAVE_KEY, save)
 }
 
@@ -88,5 +88,5 @@ export function* watchSetKey() {
 export const appSagas = [
   fork(watchInitApp),
   fork(watchLocationChange),
-  fork(watchSetKey)
+  fork(watchSaveKey)
 ]

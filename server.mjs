@@ -4,7 +4,7 @@ import server from './api/index.mjs'
 import config from './config.mjs'
 
 const logger = debug('server')
-debug.enable('server')
+debug.enable('server,api,knex')
 
 const main = async () => {
   const { port } = config
