@@ -10,8 +10,8 @@ const initialState = new Record({
 
 export function appReducer(state = initialState(), { payload, type }) {
   switch (type) {
-    case appActions.SET_KEY:
-    case appActions.SAVE_KEY:
+    case appActions.LOAD_KEY:
+    case appActions.NEW_KEY:
       return state.merge({ isLoaded: true, ...payload })
 
     case appActions.APP_LOADED:

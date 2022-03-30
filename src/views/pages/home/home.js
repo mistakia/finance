@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Grid from '@mui/material/Grid'
-import Divider from '@mui/material/Divider'
 import Container from '@mui/material/Container'
 
+import Assets from '@components/assets'
 import Connections from '@components/connections'
 
 import './home.styl'
@@ -89,10 +89,7 @@ export default class HomePage extends React.Component {
             ))}
           </Grid>
         </Grid>
-        <div className='assets__container'>
-          <Divider textAlign='left'>Assets</Divider>
-          <div className='assets__table'></div>
-        </div>
+        <Assets />
         <Connections />
       </Container>
     )

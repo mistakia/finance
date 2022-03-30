@@ -3,6 +3,7 @@ import { call, put, cancelled } from 'redux-saga/effects'
 
 import { api, apiRequest } from '@core/api/service'
 import { postJobRequestActions } from '@core/jobs'
+import { getAssetsRequestActions } from '@core/assets/actions'
 
 function* fetchAPI(apiFunction, actions, opts = {}) {
   const { abort, request } = apiRequest(apiFunction, opts)
@@ -32,3 +33,8 @@ function* fetch(...args) {
 }
 
 export const postJob = fetch.bind(null, api.postJob, postJobRequestActions)
+export const getAssets = fetch.bind(
+  null,
+  api.getAssets,
+  getAssetsRequestActions
+)

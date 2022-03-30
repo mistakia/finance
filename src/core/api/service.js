@@ -17,6 +17,10 @@ export const api = {
   postJob(data) {
     const url = `${API_URL}/jobs`
     return { url, ...POST(data) }
+  },
+  getAssets({ publicKey }) {
+    const url = `${API_URL}/assets/${publicKey}`
+    return { url }
   }
 }
 

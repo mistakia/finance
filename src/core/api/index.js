@@ -1,1 +1,1 @@
-export { postJob } from './sagas'
+export { postJob, getAssets } from './sagas'

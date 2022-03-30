@@ -29,7 +29,7 @@ export default class SeedPage extends React.Component {
         <Grid container spacing={4}>
           <Grid item sm={12}>
             <Typography variant='h3' gutterBottom component='div'>
-              Seed
+              Secret
             </Typography>
             <Typography variant='body1'>
               This provides access to your accounts

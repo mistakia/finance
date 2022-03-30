@@ -44,7 +44,7 @@ export function* load() {
     if (history.location.pathname === '/init') {
       yield put(push('/'))
     }
-    yield put(appActions.setKey({ privateKey, publicKey }))
+    yield put(appActions.loadKey({ privateKey, publicKey }))
   } else {
     yield put(push('/init'))
   }
@@ -77,8 +77,8 @@ export function* watchLocationChange() {
   yield takeLatest(LOCATION_CHANGE, reset)
 }
 
-export function* watchSaveKey() {
-  yield takeLatest(appActions.SAVE_KEY, save)
+export function* watchNewKey() {
+  yield takeLatest(appActions.NEW_KEY, save)
 }
 
 //= ====================================
@@ -88,5 +88,5 @@ export function* watchSaveKey() {
 export const appSagas = [
   fork(watchInitApp),
   fork(watchLocationChange),
-  fork(watchSaveKey)
+  fork(watchNewKey)
 ]

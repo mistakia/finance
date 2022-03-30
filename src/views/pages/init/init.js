@@ -20,7 +20,7 @@ function generateKeyPair() {
 export default class InitPage extends React.Component {
   generateKey = () => {
     const keyPair = generateKeyPair()
-    this.props.saveKey(keyPair)
+    this.props.newKey(keyPair)
   }
 
   render() {
@@ -35,9 +35,9 @@ export default class InitPage extends React.Component {
           </Button>
           <TextField
             id='outlined-basic'
-            label='Private Key'
+            label='Secret'
             variant='outlined'
-            helperText='Paste key to load existing account'
+            helperText='Paste secret to load existing account'
           />
         </Stack>
       </div>
@@ -46,5 +46,5 @@ export default class InitPage extends React.Component {
 }
 
 InitPage.propTypes = {
-  saveKey: PropTypes.func
+  newKey: PropTypes.func
 }

@@ -5,21 +5,9 @@ import { getConnections, connectionActions } from '@core/connections'
 
 import Connections from './connections'
 
-const mapStateToProps = createSelector(getConnections, (connections) => {
-  const rows = []
-
-  for (const [key, value] of connections.toSeq()) {
-    rows.push({
-      id: key,
-      type: value.connection,
-      label: key
-    })
-  }
-
-  return {
-    rows
-  }
-})
+const mapStateToProps = createSelector(getConnections, (connections) => ({
+  connections
+}))
 
 const mapDispatchToProps = {
   addConnection: connectionActions.addConnection

@@ -5,7 +5,7 @@ import { appActions } from '@core/app'
 import InitPage from './init'
 
 const mapDispatchToProps = {
-  saveKey: appActions.saveKey
+  newKey: appActions.newKey
 }
 
 export default connect(null, mapDispatchToProps)(InitPage)

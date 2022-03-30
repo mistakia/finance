@@ -33,12 +33,12 @@ export function* watchWebSocketClose() {
   yield takeLatest(websocketActions.WEBSOCKET_CLOSE, reconnect)
 }
 
-export function* watchSaveKey() {
-  yield takeLatest(appActions.SAVE_KEY, connect)
+export function* watchNewKey() {
+  yield takeLatest(appActions.NEW_KEY, connect)
 }
 
-export function* watchSetKey() {
-  yield takeLatest(appActions.SET_KEY, connect)
+export function* watchLoadKey() {
+  yield takeLatest(appActions.LOAD_KEY, connect)
 }
 
 //= ====================================
@@ -47,6 +47,6 @@ export function* watchSetKey() {
 
 export const websocketSagas = [
   fork(watchWebSocketClose),
-  fork(watchSaveKey),
-  fork(watchSetKey)
+  fork(watchNewKey),
+  fork(watchLoadKey)
 ]

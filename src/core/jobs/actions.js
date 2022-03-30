@@ -3,9 +3,10 @@ export const jobActions = {
   POST_JOB_PENDING: 'POST_JOB_PENDING',
   POST_JOB_FULFILLED: 'POST_JOB_FULFILLED',
 
-  postJobFailed: (error) => ({
+  postJobFailed: (params, error) => ({
     type: jobActions.POST_JOB_FAILED,
     payload: {
+      params,
       error
     }
   }),
