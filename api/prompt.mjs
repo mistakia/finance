@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws'
 
-import { wait } from '../common/index.mjs'
-import wss from './websocket.mjs'
+import { wait } from '#common'
+import wss from '#root/api/websocket.mjs'
 
 const prompt = ({ publicKey, inputs }) =>
   new Promise((resolve, reject) => {

@@ -16,11 +16,11 @@ import cors from 'cors'
 import favicon from 'express-favicon'
 import robots from 'express-robots-txt'
 
-import config from '../config.mjs'
-import routes from './routes/index.mjs'
-import cache from './cache.mjs'
-import db from '../db/index.mjs'
-import wss from './websocket.mjs'
+import config from '#config'
+import db from '#db'
+import routes from '#root/api/routes/index.mjs'
+import cache from '#root/api/cache.mjs'
+import wss from '#root/api/websocket.mjs'
 
 // import './cron.mjs'
 

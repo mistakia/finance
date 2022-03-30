@@ -1,7 +1,7 @@
 import debug from 'debug'
 
-import server from './api/index.mjs'
-import config from './config.mjs'
+import server from '#root/api/index.mjs'
+import config from '#config'
 
 const logger = debug('server')
 debug.enable('server,api,knex')

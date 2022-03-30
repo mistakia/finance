@@ -1,8 +1,8 @@
 import express from 'express'
 
-import { send } from '../websocket.mjs'
-import prompt from '../prompt.mjs'
-import importRobinhoodAccounts from '../../scripts/import-robinhood-accounts.mjs'
+import { send } from '#root/api/websocket.mjs'
+import prompt from '#root/api/prompt.mjs'
+import importRobinhoodAccounts from '#scripts/import-robinhood-accounts.mjs'
 
 export const jobs = {
   'robinhood/accounts': importRobinhoodAccounts

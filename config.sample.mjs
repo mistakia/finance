@@ -3,6 +3,15 @@ export default {
 
   url: 'http://localhost:8081',
 
+  morningstar: {
+    search_api_key: '',
+    data_api_key: ''
+  },
+
+  robinhood: {
+    bearer: ''
+  },
+
   alphavantage: '',
   mysql: {
     client: 'mysql2',

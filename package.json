@@ -1,4 +1,11 @@
 {
+  "imports": {
+    "#root/*": "./*",
+    "#scripts/*": "./scripts/*",
+    "#common": "./common/index.mjs",
+    "#config": "./config.mjs",
+    "#db": "./db/index.mjs"
+  },
   "scripts": {
     "dev": "concurrently \"yarn start\" \"yarn start:api\"",
     "start": "webpack serve --mode=development --config internals/webpack/webpack.dev.babel.mjs --port 8081 --history-api-fallback",

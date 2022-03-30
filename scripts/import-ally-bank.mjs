@@ -2,13 +2,13 @@ import debug from 'debug'
 import cli_prompt from 'prompt'
 import puppeteer from 'puppeteer'
 
-import websocket_prompt from '../api/prompt.mjs'
+import websocket_prompt from '#root/api/prompt.mjs'
 // import yargs from 'yargs'
 // import { hideBin } from 'yargs/helpers'
 
-// import db from '../db/index.mjs'
-import config from '../config.mjs'
-import { isMain } from '../common/index.mjs'
+// import db from '#db'
+import config from '#config'
+import { isMain } from '#common'
 
 // const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-bank')

@@ -4,111 +4,13 @@ import fetch from 'node-fetch'
 // import yargs from 'yargs'
 // import { hideBin } from 'yargs/helpers'
 
-import websocket_prompt from '../api/prompt.mjs'
-import db from '../db/index.mjs'
-import config from '../config.mjs'
-import { isMain, getSession, saveSession } from '../common/index.mjs'
+import db from '#db'
+import config from '#config'
+import { isMain, getSession, saveSession } from '#common'
 
 // const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-robinhood-accounts')
 debug.enable('import-robinhood-accounts')
-
-const getDeviceId = async () => {
-  const response = await fetch('https://robinhood.com/login')
-  const cookies = response.headers.raw()['set-cookie']
-  const cookie = cookies.find((c) => c.includes('device_id='))
-  const found = /device_id=(?<device_id>[^;]+)/gi.exec(cookie)
-  return found.groups.device_id
-}
-
-const postAuth = async ({ username, password, device_id, challenge_id }) => {
-  log(device_id)
-  const params = new URLSearchParams()
-  params.append('username', username)
-  params.append('password', password)
-  params.append('grant_type', 'password')
-  params.append('score', 'internal')
-  params.append('challenge_type', 'sms')
-  params.append('client_id', 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS')
-  params.append('device_token', device_id)
-
-  const options = { method: 'POST', body: params }
-  if (challenge_id) {
-    options.headers = {
-      'X-ROBINHOOD-CHALLENGE-RESPONSE-ID': challenge_id
-    }
-  }
-
-  const response = await fetch(
-    'https://api.robinhood.com/oauth2/token/',
-    options
-  )
-  const data = await response.json()
-
-  return data
-}
-
-const postChallenge = async ({ code, challenge_id }) => {
-  const params = new URLSearchParams()
-  params.append('response', code)
-  const response = await fetch(
-    `https://api.robinhood.com/challenge/${challenge_id}/respond/`,
-    { method: 'POST', body: params }
-  )
-  const data = await response.json()
-  return data
-}
-
-const login = async ({ device_id, username, password, publicKey }) => {
-  const response = await postAuth({ username, password, device_id })
-  log(response)
-
-  if (response.access_token) {
-    return response
-  }
-
-  const inputs = ['code']
-  const { code } = await websocket_prompt({ publicKey, inputs })
-  const challenge_id = response.challenge.id
-  await postChallenge({ code, challenge_id })
-  return postAuth({ username, password, device_id, challenge_id })
-}
-
-const getAccounts = async ({ token }) => {
-  const response = await fetch('https://api.robinhood.com/accounts/', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-  const data = await response.json()
-  return data
-}
-
-const getAccount = async ({ token, url }) => {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-  const data = await response.json()
-  return data
-}
-
-const getAccountPositions = async ({ token, url }) => {
-  const response = await fetch(
-    'https://api.robinhood.com/positions/?nonzero=true',
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  )
-  const data = await response.json()
-  return data
-}
 
 const formatPosition = async ({ position, publicKey }) => {
   const position_info_res = await fetch(position.instrument)
@@ -127,19 +29,26 @@ const formatPosition = async ({ position, publicKey }) => {
 }
 
 const run = async ({ session = {}, credentials, publicKey }) => {
-  const device_id = session.device_id || (await getDeviceId())
-  const response = await login({ device_id, publicKey, ...credentials })
+  const device_id = session.device_id || (await robinhood.getDeviceId())
+  const response = await robinhood.login({
+    device_id,
+    publicKey,
+    ...credentials
+  })
   log(response)
   const token = response.access_token
 
   session.device_id = device_id
 
-  const accounts = await getAccounts({ token })
+  const accounts = await robinhood.getAccounts({ token })
   // log(accounts)
   const items = []
   for (const account of accounts.results) {
     // log(await getAccount({ token, url: account.url }))
-    const positions = await getAccountPositions({ token, url: account.url })
+    const positions = await robinhood.getAccountPositions({
+      token,
+      url: account.url
+    })
     for (const position of positions.results) {
       const formatted = await formatPosition({ position, publicKey })
       items.push(formatted)
