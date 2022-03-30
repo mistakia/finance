@@ -8,10 +8,6 @@ export default {
     data_api_key: ''
   },
 
-  robinhood: {
-    bearer: ''
-  },
-
   alphavantage: '',
   mysql: {
     client: 'mysql2',

@@ -30,6 +30,14 @@ const postAuth = async ({ username, password, device_id, challenge_id }) => {
   return data
 }
 
+const getBearerToken = async () => {
+  const response = await fetch('https://robinhood.com/stocks/VTI')
+  const html = await response.text()
+  const re = /{"access_token":"(?<token>[^"]*)",/g
+  const match = re.exec(html)
+  return match.groups.token
+}
+
 const postChallenge = async ({ code, challenge_id }) => {
   const params = new URLSearchParams()
   params.append('response', code)
@@ -102,10 +110,11 @@ export const getAccountPositions = async ({ token, url }) => {
 
 export const getQuote = async ({ symbol }) => {
   try {
+    const token = await getBearerToken()
     const url = `https://api.robinhood.com/quotes/${symbol.toUpperCase()}/`
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${config.robinhood.bearer}`
+        Authorization: `Bearer ${token}`
       }
     })
     const data = await response.json()
