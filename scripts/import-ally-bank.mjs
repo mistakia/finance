@@ -1,7 +1,8 @@
 import debug from 'debug'
-import prompt from 'prompt'
+import cli_prompt from 'prompt'
 import puppeteer from 'puppeteer'
 
+import websocket_prompt from '../api/prompt.mjs'
 // import yargs from 'yargs'
 // import { hideBin } from 'yargs/helpers'
 
@@ -13,15 +14,15 @@ import { isMain } from '../common/index.mjs'
 const log = debug('import-ally-bank')
 debug.enable('import-ally-bank')
 
-const getBalances = async () => {
+const getBalances = async ({ username, password }) => {
   const browser = await puppeteer.launch({ headless: false })
   const page = await browser.newPage()
   await page.goto('https://secure.ally.com/', {
     waitUntil: 'networkidle2'
   })
 
-  await page.type('#username', config.links.ally_bank.username)
-  await page.type('#password', config.links.ally_bank.password)
+  await page.type('#username', username)
+  await page.type('#password', password)
   await Promise.all([
     page.evaluate(() => {
       document.querySelector('button[type=submit]').click()
@@ -47,7 +48,8 @@ const getBalances = async () => {
     // '#main button[type=button][allytmln=continue]'
 
     // enter security code
-    const { code } = await prompt.get(['code'])
+    const inputs = ['code']
+    const { code } = await websocket_prompt({ publicKey, inputs })
     log(code)
   }
 
@@ -91,8 +93,8 @@ const getBalances = async () => {
   return [...checkingAccounts, ...savingAccounts]
 }
 
-const run = async () => {
-  const accounts = await getBalances()
+const run = async ({ credentials, publicKey }) => {
+  const accounts = await getBalances({ ...credentials })
   log(accounts)
 }
 
@@ -101,7 +103,9 @@ export default run
 const main = async () => {
   let error
   try {
-    await run()
+    const publicKey = argv.publicKey
+    const credentials = config.links.ally_bank
+    await run({ credentials, publicKey })
   } catch (err) {
     error = err
     console.log(error)

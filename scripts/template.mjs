@@ -11,9 +11,6 @@ import { isMain } from '../common/index.mjs'
 debug.enable('template')
 
 const run = async () => {}
-
-export default run
-
 const main = async () => {
   let error
   try {
@@ -36,3 +33,5 @@ const main = async () => {
 if (isMain) {
   main()
 }
+
+export default run

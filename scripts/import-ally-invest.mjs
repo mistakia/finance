@@ -13,34 +13,39 @@ import { isMain } from '../common/index.mjs'
 const log = debug('import-ally-invest')
 debug.enable('import-ally-invest')
 
-const oauth = OAuth({
-  consumer: {
-    key: config.links.ally.consumer_key,
-    secret: config.links.ally.consumer_secret
-  },
-  signature_method: 'HMAC-SHA1',
-  hash_function(base_string, key) {
-    return crypto.createHmac('sha1', key).update(base_string).digest('base64')
-  }
-})
-
-const formatAsset = (item) => ({
-  link: `/user/ally-invest/${item.displaydata.symbol}`,
+const formatAsset = ({ item, publicKey }) => ({
+  link: `/${publicKey}/ally-invest/${item.displaydata.symbol}`,
   name: item.displaydata.desc,
   cost_basis: parseFloat(item.costbasis),
   quantity: parseInt(item.qty, 10),
   symbol: item.displaydata.symbol
 })
 
-const getAccounts = async () => {
+const getAccounts = async ({
+  consumer_key,
+  consumer_secret,
+  oauth_key,
+  oauth_secret
+}) => {
+  const oauth = OAuth({
+    consumer: {
+      key: consumer_key,
+      secret: consumer_secret
+    },
+    signature_method: 'HMAC-SHA1',
+    hash_function(base_string, key) {
+      return crypto.createHmac('sha1', key).update(base_string).digest('base64')
+    }
+  })
+
   const request_data = {
     url: 'https://devapi.invest.ally.com/v1/accounts.json',
     method: 'GET'
   }
 
   const token = {
-    key: config.links.ally.oauth_key,
-    secret: config.links.ally.oauth_secret
+    key: oauth_key,
+    secret: oauth_secret
   }
 
   return await fetch(request_data.url, {
@@ -48,11 +53,11 @@ const getAccounts = async () => {
   }).then((res) => res.json())
 }
 
-const run = async () => {
-  const data = await getAccounts()
+const run = async ({ credentials, publicKey }) => {
+  const data = await getAccounts({ ...credentials })
   const inserts =
-    data.response.accounts.accountsummary.accountholdings.holding.map((i) =>
-      formatAsset(i)
+    data.response.accounts.accountsummary.accountholdings.holding.map((item) =>
+      formatAsset({ item, publicKey })
     )
 
   // add cash balance
@@ -60,7 +65,7 @@ const run = async () => {
     data.response.accounts.accountsummary.accountbalance.money.cash
   )
   inserts.push({
-    link: '/user/ally-invest/USD',
+    link: `/${publicKey}/ally-invest/USD`,
     name: 'Cash',
     cost_basis: cash,
     quantity: cash,
@@ -80,7 +85,9 @@ export default run
 const main = async () => {
   let error
   try {
-    await run()
+    const publicKey = argv.publicKey
+    const credentials = config.links.ally
+    await run({ credentials, publicKey })
   } catch (err) {
     error = err
     console.log(error)

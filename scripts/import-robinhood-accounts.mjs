@@ -159,7 +159,11 @@ export default run
 const main = async () => {
   let error
   try {
-    await run()
+    const publicKey = argv.publicKey
+    const session = await getSession()
+    const credentials = config.links.robinhood
+    const result = await run({ session, credentials, publicKey })
+    await saveSession(result)
   } catch (err) {
     error = err
     console.log(error)

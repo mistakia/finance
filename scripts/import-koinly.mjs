@@ -56,25 +56,31 @@ const getType = (item) => {
 
 const getWallet = (string) => string.replace(/\s+/g, '-').toLowerCase()
 
-const formatTransaction = (item) => {
+const formatTransaction = ({ item, publicKey }) => {
   const data = {
-    link: `/user/koinly/${item.id}`,
+    link: `/${publicKey}/koinly/${item.id}`,
     type: getType(item),
     from_link:
       item.from &&
-      `/user/${getWallet(item.from.wallet.name)}/${item.from.currency.symbol}`,
+      `/${publicKey}/${getWallet(item.from.wallet.name)}/${
+        item.from.currency.symbol
+      }`,
     from_amount: item.from && parseFloat(item.from.amount),
     from_symbol: item.from && item.from.currency.symbol,
     to_link:
       item.to &&
-      `/user/${getWallet(item.to.wallet.name)}/${item.to.currency.symbol}`,
+      `/${publicKey}/${getWallet(item.to.wallet.name)}/${
+        item.to.currency.symbol
+      }`,
     to_amount: item.to && parseFloat(item.to.amount),
     to_symbol: item.to && item.to.currency.symbol,
     fee_amount: item.fee && parseFloat(item.fee.amount),
     fee_symbol: item.fee && item.fee.currency.symbol,
     fee_link:
       item.fee &&
-      `/user/${getWallet(item.fee.wallet.name)}/${item.fee.currency.symbol}`,
+      `/${publicKey}/${getWallet(item.fee.wallet.name)}/${
+        item.fee.currency.symbol
+      }`,
     date: dayjs(item.date).unix(),
     tx_id: item.txhash,
     tx_src: item.txsrc,
@@ -84,13 +90,13 @@ const formatTransaction = (item) => {
   }
 
   if (item.txdest && !data.to_link) {
-    data.to_link = `/user/self/${item.from.currency.symbol}/${item.txdest}`
+    data.to_link = `/${publicKey}/self/${item.from.currency.symbol}/${item.txdest}`
     data.to_symbol = item.from.currency.symbol
     // data.to_amount
   }
 
   if (item.txsrc && !data.from_link) {
-    data.from_link = `/user/self/${item.to.currency.symbol}/${item.txsrc}`
+    data.from_link = `/${publicKey}/self/${item.to.currency.symbol}/${item.txsrc}`
     data.from_symbol = item.to.currency.symbol
     // data.from_amount
   }
@@ -98,21 +104,30 @@ const formatTransaction = (item) => {
   return data
 }
 
-const getTransactions = async ({ page }) => {
+const getTransactions = async ({
+  page,
+  auth_token,
+  portfolio_token,
+  cookie,
+  user_agent,
+  publicKey
+}) => {
   const URL = `https://api.koinly.io/api/transactions?per_page=25&order=date&page=${page}`
   log(URL)
   const data = await fetch(URL, {
     headers: {
-      'x-auth-token': config.koinly.auth_token,
-      'x-portfolio-token': config.koinly.portfolio_token,
-      cookie: config.koinly.cookie,
-      'user-agent': config.koinly.user_agent
+      'x-auth-token': auth_token,
+      'x-portfolio-token': portfolio_token,
+      cookie: cookie,
+      'user-agent': user_agent
     }
   }).then((res) => res.json())
   log(data.meta.page)
   log(`Received ${data.transactions.length} transactions`)
 
-  const inserts = data.transactions.map(formatTransaction)
+  const inserts = data.transactions.map((item) =>
+    formatTransaction({ item, publicKey })
+  )
   if (inserts.length) {
     log(`Inserting ${inserts.length} transactions into database`)
     await db('transactions').insert(inserts).onConflict().merge()
@@ -121,12 +136,12 @@ const getTransactions = async ({ page }) => {
   return data
 }
 
-const run = async () => {
+const run = async ({ credentials, publicKey }) => {
   log('importing transactions')
   let page = 1
   let res
   do {
-    res = await getTransactions({ page })
+    res = await getTransactions({ page, publicKey, ...credentials })
     if (res) {
       page += 1
     }
@@ -140,7 +155,9 @@ export default run
 const main = async () => {
   let error
   try {
-    await run()
+    const publicKey = argv.publicKey
+    const credentials = config.koinly
+    await run({ credentials, publicKey })
   } catch (err) {
     error = err
     console.log(error)
