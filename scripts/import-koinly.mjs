@@ -1,14 +1,14 @@
 import debug from 'debug'
 import dayjs from 'dayjs'
 import fetch from 'node-fetch'
-// import yargs from 'yargs'
-// import { hideBin } from 'yargs/helpers'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
 import { isMain, wait } from '#common'
 
-// const argv = yargs(hideBin(process.argv)).argv
+const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-transactions-koinly')
 debug.enable('import-transactions-koinly')
 

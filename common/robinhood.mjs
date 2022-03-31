@@ -1,10 +1,8 @@
 import fetch from 'node-fetch'
 
 import websocket_prompt from '#root/api/prompt.mjs'
-import config from '#config'
 
 const postAuth = async ({ username, password, device_id, challenge_id }) => {
-  log(device_id)
   const params = new URLSearchParams()
   params.append('username', username)
   params.append('password', password)
@@ -59,7 +57,6 @@ export const getDeviceId = async () => {
 
 export const login = async ({ device_id, username, password, publicKey }) => {
   const response = await postAuth({ username, password, device_id })
-  log(response)
 
   if (response.access_token) {
     return response

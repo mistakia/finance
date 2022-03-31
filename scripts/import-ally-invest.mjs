@@ -2,14 +2,14 @@ import OAuth from 'oauth-1.0a'
 import crypto from 'crypto'
 import debug from 'debug'
 import fetch from 'node-fetch'
-// import yargs from 'yargs'
-// import { hideBin } from 'yargs/helpers'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
 import { isMain } from '#common'
 
-// const argv = yargs(hideBin(process.argv)).argv
+const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-invest')
 debug.enable('import-ally-invest')
 
@@ -76,7 +76,7 @@ const run = async ({ credentials, publicKey }) => {
 
   if (inserts.length) {
     log(`saving ${inserts.length} holdings`)
-    await db('assets').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict().merge()
   }
 }
 

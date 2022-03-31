@@ -14,11 +14,11 @@ const run = async ({ symbol }) => {
   const entity = await morningstar.searchEntity({ symbol })
   const security = await morningstar.searchSecurity({ symbol })
   const quote = await morningstar.getSecurityQuote({ secId: security.secId })
-  console.log(entity)
-  console.log(security)
-  console.log(quote)
+  log(entity)
+  log(security)
+  log(quote)
   const robinhood_quote = await robinhood.getQuote({ symbol })
-  console.log(robinhood_quote)
+  log(robinhood_quote)
 }
 
 const main = async () => {

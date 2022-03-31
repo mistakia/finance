@@ -21,7 +21,11 @@ const prompt = ({ publicKey, inputs }) =>
     const response = new Promise((resolve, reject) => {
       listener = (msg) => {
         const message = JSON.parse(msg)
-        const { payload } = message
+        const { type, payload } = message
+        if (type !== 'CONNECTION_PROMPT_RESPONSE') {
+          return
+        }
+
         const values = {}
         for (const param of payload.params) {
           values[param.field] = param.value

@@ -11,7 +11,7 @@
     "start": "webpack serve --mode=development --config internals/webpack/webpack.dev.babel.mjs --port 8081 --history-api-fallback",
     "start:api": "NODE_ENV=development node server.mjs",
     "build": "cross-env NODE_ENV=production webpack --config internals/webpack/webpack.prod.babel.mjs --color --progress",
-    "lint": "eslint .",
+    "lint": "eslint . --ext js,mjs",
     "prettier": "prettier --write ."
   },
   "dependencies": {
@@ -40,7 +40,7 @@
     "cross-env": "^7.0.3",
     "crypto-browserify": "^3.12.0",
     "css-loader": "^6.7.1",
-    "dayjs": "^1.10.7",
+    "dayjs": "^1.11.0",
     "debug": "^4.3.3",
     "deep-extend": "^0.6.0",
     "depcheck": "^1.4.3",

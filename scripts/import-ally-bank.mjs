@@ -1,20 +1,19 @@
 import debug from 'debug'
-import cli_prompt from 'prompt'
 import puppeteer from 'puppeteer'
 
 import websocket_prompt from '#root/api/prompt.mjs'
-// import yargs from 'yargs'
-// import { hideBin } from 'yargs/helpers'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
 // import db from '#db'
 import config from '#config'
 import { isMain } from '#common'
 
-// const argv = yargs(hideBin(process.argv)).argv
+const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-bank')
 debug.enable('import-ally-bank')
 
-const getBalances = async ({ username, password }) => {
+const getBalances = async ({ publicKey, username, password }) => {
   const browser = await puppeteer.launch({ headless: false })
   const page = await browser.newPage()
   await page.goto('https://secure.ally.com/', {
@@ -94,7 +93,7 @@ const getBalances = async ({ username, password }) => {
 }
 
 const run = async ({ credentials, publicKey }) => {
-  const accounts = await getBalances({ ...credentials })
+  const accounts = await getBalances({ publicKey, ...credentials })
   log(accounts)
 }
 

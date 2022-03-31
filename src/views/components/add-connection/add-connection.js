@@ -53,6 +53,7 @@ export default class AddConnection extends React.Component {
     const param_id = field.value
     const id = `${connection.id}/${param_id}`
     this.props.addConnection({ id, connection, params })
+    this.handleClose()
   }
 
   render() {

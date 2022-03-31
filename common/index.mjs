@@ -4,6 +4,9 @@ import { fileURLToPath } from 'url'
 
 export * as morningstar from './morningstar.mjs'
 export * as robinhood from './robinhood.mjs'
+export * as alphavantage from './alphavantage.mjs'
+export * as coingecko from './coingecko.mjs'
+export { default as addAsset } from './add-asset.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')
@@ -18,6 +21,18 @@ export const median = (arr) => {
     ? arr[middle]
     : (arr[middle - 1] + arr[middle]) / 2
 }
+
+export const slugify = (text) =>
+  text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with -
+    .replace(/&/g, '-and-') // Replace & with 'and'
+    .replace(/[^\w-]+/g, '') // Remove all non-word chars
+    .replace(/--+/g, '-') // Replace multiple - with single -
+    .replace(/^-+/, '') // Trim - from start of text
+    .replace(/-+$/, '') // Trim - from end of text
 
 export const getSession = async () => {
   let session

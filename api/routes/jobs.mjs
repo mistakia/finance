@@ -1,7 +1,6 @@
 import express from 'express'
 
 import { send } from '#root/api/websocket.mjs'
-import prompt from '#root/api/prompt.mjs'
 import importRobinhoodAccounts from '#scripts/import-robinhood-accounts.mjs'
 
 export const jobs = {
@@ -22,8 +21,13 @@ const run = async ({ id, publicKey, connection, credentials, session }) => {
     send({ publicKey, event })
   }
 
-  console.log('job done')
-  // send ws message to update client state
+  const event = {
+    type: 'SET_CONNECTION_LAST_CONNECTION',
+    payload: {
+      id
+    }
+  }
+  send({ publicKey, event })
 }
 
 const router = express.Router()

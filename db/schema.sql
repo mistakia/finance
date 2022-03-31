@@ -14,11 +14,11 @@ CREATE TABLE `adjusted_daily_prices` (
 DROP TABLE IF EXISTS `assets`;
 
 CREATE TABLE `assets` (
-  `link` varchar(200) NOT NULL comment '/[user]/[custodian]/[symbol]',
-  `name` varchar(200) NOT NULL,
-  `cost_basis` decimal(65,30) NOT NULL,
-  `quantity` decimal(65,30) NOT NULL,
-  `symbol` varchar(20) DEFAULT NULL,
+  `link` varchar(200) NOT NULL,
+  `symbol` varchar(20) NOT NULL,
+  `market_value_usd` decimal(65,30) DEFAULT NULL,
+  `asset_class` varchar(200) NOT NULL,
+  `type` varchar(200) NOT NULL,
   UNIQUE KEY `link` (`link`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -28,6 +28,18 @@ CREATE TABLE `cpi` (
   `d` datetime NOT NULL,
   `v` int unsigned NOT NULL,
   UNIQUE KEY `date` (`d`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `holdings`;
+
+CREATE TABLE `holdings` (
+  `link` varchar(200) NOT NULL comment '/[user]/[custodian]/[symbol]',
+  `name` varchar(200) NOT NULL,
+  `cost_basis` decimal(65,30) NOT NULL,
+  `quantity` decimal(65,30) NOT NULL,
+  `symbol` varchar(20) DEFAULT NULL,
+  `asset_link` varchar(2000 NOT NULL,
+  UNIQUE KEY `link` (`link`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `transactions`;

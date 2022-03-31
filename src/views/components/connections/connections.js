@@ -39,7 +39,7 @@ function Connection({ connection }) {
         {connection.id}
       </TableCell>
       <TableCell align='right'>{connection.connection}</TableCell>
-      <TableCell align='right'></TableCell>
+      <TableCell align='right'>{connection.last_connection}</TableCell>
     </TableRow>
   )
 }
