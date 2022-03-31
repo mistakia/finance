@@ -1,11 +1,9 @@
-import fetch from 'node-fetch'
 import debug from 'debug'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
-import { isMain, wait } from '#common'
+import { isMain, wait, alphavantage } from '#common'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-historical-prices-alphavantage')
@@ -20,9 +18,7 @@ const getItem = (item) => ({
 })
 
 const runOne = async (symbol) => {
-  const URL = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${config.alphavantage}&outputsize=full`
-  const data = await fetch(URL).then((res) => res.json())
-
+  const data = alphavantage.getDailyTimeSeries({ symbol })
   const inserts = []
   for (const [date, item] of Object.entries(data['Time Series (Daily)'])) {
     inserts.push({

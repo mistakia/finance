@@ -12,7 +12,7 @@ router.get('/:publicKey', async (req, res) => {
       `%${publicKey}%`
     )
     const asset_links = holdings.map((i) => i.asset_link)
-    const uniq_links = new Set(asset_links.filter(i => Boolean(i)))
+    const uniq_links = new Set(asset_links.filter((i) => Boolean(i)))
     if (!uniq_links.size) {
       return res.status(200).send([])
     }
