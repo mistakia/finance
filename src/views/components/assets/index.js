@@ -1,13 +1,13 @@
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
 
-import { getAssets } from '@core/assets'
+import { getAssetClasses } from '@core/assets'
 
 import Assets from './assets'
 
-const mapStateToProps = createSelector(getAssets, (assets) => {
+const mapStateToProps = createSelector(getAssetClasses, (asset_classes) => {
   return {
-    assets
+    asset_classes
   }
 })
 

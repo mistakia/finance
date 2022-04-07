@@ -1,5 +1,5 @@
 import React from 'react'
-import PropTypes from 'prop-types'
+import ImmutablePropTypes from 'react-immutable-proptypes'
 import Box from '@mui/material/Box'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -8,64 +8,12 @@ import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableRow from '@mui/material/TableRow'
 
-const ASSETS = [
-  {
-    name: 'US Equities',
-    balance: '$50,223',
-    current_allocation_pct: '34%',
-    target_allocation_pct: '23%'
-  },
-  {
-    name: 'Foreign Equities',
-    balance: '$50,223',
-    current_allocation_pct: '34%',
-    target_allocation_pct: '23%'
-  },
-  {
-    name: 'Fixed Income',
-    balance: '$50,223',
-    current_allocation_pct: '34%',
-    target_allocation_pct: '23%'
-  },
-  {
-    name: 'Currencies',
-    balance: '$50,223',
-    current_allocation_pct: '34%',
-    target_allocation_pct: '23%'
-  },
-  {
-    name: 'Crypto Currencies',
-    balance: '$50,223',
-    current_allocation_pct: '34%',
-    target_allocation_pct: '23%'
-  },
-  {
-    name: 'Commodities',
-    balance: '$50,223',
-    current_allocation_pct: '34%',
-    target_allocation_pct: '23%'
-  }
-]
-
-function Asset({ asset }) {
-  return (
-    <TableRow hover tabIndex={-1} key={asset.name}>
-      <TableCell component='th' scope='row'>
-        {asset.name}
-      </TableCell>
-      <TableCell align='right'>{asset.balance}</TableCell>
-      <TableCell align='right'>{asset.current_allocation_pct}</TableCell>
-      <TableCell align='right'>{asset.target_allocation_pct}</TableCell>
-    </TableRow>
-  )
-}
-
-Asset.propTypes = {
-  asset: PropTypes.object
-}
+import AssetClass from '@components/asset-class'
 
 export default class Assets extends React.Component {
   render() {
+    const { asset_classes } = this.props
+
     return (
       <Box sx={{ width: '100%', paddingTop: '35px' }}>
         <TableContainer>
@@ -79,8 +27,8 @@ export default class Assets extends React.Component {
               </TableRow>
             </TableHead>
             <TableBody>
-              {ASSETS.map((asset, idx) => (
-                <Asset asset={asset} key={idx} />
+              {asset_classes.toJS().map((asset_class, idx) => (
+                <AssetClass asset_class={asset_class} key={idx} />
               ))}
             </TableBody>
           </Table>
@@ -88,4 +36,8 @@ export default class Assets extends React.Component {
       </Box>
     )
   }
+}
+
+Assets.propTypes = {
+  asset_classes: ImmutablePropTypes.list
 }

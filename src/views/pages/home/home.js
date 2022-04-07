@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Grid from '@mui/material/Grid'
 import Container from '@mui/material/Container'
+import BigNumber from 'bignumber.js'
 
 import Assets from '@components/assets'
 import Connections from '@components/connections'
@@ -43,12 +44,9 @@ Performance.propTypes = {
 
 export default class HomePage extends React.Component {
   render() {
+    const { balance } = this.props
     // placeholder data
     const data = {
-      balance: {
-        value: 2.555,
-        label: 'M'
-      },
       performance: [
         {
           label: '1d',
@@ -81,7 +79,7 @@ export default class HomePage extends React.Component {
       <Container maxWidth='md' className='home__container'>
         <Grid container className='home__header'>
           <Grid item xs={3} className='balance__box'>
-            {`$${data.balance.value} ${data.balance.label}`}
+            {`$${BigNumber(balance).toFormat(2)}`}
           </Grid>
           <Grid item xs={9} container spacing={2}>
             {data.performance.map((item, idx) => (
@@ -94,4 +92,8 @@ export default class HomePage extends React.Component {
       </Container>
     )
   }
+}
+
+HomePage.propTypes = {
+  balance: PropTypes.number
 }

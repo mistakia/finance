@@ -3,10 +3,10 @@ import { createSelector } from 'reselect'
 
 import { getAssetsBalance } from '@core/assets'
 
-import HomePage from './home'
+import Asset from './asset'
 
 const mapStateToProps = createSelector(getAssetsBalance, (balance) => ({
   balance
 }))
 
-export default connect(mapStateToProps)(HomePage)
+export default connect(mapStateToProps)(Asset)

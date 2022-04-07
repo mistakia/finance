@@ -30,3 +30,5 @@ export async function decrypt(privateKey, blob) {
   const message = await eccrypto.decrypt(Buffer.from(privateKey, 'hex'), cypher)
   return JSON.parse(message.toString('utf8'))
 }
+
+export const sum = (arr) => arr.reduce((a, b) => a + b, 0)
