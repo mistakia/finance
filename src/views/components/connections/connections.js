@@ -45,7 +45,7 @@ function Connection({ connection }) {
 }
 
 Connection.propTypes = {
-  connection: PropTypes.obj
+  connection: PropTypes.object
 }
 
 export default class Connections extends React.Component {

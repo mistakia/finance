@@ -61,7 +61,7 @@ function Asset({ asset }) {
 }
 
 Asset.propTypes = {
-  asset: PropTypes.obj
+  asset: PropTypes.object
 }
 
 export default class Assets extends React.Component {
