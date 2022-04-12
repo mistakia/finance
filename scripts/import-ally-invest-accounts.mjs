@@ -72,12 +72,12 @@ const run = async ({ credentials, publicKey }) => {
     symbol: 'USD'
   })
 
-  // log(inserts)
-
   if (inserts.length) {
     log(`saving ${inserts.length} holdings`)
     await db('holdings').insert(inserts).onConflict().merge()
   }
+
+  return null
 }
 
 export default run
