@@ -1,5 +1,6 @@
 export const connectionActions = {
   ADD_CONNECTION: 'ADD_CONNECTION',
+  SYNC_CONNECTION: 'SYNC_CONNECTION',
 
   SET_CONNECTIONS: 'SET_CONNECTIONS',
 
@@ -8,6 +9,15 @@ export const connectionActions = {
 
   CONNECTION_PROMPT_REQUEST: 'CONNECTION_PROMPT_REQUEST',
   CONNECTION_PROMPT_RESPONSE: 'CONNECTION_PROMPT_RESPONSE',
+
+  syncConnection: ({ id, connection, params }) => ({
+    type: connectionActions.SYNC_CONNECTION,
+    payload: {
+      id,
+      connection,
+      params
+    }
+  }),
 
   addConnection: ({ id, connection, params }) => ({
     type: connectionActions.ADD_CONNECTION,

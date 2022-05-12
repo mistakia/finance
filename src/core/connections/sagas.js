@@ -26,9 +26,7 @@ export function* save() {
   // backup to tint.finance server
 }
 
-export function* add({ payload }) {
-  yield call(save)
-
+export function* sync({ payload }) {
   const { publicKey } = yield select(getApp)
   const { id, connection, params } = payload
   const credentials = {}
@@ -36,6 +34,12 @@ export function* add({ payload }) {
     credentials[param.field] = param.value
   }
   yield call(postJob, { id, publicKey, connection, credentials })
+}
+
+export function* add({ payload }) {
+  yield call(save)
+
+  yield call(sync, { payload })
 }
 
 async function loadConnections() {
@@ -96,6 +100,10 @@ export function* watchAddConnection() {
   yield takeLatest(connectionActions.ADD_CONNECTION, add)
 }
 
+export function* watchSyncConnection() {
+  yield takeLatest(connectionActions.SYNC_CONNECTION, sync)
+}
+
 export function* watchInitApp() {
   yield takeLatest(appActions.APP_LOAD, load)
 }
@@ -127,6 +135,7 @@ export function* watchSetConnectionLastConnection() {
 export const connectionSagas = [
   fork(watchInitApp),
   fork(watchAddConnection),
+  fork(watchSyncConnection),
   fork(watchConnectionPromptRequest),
   fork(watchConnectionPromptResponse),
   fork(watchSetConnectionSession),

@@ -3,7 +3,7 @@ export const CONNECTIONS = [
     id: 'ally-bank',
     name: 'Ally Bank',
     url: 'https://www.ally.com/',
-    jobs: [],
+    jobs: ['ally-bank/accounts'],
     params: ['username', 'password'],
     params_id: 'username'
   },
@@ -19,7 +19,7 @@ export const CONNECTIONS = [
     id: 'ally-invest',
     name: 'Ally Invest',
     url: 'https://www.ally.com/invest/',
-    jobs: [],
+    jobs: ['ally-invest/accounts'],
     params: ['consumer_key', 'consumer_secret', 'oauth_key', 'oauth_secret'],
     params_id: 'consumer_key'
   },
