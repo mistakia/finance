@@ -1,12 +1,7 @@
-import puppeteer from 'puppeteer-extra'
-import StealthPlugin from 'puppeteer-extra-plugin-stealth'
-import AnonymizeUaPlugin from 'puppeteer-extra-plugin-anonymize-ua'
-
-import websocket_prompt from '#root/api/prompt.mjs'
 import prompt from 'prompt'
 
-puppeteer.use(StealthPlugin())
-puppeteer.use(AnonymizeUaPlugin())
+import { getPage } from './puppeteer.mjs'
+import websocket_prompt from '#root/api/prompt.mjs'
 
 // const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -16,24 +11,7 @@ export const getBalances = async ({
   password,
   cli = false
 }) => {
-  const args = [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-infobars',
-    '--window-position=0,0',
-    '--ignore-certifcate-errors',
-    '--ignore-certifcate-errors-spki-list',
-    '--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36"'
-  ]
-  const browser = await puppeteer.launch({
-    headless: false,
-    args,
-    timeout: 0, // 90000,
-    ignoreDefaultArgs: ['--enable-automation']
-  })
-
-  const page = await browser.newPage()
-  await page.goto('https://ally.com/')
+  const { page, browser } = await getPage('https://ally.com/')
 
   await page.waitForTimeout(10000)
 

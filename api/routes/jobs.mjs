@@ -4,11 +4,13 @@ import { send } from '#root/api/websocket.mjs'
 import importRobinhoodAccounts from '#scripts/import-robinhood-accounts.mjs'
 import importAllyBankAccounts from '#scripts/import-ally-bank-accounts.mjs'
 import importAllyInvestAccounts from '#scripts/import-ally-invest-accounts.mjs'
+import importPeerstreetAccounts from '#scripts/import-peerstreet-accounts.mjs'
 
 export const jobs = {
   'robinhood/accounts': importRobinhoodAccounts,
   'ally-bank/accounts': importAllyBankAccounts,
-  'ally-invest/accounts': importAllyInvestAccounts
+  'ally-invest/accounts': importAllyInvestAccounts,
+  'peerstreet/accounts': importPeerstreetAccounts
 }
 
 const run = async ({ id, publicKey, connection, credentials, session }) => {

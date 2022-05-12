@@ -5421,6 +5421,7 @@ __metadata:
     puppeteer-extra-plugin-anonymize-ua: ^2.3.3
     puppeteer-extra-plugin-stealth: ^2.9.0
     query-string: ^7.1.1
+    random-useragent: ^0.5.0
     react: ^17.0.2
     react-dom: ^17.0.2
     react-immutable-proptypes: ^2.2.0
@@ -6822,7 +6823,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"json-stringify-safe@npm:~5.0.1":
+"json-stringify-safe@npm:^5.0.1, json-stringify-safe@npm:~5.0.1":
   version: 5.0.1
   resolution: "json-stringify-safe@npm:5.0.1"
   checksum: 48ec0adad5280b8a96bb93f4563aa1667fd7a36334f79149abd42446d0989f2ddc58274b479f4819f1f00617957e6344c886c55d05a4e15ebb4ab931e4a6a8ee
@@ -8702,6 +8703,24 @@ __metadata:
   version: 1.2.3
   resolution: "queue-microtask@npm:1.2.3"
   checksum: b676f8c040cdc5b12723ad2f91414d267605b26419d5c821ff03befa817ddd10e238d22b25d604920340fd73efd8ba795465a0377c4adf45a4a41e4234e42dc4
+  languageName: node
+  linkType: hard
+
+"random-seed@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "random-seed@npm:0.3.0"
+  dependencies:
+    json-stringify-safe: ^5.0.1
+  checksum: 0a82692fc8d830bc26259dad78a911969343c247afb4be5d578c30fd9fbe76c7ce3f6900422310fc90fe05d6baa12e84a1b9ff93b0b7fda757ecfa40645a1f72
+  languageName: node
+  linkType: hard
+
+"random-useragent@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "random-useragent@npm:0.5.0"
+  dependencies:
+    random-seed: ^0.3.0
+  checksum: 604a7fc63a12b4ef949c67cf0a48b22c55c622da7cc44f80ec7be45164cefcf6f701a5182efbaa6543bd17ce2f653da419f1529d0ba1f2458ee0b1a90fba4cb3
   languageName: node
   linkType: hard
 

@@ -71,6 +71,22 @@ export default async function ({ type, symbol }) {
       }
     }
 
+    case 'mortgage': {
+      return {
+        ...info,
+        market_value_usd: 1,
+        asset_class: '/parcel/'
+      }
+    }
+
+    case 'note': {
+      return {
+        ...info,
+        market_value_usd: 1,
+        asset_class: '/misc/'
+      }
+    }
+
     default: {
       throw new Error('unknown asset type')
     }

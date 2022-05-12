@@ -42,6 +42,10 @@ export default {
     robinhood: {
       username: '',
       password: ''
+    },
+    peerstreet: {
+      username: '',
+      password: ''
     }
   }
 }

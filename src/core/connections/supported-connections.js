@@ -30,5 +30,13 @@ export const CONNECTIONS = [
     url: 'https://koinly.io/',
     params: ['auth_token', 'portfolio_token', 'cookie'],
     params_id: 'portfolio_token'
+  },
+  {
+    id: 'peerstreet',
+    name: 'Peerstreet',
+    url: 'https://www.peerstreet.com/',
+    jobs: ['peerstreet/accounts'],
+    params: ['username', 'password'],
+    params_id: 'username'
   }
 ]

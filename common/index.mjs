@@ -10,6 +10,7 @@ export { default as addAsset } from './add-asset.mjs'
 export { default as getType } from './get-type.mjs'
 export * as allyInvest from './ally-invest.mjs'
 export * as allyBank from './ally-bank.mjs'
+export * as peerstreet from './peerstreet.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')
