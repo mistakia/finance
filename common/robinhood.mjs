@@ -1,6 +1,7 @@
 import fetch from 'node-fetch'
 
 import websocket_prompt from '#root/api/prompt.mjs'
+import prompt from 'prompt'
 
 const postAuth = async ({ username, password, device_id, challenge_id }) => {
   const params = new URLSearchParams()
@@ -55,7 +56,13 @@ export const getDeviceId = async () => {
   return found.groups.device_id
 }
 
-export const login = async ({ device_id, username, password, publicKey }) => {
+export const login = async ({
+  device_id,
+  username,
+  password,
+  publicKey,
+  cli = false
+}) => {
   const response = await postAuth({ username, password, device_id })
 
   if (response.access_token) {
@@ -63,7 +70,14 @@ export const login = async ({ device_id, username, password, publicKey }) => {
   }
 
   const inputs = ['code']
-  const { code } = await websocket_prompt({ publicKey, inputs })
+  let code
+  if (cli) {
+    const res = await prompt.get(['code'])
+    code = res.code
+  } else {
+    const res = await websocket_prompt({ publicKey, inputs })
+    code = res.code
+  }
   const challenge_id = response.challenge.id
   await postChallenge({ code, challenge_id })
   return postAuth({ username, password, device_id, challenge_id })
@@ -116,6 +130,18 @@ export const getQuote = async ({ symbol }) => {
     })
     const data = await response.json()
     return data
+  } catch (err) {
+    console.log(err)
+    return null
+  }
+}
+
+export const getInstrument = async ({ symbol }) => {
+  try {
+    const url = `https://api.robinhood.com/instruments/?symbol=${symbol.toUpperCase()}`
+    const response = await fetch(url)
+    const data = await response.json()
+    return data.results[0]
   } catch (err) {
     console.log(err)
     return null

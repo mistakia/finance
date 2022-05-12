@@ -7,11 +7,13 @@ export * as robinhood from './robinhood.mjs'
 export * as alphavantage from './alphavantage.mjs'
 export * as coingecko from './coingecko.mjs'
 export { default as addAsset } from './add-asset.mjs'
+export { default as getType } from './get-type.mjs'
+export * as allyInvest from './ally-invest.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')
 
-export const isMain = () => process.argv[1] === fileURLToPath(import.meta.url)
+export const isMain = (path) => process.argv[1] === fileURLToPath(path)
 export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 export const average = (array) => array.reduce((a, b) => a + b) / array.length
 export const median = (arr) => {

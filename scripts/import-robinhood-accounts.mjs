@@ -11,11 +11,12 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-robinhood-accounts')
 debug.enable('import-robinhood-accounts')
 
-const run = async ({ session = {}, credentials, publicKey }) => {
+const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
   const device_id = session.device_id || (await robinhood.getDeviceId())
   const response = await robinhood.login({
     device_id,
     publicKey,
+    cli,
     ...credentials
   })
   log(response)
@@ -73,7 +74,7 @@ const main = async () => {
     const publicKey = argv.publicKey
     const session = await getSession()
     const credentials = config.links.robinhood
-    const result = await run({ session, credentials, publicKey })
+    const result = await run({ session, credentials, publicKey, cli: true })
     await saveSession(result)
   } catch (err) {
     error = err
@@ -90,6 +91,6 @@ const main = async () => {
   process.exit()
 }
 
-if (isMain()) {
+if (isMain(import.meta.url)) {
   main()
 }

@@ -53,6 +53,14 @@ export default async function ({ type, symbol }) {
       }
     }
 
+    case 'currency': {
+      // TODO
+      return {
+        ...info,
+        asset_class: '/currency/'
+      }
+    }
+
     case 'us-property': {
       // TODO
       return {

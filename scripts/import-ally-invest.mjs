@@ -1,13 +1,10 @@
-import OAuth from 'oauth-1.0a'
-import crypto from 'crypto'
 import debug from 'debug'
-import fetch from 'node-fetch'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
-import { isMain } from '#common'
+import { isMain, allyInvest, addAsset } from '#common'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-invest')
@@ -21,58 +18,31 @@ const formatAsset = ({ item, publicKey }) => ({
   symbol: item.displaydata.symbol
 })
 
-const getAccounts = async ({
-  consumer_key,
-  consumer_secret,
-  oauth_key,
-  oauth_secret
-}) => {
-  const oauth = OAuth({
-    consumer: {
-      key: consumer_key,
-      secret: consumer_secret
-    },
-    signature_method: 'HMAC-SHA1',
-    hash_function(base_string, key) {
-      return crypto.createHmac('sha1', key).update(base_string).digest('base64')
-    }
-  })
-
-  const request_data = {
-    url: 'https://devapi.invest.ally.com/v1/accounts.json',
-    method: 'GET'
-  }
-
-  const token = {
-    key: oauth_key,
-    secret: oauth_secret
-  }
-
-  return await fetch(request_data.url, {
-    headers: oauth.toHeader(oauth.authorize(request_data, token))
-  }).then((res) => res.json())
-}
-
 const run = async ({ credentials, publicKey }) => {
-  const data = await getAccounts({ ...credentials })
+  const data = await allyInvest.getAccounts({ ...credentials })
   const inserts =
     data.response.accounts.accountsummary.accountholdings.holding.map((item) =>
       formatAsset({ item, publicKey })
     )
 
+  for (const insert of inserts) {
+    const asset = await addAsset({ symbol: insert.symbol })
+    insert.asset_link = asset.link
+  }
+
   // add cash balance
   const cash = parseFloat(
-    data.response.accounts.accountsummary.accountbalance.money.cash
+    data.response.accounts.accountsummary.accountbalance.money.total
   )
+  const asset = await addAsset({ type: 'currency', symbol: 'USD' })
   inserts.push({
     link: `/${publicKey}/ally-invest/USD`,
     name: 'Cash',
     cost_basis: cash,
     quantity: cash,
-    symbol: 'USD'
+    symbol: 'USD',
+    asset_link: asset.link
   })
-
-  // log(inserts)
 
   if (inserts.length) {
     log(`saving ${inserts.length} holdings`)
@@ -103,6 +73,6 @@ const main = async () => {
   process.exit()
 }
 
-if (isMain) {
+if (isMain(import.meta.url)) {
   main()
 }
