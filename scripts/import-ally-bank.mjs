@@ -1,100 +1,42 @@
 import debug from 'debug'
-import puppeteer from 'puppeteer'
-
-import websocket_prompt from '#root/api/prompt.mjs'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
-// import db from '#db'
+import db from '#db'
 import config from '#config'
-import { isMain } from '#common'
+import { isMain, allyBank, addAsset } from '#common'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-bank')
 debug.enable('import-ally-bank')
 
-const getBalances = async ({ publicKey, username, password }) => {
-  const browser = await puppeteer.launch({ headless: false })
-  const page = await browser.newPage()
-  await page.goto('https://secure.ally.com/', {
-    waitUntil: 'networkidle2'
+const run = async ({ credentials, publicKey, cli = false }) => {
+  const accounts = await allyBank.getBalances({
+    publicKey,
+    cli,
+    ...credentials
   })
 
-  await page.type('#username', username)
-  await page.type('#password', password)
-  await Promise.all([
-    page.evaluate(() => {
-      document.querySelector('button[type=submit]').click()
-    }),
-    page.waitForNavigation({ waitUntil: 'networkidle0' })
-  ])
+  log(accounts)
 
-  // check if security step is needed
-  const isSecurityStep = await page.evaluate(
-    (el) => el && el.innerText.includes('Additional Verification Needed'),
-    await page.$('#main')
-  )
-  if (isSecurityStep) {
-    // send security code
-    await Promise.all([
-      page.evaluate(() => {
-        document.querySelector('button[type=submit]').click()
-      }),
-      page.waitForNavigation({ waitUntil: 'networkidle0' })
-    ])
-
-    // click continue
-    // '#main button[type=button][allytmln=continue]'
-
-    // enter security code
-    const inputs = ['code']
-    const { code } = await websocket_prompt({ publicKey, inputs })
-    log(code)
+  const inserts = []
+  for (const account of accounts) {
+    // TODO - save APY
+    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    inserts.push({
+      link: `/${publicKey}/ally-bank/USD/${account.type}/${account.last_four}`,
+      name: 'Cash',
+      cost_basis: account.balance,
+      quantity: account.balance,
+      symbol: 'USD',
+      asset_link: asset.link
+    })
   }
 
-  // get balances
-  const checkingAccounts = await page.$$eval(
-    '#main table:not(.savings-table) tbody tr',
-    (rows) =>
-      rows.map((row) => ({
-        name: row.querySelector('td:nth-child(1) a').innerText,
-        balance: parseFloat(
-          row
-            .querySelector('td:nth-child(3)')
-            .innerText.replace('$', '')
-            .replace(',', '')
-        ),
-        apy: parseFloat(
-          row.querySelector('td:nth-child(5)').innerText.replace('%', '')
-        )
-      }))
-  )
-
-  const savingAccounts = await page.$$eval(
-    '#main table.savings-table tbody tr',
-    (rows) =>
-      rows.map((row) => ({
-        name: row.querySelector('td:nth-child(1) a').innerText,
-        balance: parseFloat(
-          row
-            .querySelector('td:nth-child(3)')
-            .innerText.replace('$', '')
-            .replace(',', '')
-        ),
-        apy: parseFloat(
-          row.querySelector('td:nth-child(5)').innerText.replace('%', '')
-        )
-      }))
-  )
-
-  await browser.close()
-
-  return [...checkingAccounts, ...savingAccounts]
-}
-
-const run = async ({ credentials, publicKey }) => {
-  const accounts = await getBalances({ publicKey, ...credentials })
-  log(accounts)
+  if (inserts.length) {
+    log(`saving ${inserts.length} holdings`)
+    await db('holdings').insert(inserts).onConflict().merge()
+  }
 }
 
 export default run
@@ -108,7 +50,7 @@ const main = async () => {
       return
     }
     const credentials = config.links.ally_bank
-    await run({ credentials, publicKey })
+    await run({ credentials, publicKey, cli: true })
   } catch (err) {
     error = err
     console.log(error)

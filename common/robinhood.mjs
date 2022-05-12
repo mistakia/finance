@@ -72,7 +72,7 @@ export const login = async ({
   const inputs = ['code']
   let code
   if (cli) {
-    const res = await prompt.get(['code'])
+    const res = await prompt.get(inputs)
     code = res.code
   } else {
     const res = await websocket_prompt({ publicKey, inputs })
