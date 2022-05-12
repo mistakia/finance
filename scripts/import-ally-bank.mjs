@@ -103,6 +103,10 @@ const main = async () => {
   let error
   try {
     const publicKey = argv.publicKey
+    if (!publicKey) {
+      console.log('missing --public-key')
+      return
+    }
     const credentials = config.links.ally_bank
     await run({ credentials, publicKey })
   } catch (err) {

@@ -72,6 +72,11 @@ const main = async () => {
   let error
   try {
     const publicKey = argv.publicKey
+    if (!publicKey) {
+      console.log('missing --public-key')
+      return
+    }
+
     const session = await getSession()
     const credentials = config.links.robinhood
     const result = await run({ session, credentials, publicKey, cli: true })

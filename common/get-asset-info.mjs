@@ -54,9 +54,11 @@ export default async function ({ type, symbol }) {
     }
 
     case 'currency': {
-      // TODO
+      const exchangeInfo = await alphavantage.getExchangeRate({ symbol })
+
       return {
         ...info,
+        market_value_usd: exchangeInfo.rate,
         asset_class: '/currency/'
       }
     }
