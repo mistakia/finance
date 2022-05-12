@@ -109,5 +109,6 @@
   "main": "index.js",
   "repository": "git@github.com:mistakia/finance.git",
   "author": "mistakia <1823355+mistakia@users.noreply.github.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "packageManager": "yarn@3.2.0"
 }

@@ -1,6 +1,8 @@
 import { coingecko, morningstar, slugify, alphavantage } from '#common'
 
 export default async function ({ type, symbol }) {
+  // TODO - if type missing, get type
+
   const info = {
     type,
     symbol,
