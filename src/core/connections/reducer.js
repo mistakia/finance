@@ -14,6 +14,11 @@ export function connectionReducer(state = new Map(), { payload, type }) {
       })
     }
 
+    case connectionActions.DEL_CONNECTION: {
+      const { id } = payload
+      return state.delete(id)
+    }
+
     case connectionActions.SET_CONNECTIONS:
       return new Map(payload.connections)
 

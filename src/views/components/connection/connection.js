@@ -14,12 +14,20 @@ export default class Connection extends React.Component {
   handleSync = (close) => {
     const { connection } = this.props
     const { id, params } = connection
-    console.log(connection)
+
     this.props.syncConnection({
       id,
       params,
       connection: CONNECTIONS.find((c) => c.id === connection.connection)
     })
+    close()
+  }
+
+  handleDelete = (close) => {
+    const { connection } = this.props
+    const { id } = connection
+    this.props.delConnection({ id })
+
     close()
   }
 
@@ -42,7 +50,9 @@ export default class Connection extends React.Component {
                     Sync
                   </MenuItem>
                   <MenuItem onClick={popupState.close}>Edit</MenuItem>
-                  <MenuItem onClick={popupState.close}>Delete</MenuItem>
+                  <MenuItem onClick={() => this.handleDelete(popupState.close)}>
+                    Delete
+                  </MenuItem>
                 </Menu>
               </React.Fragment>
             )}
@@ -58,5 +68,6 @@ export default class Connection extends React.Component {
 
 Connection.propTypes = {
   connection: PropTypes.object,
-  syncConnection: PropTypes.func
+  syncConnection: PropTypes.func,
+  delConnection: PropTypes.func
 }

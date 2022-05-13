@@ -104,6 +104,10 @@ export function* watchSyncConnection() {
   yield takeLatest(connectionActions.SYNC_CONNECTION, sync)
 }
 
+export function* watchDelConnection() {
+  yield takeLatest(connectionActions.DEL_CONNECTION, save)
+}
+
 export function* watchInitApp() {
   yield takeLatest(appActions.APP_LOAD, load)
 }
@@ -136,6 +140,7 @@ export const connectionSagas = [
   fork(watchInitApp),
   fork(watchAddConnection),
   fork(watchSyncConnection),
+  fork(watchDelConnection),
   fork(watchConnectionPromptRequest),
   fork(watchConnectionPromptResponse),
   fork(watchSetConnectionSession),

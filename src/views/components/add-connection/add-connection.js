@@ -51,7 +51,7 @@ export default class AddConnection extends React.Component {
     const connection = this.state.selected
     const field = params.find((p) => p.field === connection.params_id)
     const param_id = field.value
-    const id = `${connection.id}/${param_id}`
+    const id = `${connection.id}/${param_id}`.toLowerCase()
     this.props.addConnection({ id, connection, params })
     this.handleClose()
   }

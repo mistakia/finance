@@ -1,6 +1,7 @@
 export const connectionActions = {
   ADD_CONNECTION: 'ADD_CONNECTION',
   SYNC_CONNECTION: 'SYNC_CONNECTION',
+  DEL_CONNECTION: 'DEL_CONNECTION',
 
   SET_CONNECTIONS: 'SET_CONNECTIONS',
 
@@ -25,6 +26,13 @@ export const connectionActions = {
       id,
       connection,
       params
+    }
+  }),
+
+  delConnection: ({ id }) => ({
+    type: connectionActions.DEL_CONNECTION,
+    payload: {
+      id
     }
   }),
 
