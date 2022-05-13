@@ -62,5 +62,13 @@ export const CONNECTIONS = [
     url: 'https://nano.org/',
     params: ['address'],
     params_id: 'address'
+  },
+  {
+    id: 'ethereum',
+    name: 'Ethereum',
+    jobs: ['ethereum/accounts'],
+    url: 'https://ethereum.org/',
+    params: ['address'],
+    params_id: 'address'
   }
 ]

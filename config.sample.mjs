@@ -8,6 +8,8 @@ export default {
     data_api_key: ''
   },
 
+  ethplorer_api: '',
+
   alphavantage: '',
   mysql: {
     client: 'mysql2',
@@ -52,6 +54,12 @@ export default {
       secret: ''
     },
     bitcoin: {
+      address: ''
+    },
+    nano: {
+      address: ''
+    },
+    ethereum: {
       address: ''
     }
   }

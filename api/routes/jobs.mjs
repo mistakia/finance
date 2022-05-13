@@ -8,6 +8,7 @@ import importPeerstreetAccounts from '#scripts/import-peerstreet-accounts.mjs'
 import importGeminiAccounts from '#scripts/import-gemini-accounts.mjs'
 import importBitcoinAccounts from '#scripts/import-bitcoin-accounts.mjs'
 import importNanoAccounts from '#scripts/import-nano-accounts.mjs'
+import importEthereumAccounts from '#scripts/import-ethereum-accounts.mjs'
 
 export const jobs = {
   'robinhood/accounts': importRobinhoodAccounts,
@@ -16,7 +17,8 @@ export const jobs = {
   'peerstreet/accounts': importPeerstreetAccounts,
   'gemini/accounts': importGeminiAccounts,
   'bitcoin/accounts': importBitcoinAccounts,
-  'nano/accounts': importNanoAccounts
+  'nano/accounts': importNanoAccounts,
+  'ethereum/accounts': importEthereumAccounts
 }
 
 const run = async ({ id, publicKey, connection, credentials, session }) => {
