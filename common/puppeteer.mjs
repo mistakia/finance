@@ -6,7 +6,17 @@ import randomUseragent from 'random-useragent'
 puppeteer.use(StealthPlugin())
 puppeteer.use(AnonymizeUaPlugin())
 
-export const getPage = async (url) => {
+export const getPage = async (
+  url,
+  {
+    webdriver = true,
+    chrome = true,
+    notifications = true,
+    plugins = true,
+    languages = true,
+    timeout = 90000
+  } = {}
+) => {
   const args = [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -19,7 +29,7 @@ export const getPage = async (url) => {
   const browser = await puppeteer.launch({
     headless: false,
     args,
-    timeout: 0, // 90000,
+    timeout,
     ignoreDefaultArgs: ['--enable-automation']
   })
 
@@ -37,7 +47,7 @@ export const getPage = async (url) => {
 
   await page.setUserAgent(randomUseragent.getRandom())
   await page.setJavaScriptEnabled(true)
-  await page.setDefaultNavigationTimeout(0)
+  await page.setDefaultNavigationTimeout(timeout)
 
   // Skip images/styles/fonts loading for performance
   /* await page.setRequestInterception(true)
@@ -53,47 +63,58 @@ export const getPage = async (url) => {
    *   }
    * })
    */
-  await page.evaluateOnNewDocument(() => {
-    // Pass webdriver check
-    Object.defineProperty(navigator, 'webdriver', {
-      get: () => false
+
+  if (webdriver) {
+    await page.evaluateOnNewDocument(() => {
+      // Pass webdriver check
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => false
+      })
     })
-  })
+  }
 
-  await page.evaluateOnNewDocument(() => {
-    // Pass chrome check
-    window.chrome = {
-      runtime: {}
-      // etc.
-    }
-  })
-
-  await page.evaluateOnNewDocument(() => {
-    // Pass notifications check
-    const originalQuery = window.navigator.permissions.query
-    return (window.navigator.permissions.query = (parameters) =>
-      parameters.name === 'notifications'
-        ? Promise.resolve({ state: Notification.permission })
-        : originalQuery(parameters))
-  })
-
-  await page.evaluateOnNewDocument(() => {
-    // Overwrite the `plugins` property to use a custom getter.
-    Object.defineProperty(navigator, 'plugins', {
-      // This just needs to have `length > 0` for the current test,
-      // but we could mock the plugins too if necessary.
-      get: () => [1, 2, 3, 4, 5]
+  if (chrome) {
+    await page.evaluateOnNewDocument(() => {
+      // Pass chrome check
+      window.chrome = {
+        runtime: {}
+        // etc.
+      }
     })
-  })
+  }
 
-  await page.evaluateOnNewDocument(() => {
-    // Overwrite the `languages` property to use a custom getter.
-    Object.defineProperty(navigator, 'languages', {
-      get: () => ['en-US', 'en']
+  if (notifications) {
+    await page.evaluateOnNewDocument(() => {
+      // Pass notifications check
+      const originalQuery = window.navigator.permissions.query
+      return (window.navigator.permissions.query = (parameters) =>
+        parameters.name === 'notifications'
+          ? Promise.resolve({ state: Notification.permission })
+          : originalQuery(parameters))
     })
-  })
+  }
 
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 0 })
+  if (plugins) {
+    await page.evaluateOnNewDocument(() => {
+      // Overwrite the `plugins` property to use a custom getter.
+      Object.defineProperty(navigator, 'plugins', {
+        // This just needs to have `length > 0` for the current test,
+        // but we could mock the plugins too if necessary.
+        get: () => [1, 2, 3, 4, 5]
+      })
+    })
+  }
+
+  if (languages) {
+    await page.evaluateOnNewDocument(() => {
+      // Overwrite the `languages` property to use a custom getter.
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en']
+      })
+    })
+  }
+
+  await page.goto(url)
 
   return { page, browser }
 }

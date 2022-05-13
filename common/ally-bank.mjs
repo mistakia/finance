@@ -11,7 +11,13 @@ export const getBalances = async ({
   password,
   cli = false
 }) => {
-  const { page, browser } = await getPage('https://ally.com/')
+  const { page, browser } = await getPage('https://ally.com/', {
+    webdriver: false,
+    chrome: false,
+    notifications: false,
+    plugins: false,
+    languages: false
+  })
 
   await page.waitForTimeout(10000)
 
@@ -30,7 +36,7 @@ export const getBalances = async ({
   await elementHandle.type(password)
   await elementHandle.press('Enter')
 
-  await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 0 })
+  await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 90000 })
 
   // check if security step is needed
   const isSecurityStep = await page.evaluate(
@@ -47,9 +53,6 @@ export const getBalances = async ({
       page.waitForNavigation({ waitUntil: 'networkidle0' })
     ])
 
-    // click continue
-    // '#main button[type=button][allytmln=continue]'
-
     // enter security code
     const inputs = ['code']
     let code
@@ -60,7 +63,13 @@ export const getBalances = async ({
       const res = await websocket_prompt({ publicKey, inputs })
       code = res.code
     }
-    console.log(code)
+
+    await page.waitForSelector('#otpCode')
+    const elementHandle2 = await page.$('#otpCode')
+    await elementHandle2.type(code)
+    await elementHandle2.press('Enter')
+
+    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 90000 })
   }
 
   await page.waitForSelector('#main')

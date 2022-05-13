@@ -22,23 +22,30 @@ export const jobs = {
 }
 
 const run = async ({ id, publicKey, connection, credentials, session }) => {
+  const errors = []
   for (const job_id of connection.jobs) {
-    const job = jobs[job_id]
-    const res = await job({ credentials, session, publicKey })
-    const event = {
-      type: 'SET_CONNECTION_SESSION',
-      payload: {
-        id,
-        session: res
+    try {
+      const job = jobs[job_id]
+      const res = await job({ credentials, session, publicKey })
+      const event = {
+        type: 'SET_CONNECTION_SESSION',
+        payload: {
+          id,
+          session: res
+        }
       }
+      send({ publicKey, event })
+    } catch (error) {
+      errors.push(error)
+      console.log(error)
     }
-    send({ publicKey, event })
   }
 
   const event = {
     type: 'SET_CONNECTION_LAST_CONNECTION',
     payload: {
-      id
+      id,
+      errors
     }
   }
   send({ publicKey, event })

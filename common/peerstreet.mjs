@@ -7,6 +7,8 @@ export const getBalances = async ({ publicKey, username, password }) => {
     'https://www.peerstreet.com/users/sign_in'
   )
 
+  page.waitForNetworkIdle()
+
   await page.waitForTimeout(1000)
 
   await page.type('input#user_email', username)
