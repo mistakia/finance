@@ -5,12 +5,16 @@ import importRobinhoodAccounts from '#scripts/import-robinhood-accounts.mjs'
 import importAllyBankAccounts from '#scripts/import-ally-bank-accounts.mjs'
 import importAllyInvestAccounts from '#scripts/import-ally-invest-accounts.mjs'
 import importPeerstreetAccounts from '#scripts/import-peerstreet-accounts.mjs'
+import importGeminiAccounts from '#scripts/import-gemini-accounts.mjs'
+import importBitcoinAccounts from '#scripts/import-bitcoin-accounts.mjs'
 
 export const jobs = {
   'robinhood/accounts': importRobinhoodAccounts,
   'ally-bank/accounts': importAllyBankAccounts,
   'ally-invest/accounts': importAllyInvestAccounts,
-  'peerstreet/accounts': importPeerstreetAccounts
+  'peerstreet/accounts': importPeerstreetAccounts,
+  'gemini/accounts': importGeminiAccounts,
+  'bitcoin/accounts': importBitcoinAccounts
 }
 
 const run = async ({ id, publicKey, connection, credentials, session }) => {

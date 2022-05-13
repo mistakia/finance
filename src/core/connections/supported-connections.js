@@ -38,5 +38,21 @@ export const CONNECTIONS = [
     jobs: ['peerstreet/accounts'],
     params: ['username', 'password'],
     params_id: 'username'
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini',
+    jobs: ['gemini/accounts'],
+    url: 'https://www.gemini.com/',
+    params: ['key', 'secret'],
+    params_id: 'key'
+  },
+  {
+    id: 'bitcoin',
+    name: 'Bitcoin',
+    jobs: ['bitcoin/accounts'],
+    url: 'https://bitcoin.org/en/',
+    params: ['address'],
+    params_id: 'address'
   }
 ]

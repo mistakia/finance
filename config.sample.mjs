@@ -46,6 +46,13 @@ export default {
     peerstreet: {
       username: '',
       password: ''
+    },
+    gemini: {
+      key: '',
+      secret: ''
+    },
+    bitcoin: {
+      address: ''
     }
   }
 }

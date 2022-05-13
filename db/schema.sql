@@ -35,7 +35,7 @@ DROP TABLE IF EXISTS `holdings`;
 CREATE TABLE `holdings` (
   `link` varchar(200) NOT NULL comment '/[user]/[custodian]/[symbol]',
   `name` varchar(200) NOT NULL,
-  `cost_basis` decimal(65,30) NOT NULL,
+  `cost_basis` decimal(65,30) DEFAULT NULL,
   `quantity` decimal(65,30) NOT NULL,
   `symbol` varchar(20) DEFAULT NULL,
   `asset_link` varchar(2000 NOT NULL,

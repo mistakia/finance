@@ -32,7 +32,7 @@ const run = async ({ credentials, publicKey }) => {
   }
 
   if (account.loanBalance) {
-    const asset = await addAsset({ type: 'mortgage', symbol: 'LOAN' })
+    const asset = await addAsset({ type: 'loan-mortgage', symbol: 'LOAN' })
 
     inserts.push({
       link: `/${publicKey}/peerstreet/LOAN`,
@@ -52,7 +52,7 @@ const run = async ({ credentials, publicKey }) => {
       name: 'Short Term Note',
       cost_basis: account.pocketBalance,
       quantity: account.pocketBalance,
-      symbol: 'LOAN',
+      symbol: 'NOTE',
       asset_link: asset.link
     })
   }

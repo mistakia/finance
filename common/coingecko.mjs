@@ -8,8 +8,9 @@ export const getCoins = async () => {
 }
 
 export const getCoin = async ({ symbol }) => {
+  const s = symbol.toLowerCase()
   const coins = await getCoins()
-  const coin = coins.find((c) => c.symbol === symbol)
+  const coin = coins.find((c) => c.symbol === s)
   if (!coin) {
     return null
   }

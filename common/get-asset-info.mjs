@@ -17,7 +17,7 @@ export default async function ({ type, symbol }) {
     case 'us-stock': {
       const security = await morningstar.searchSecurity({ symbol })
       if (!security) {
-        throw new Error('unsupported us security')
+        throw new Error(`unsupported us security: ${symbol}`)
       }
 
       const morningstar_quote = await morningstar.getSecurityQuote({
@@ -38,7 +38,7 @@ export default async function ({ type, symbol }) {
     case 'crypto': {
       const coin = await coingecko.getCoin({ symbol })
       if (!coin) {
-        throw new Error('unsupported crypto currency')
+        throw new Error(`unsupported crypto currency: ${symbol}`)
       }
 
       const isToken = Boolean(coin.asset_platform_id)
@@ -71,7 +71,20 @@ export default async function ({ type, symbol }) {
       }
     }
 
-    case 'mortgage': {
+    case 'loan-crypto': {
+      const coin = await coingecko.getCoin({ symbol })
+      if (!coin) {
+        throw new Error(`unsupported crypto currency: ${symbol}`)
+      }
+
+      return {
+        ...info,
+        market_value_usd: coin.market_data.current_price.usd,
+        asset_class: '/crypto-currency/'
+      }
+    }
+
+    case 'loan-mortgage': {
       return {
         ...info,
         market_value_usd: 1,
@@ -79,7 +92,7 @@ export default async function ({ type, symbol }) {
       }
     }
 
-    case 'note': {
+    case 'loan-note': {
       return {
         ...info,
         market_value_usd: 1,
