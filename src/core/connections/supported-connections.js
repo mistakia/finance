@@ -54,5 +54,13 @@ export const CONNECTIONS = [
     url: 'https://bitcoin.org/en/',
     params: ['address'],
     params_id: 'address'
+  },
+  {
+    id: 'nano',
+    name: 'Nano',
+    jobs: ['nano/accounts'],
+    url: 'https://nano.org/',
+    params: ['address'],
+    params_id: 'address'
   }
 ]

@@ -13,6 +13,7 @@ export * as allyBank from './ally-bank.mjs'
 export * as peerstreet from './peerstreet.mjs'
 export * as gemini from './gemini.mjs'
 export * as bitcoin from './bitcoin.mjs'
+export * as nano from './nano.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')
