@@ -21,18 +21,18 @@ export const getBalances = async ({
 
   await page.waitForTimeout(10000)
 
-  await page.click('button#login-btn')
-  await page.waitForSelector('#drawer-login input.js-login-v2-username')
+  await page.click('button#login')
+  await page.waitForSelector('input[autocomplete="username"]')
   await page.mouse.move(800, 200)
   await page.waitForTimeout(1000)
-  await page.select('#drawer-login select.allysf-login-v2-select', 'aob')
+  await page.select('select.allysf-login-v2-select', 'aob')
   await page.mouse.move(800, 300)
   await page.waitForTimeout(1500)
-  await page.type('#drawer-login input.js-login-v2-username', username)
+  await page.type('input[autocomplete="username"]', username)
   await page.mouse.move(800, 400)
   await page.waitForTimeout(1500)
 
-  const elementHandle = await page.$('#drawer-login input.js-login-v2-password')
+  const elementHandle = await page.$('input[type="password"]')
   await elementHandle.type(password)
   await elementHandle.press('Enter')
 
