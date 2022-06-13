@@ -11,11 +11,17 @@ const log = debug('import-ally-bank')
 debug.enable('import-ally-bank')
 
 const run = async ({ credentials, publicKey, cli = false }) => {
-  const accounts = await allyBank.getBalances({
-    publicKey,
-    cli,
-    ...credentials
-  })
+  let accounts = []
+
+  try {
+    accounts = await allyBank.getBalances({
+      publicKey,
+      cli,
+      ...credentials
+    })
+  } catch (err) {
+    log(err)
+  }
 
   log(accounts)
 

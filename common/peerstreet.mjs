@@ -7,8 +7,6 @@ export const getBalances = async ({ publicKey, username, password }) => {
     'https://www.peerstreet.com/users/sign_in'
   )
 
-  page.waitForNetworkIdle()
-
   await page.waitForTimeout(1000)
 
   await page.type('input#user_email', username)
@@ -16,12 +14,16 @@ export const getBalances = async ({ publicKey, username, password }) => {
   await elementHandle.type(password)
   await elementHandle.press('Enter')
 
-  await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 0 })
+  try {
+    await page.waitForTimeout(5000)
 
-  await page.goto('https://www.peerstreet.com/positions', {
-    waitUntil: 'networkidle0',
-    timeout: 0
-  })
+    await page.goto('https://www.peerstreet.com/positions', {
+      waitUntil: 'networkidle0',
+      timeout: 30000
+    })
+  } catch (err) {
+    return {}
+  }
 
   const loanBalance = await page.$eval(
     '.account-info-bar ul li:nth-child(3) span',

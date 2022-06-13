@@ -11,10 +11,15 @@ const log = debug('import-peerstreet-accounts')
 debug.enable('import-peerstreet-accounts')
 
 const run = async ({ credentials, publicKey }) => {
-  const account = await peerstreet.getBalances({
-    publicKey,
-    ...credentials
-  })
+  let account
+  try {
+    account = await peerstreet.getBalances({
+      publicKey,
+      ...credentials
+    })
+  } catch (err) {
+    log(err)
+  }
 
   const inserts = []
 
