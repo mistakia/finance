@@ -20,10 +20,10 @@ export default class Assets extends React.Component {
           <Table sx={{ minWidth: 750 }} size='small'>
             <TableHead>
               <TableRow>
+                <TableCell></TableCell>
                 <TableCell>Asset Class</TableCell>
                 <TableCell align='right'>Balance</TableCell>
                 <TableCell align='right'>Allocation</TableCell>
-                <TableCell align='right'>Target</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
