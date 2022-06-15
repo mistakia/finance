@@ -59,7 +59,7 @@ export default async function ({ type, symbol }) {
       return {
         ...info,
         market_value_usd: exchangeInfo.rate,
-        asset_class: '/currency/'
+        asset_class: '/currency'
       }
     }
 
@@ -67,7 +67,7 @@ export default async function ({ type, symbol }) {
       // TODO
       return {
         ...info,
-        asset_class: '/parcel/'
+        asset_class: '/parcel'
       }
     }
 
@@ -80,7 +80,7 @@ export default async function ({ type, symbol }) {
       return {
         ...info,
         market_value_usd: coin.market_data.current_price.usd,
-        asset_class: '/crypto-currency/'
+        asset_class: '/crypto-currency'
       }
     }
 
@@ -88,7 +88,7 @@ export default async function ({ type, symbol }) {
       return {
         ...info,
         market_value_usd: 1,
-        asset_class: '/parcel/'
+        asset_class: '/parcel'
       }
     }
 
@@ -96,7 +96,7 @@ export default async function ({ type, symbol }) {
       return {
         ...info,
         market_value_usd: 1,
-        asset_class: '/misc/'
+        asset_class: '/misc'
       }
     }
 

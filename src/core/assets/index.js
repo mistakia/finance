@@ -6,5 +6,6 @@ export {
   getAssetsBalance,
   getAssetsByClass,
   getAssetClasses,
+  getAssetClassesByAssetClass,
   getAssetClassSummary
 } from './selectors'

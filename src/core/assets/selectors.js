@@ -18,15 +18,29 @@ export function getAssetsBalance(state) {
 export function getAssetClasses(state) {
   const assets = getAssets(state)
   const classes = assets
-    .map((a) => a.asset_class)
+    .map((a) => a.asset_class.substring(1).split('/')[0])
+    .map((a) => `/${a}`)
     .toSet()
     .toList()
   return classes
 }
 
+export function getAssetClassesByAssetClass(state, { asset_class }) {
+  const assets = getAssetsByClass(state, { asset_class })
+  const classes = assets
+    .map((a) => a.asset_class.split(asset_class)[1])
+    .filter((a) => a !== '/')
+    .map((a) => `${asset_class}${a}`)
+    .filter((a) => a !== asset_class)
+    .toSet()
+    .toList()
+
+  return classes
+}
+
 export function getAssetsByClass(state, { asset_class }) {
   const assets = getAssets(state)
-  return assets.filter((a) => a.asset_class === asset_class)
+  return assets.filter((a) => a.asset_class.startsWith(asset_class))
 }
 
 export function getAssetClassSummary(state, { asset_class }) {

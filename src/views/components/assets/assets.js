@@ -14,6 +14,11 @@ export default class Assets extends React.Component {
   render() {
     const { asset_classes } = this.props
 
+    const items = []
+    asset_classes.forEach((asset_class, idx) =>
+      items.push(<AssetClass asset_class={asset_class} key={idx} />)
+    )
+
     return (
       <Box sx={{ width: '100%', paddingTop: '35px' }}>
         <TableContainer>
@@ -26,11 +31,7 @@ export default class Assets extends React.Component {
                 <TableCell align='right'>Allocation</TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
-              {asset_classes.toJS().map((asset_class, idx) => (
-                <AssetClass asset_class={asset_class} key={idx} />
-              ))}
-            </TableBody>
+            <TableBody>{items}</TableBody>
           </Table>
         </TableContainer>
       </Box>
