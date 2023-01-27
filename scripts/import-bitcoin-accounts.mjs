@@ -11,26 +11,22 @@ const log = debug('import-bitcoin-accounts')
 debug.enable('import-bitcoin-accounts')
 
 const run = async ({ credentials, publicKey }) => {
-  const data = await bitcoin.getBalance({ ...credentials })
-  const balance = bitcoin.convertSatsToBtc(data.address.balance)
-
-  const inserts = []
-  if (balance) {
+  const balance_sats = await bitcoin.getBalance({ ...credentials })
+  if (balance_sats) {
+    const balance = bitcoin.convertSatsToBtc(balance_sats)
     const asset = await addAsset({ type: 'crypto', symbol: 'BTC' })
 
-    inserts.push({
+    const insert = {
       link: `/${publicKey}/bitcoin/BTC/${credentials.address}`,
       name: 'Bitcoin',
       cost_basis: null,
       quantity: balance,
       symbol: 'BTC',
       asset_link: asset.link
-    })
-  }
+    }
 
-  if (inserts.length) {
-    log(`saving ${inserts.length} holdings`)
-    await db('holdings').insert(inserts).onConflict().merge()
+    log('saving btc holding')
+    await db('holdings').insert(insert).onConflict().merge()
   }
 }
 
