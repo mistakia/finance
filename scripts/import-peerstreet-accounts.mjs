@@ -23,6 +23,12 @@ const run = async ({ credentials, publicKey }) => {
 
   const inserts = []
 
+  if (!account) {
+    return
+  }
+
+  console.log(account)
+
   if (account.cashBalance) {
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
 

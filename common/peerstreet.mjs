@@ -26,41 +26,43 @@ export const getBalances = async ({ publicKey, username, password }) => {
   }
 
   const loanBalance = await page.$eval(
-    '.account-info-bar ul li:nth-child(3) span',
-    (el) => parseFloat(el.innerText.replace('$', '').replace(',', ''))
+    '.account-stats-slider ul li:nth-child(3) span',
+    (el) => Number(el.innerText.replace('$', '').replace(',', ''))
   )
 
   const pocketBalance = await page.$eval(
-    '.account-info-bar ul li:nth-child(4) span',
-    (el) => parseFloat(el.innerText.replace('$', '').replace(',', ''))
+    '.account-stats-slider ul li:nth-child(4) span',
+    (el) => Number(el.innerText.replace('$', '').replace(',', ''))
   )
 
   const cashBalance = await page.$eval(
-    '.account-info-bar ul li:nth-child(5) span',
-    (el) => parseFloat(el.innerText.replace('$', '').replace(',', ''))
+    '.account-stats-slider ul li:nth-child(6) span',
+    (el) => Number(el.innerText.replace('$', '').replace(',', ''))
   )
+
+  console.log('got balances')
 
   const activePositions = await page.$$eval(
     'table.table.active-positions-table tbody tr',
     (rows) =>
       rows.map((row) => ({
         property: row.querySelector('td:nth-child(1) a').innerText,
-        initial_investment: parseFloat(
+        initial_investment: Number(
           row
             .querySelector('td:nth-child(2)')
             .innerText.replace('$', '')
             .replace(',', '')
         ),
-        outstanding_balance: parseFloat(
+        outstanding_balance: Number(
           row
             .querySelector('td:nth-child(3)')
             .innerText.replace('$', '')
             .replace(',', '')
         ),
-        rate: parseFloat(
+        rate: Number(
           row.querySelector('td:nth-child(4) span').innerText.replace('%', '')
         ),
-        earnings: parseFloat(
+        earnings: Number(
           row
             .querySelector('td:nth-child(5)')
             .innerText.replace('$', '')
@@ -72,9 +74,13 @@ export const getBalances = async ({ publicKey, username, password }) => {
       }))
   )
 
+  console.log('got active positions')
+
   // await wait(1000000)
 
   await browser.close()
+
+  console.log('DONE')
 
   return {
     loanBalance,
