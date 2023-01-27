@@ -27,8 +27,6 @@ const run = async ({ credentials, publicKey }) => {
     return
   }
 
-  console.log(account)
-
   if (account.cashBalance) {
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
 

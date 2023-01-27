@@ -40,8 +40,6 @@ export const getBalances = async ({ publicKey, username, password }) => {
     (el) => Number(el.innerText.replace('$', '').replace(',', ''))
   )
 
-  console.log('got balances')
-
   const activePositions = await page.$$eval(
     'table.table.active-positions-table tbody tr',
     (rows) =>
@@ -74,13 +72,9 @@ export const getBalances = async ({ publicKey, username, password }) => {
       }))
   )
 
-  console.log('got active positions')
-
   // await wait(1000000)
 
   await browser.close()
-
-  console.log('DONE')
 
   return {
     loanBalance,
