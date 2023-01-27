@@ -61,6 +61,10 @@ export default {
     },
     ethereum: {
       address: ''
+    },
+    wealthfront: {
+      email: '',
+      password: ''
     }
   }
 }

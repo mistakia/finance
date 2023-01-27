@@ -70,5 +70,13 @@ export const CONNECTIONS = [
     url: 'https://ethereum.org/',
     params: ['address'],
     params_id: 'address'
+  },
+  {
+    id: 'wealthfront',
+    name: 'Wealthfront',
+    url: 'https://www.wealthfront.com/',
+    jobs: ['wealthfront/accounts'],
+    params: ['email', 'password'],
+    params_id: 'email'
   }
 ]
