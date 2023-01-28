@@ -71,6 +71,10 @@ export default {
     groundfloor: {
       email: '',
       token: ''
+    },
+    schwab: {
+      username: '',
+      password: ''
     }
   }
 }

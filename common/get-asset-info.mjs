@@ -10,10 +10,11 @@ export default async function ({ type, symbol }) {
   }
 
   switch (type) {
+    // case 'us-etf': all ETFs are ETPs
     case 'us-fund':
-    case 'us-etf':
     case 'us-etp':
     case 'us-reit':
+    case 'cn-adr':
     case 'us-stock': {
       const security = await morningstar.searchSecurity({ symbol })
       if (!security) {

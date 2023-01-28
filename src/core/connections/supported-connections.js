@@ -86,5 +86,13 @@ export const CONNECTIONS = [
     jobs: ['groundfloor/accounts'],
     params: ['email', 'token'],
     params_id: 'email'
+  },
+  {
+    id: 'schwab',
+    name: 'Charles Schwab',
+    url: 'https://www.schwab.com/',
+    jobs: ['schwab/accounts'],
+    params: ['username', 'password'],
+    params_id: 'username'
   }
 ]
