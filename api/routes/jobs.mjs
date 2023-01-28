@@ -10,6 +10,7 @@ import importBitcoinAccounts from '#scripts/import-bitcoin-accounts.mjs'
 import importNanoAccounts from '#scripts/import-nano-accounts.mjs'
 import importEthereumAccounts from '#scripts/import-ethereum-accounts.mjs'
 import importWealthfrontAccounts from '#scripts/import-wealthfront-accounts.mjs'
+import importGroundfloorAccounts from '#scripts/import-groundfloor-accounts.mjs'
 
 export const jobs = {
   'robinhood/accounts': importRobinhoodAccounts,
@@ -20,7 +21,8 @@ export const jobs = {
   'bitcoin/accounts': importBitcoinAccounts,
   'nano/accounts': importNanoAccounts,
   'ethereum/accounts': importEthereumAccounts,
-  'wealthfront/accounts': importWealthfrontAccounts
+  'wealthfront/accounts': importWealthfrontAccounts,
+  'groundfloor/accounts': importGroundfloorAccounts
 }
 
 const run = async ({ id, publicKey, connection, credentials, session }) => {

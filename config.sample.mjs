@@ -3,6 +3,8 @@ export default {
 
   url: 'http://localhost:8081',
 
+  groundfloor_api: '',
+
   morningstar: {
     search_api_key: '',
     data_api_key: ''
@@ -65,6 +67,10 @@ export default {
     wealthfront: {
       email: '',
       password: ''
+    },
+    groundfloor: {
+      email: '',
+      token: ''
     }
   }
 }

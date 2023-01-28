@@ -78,5 +78,13 @@ export const CONNECTIONS = [
     jobs: ['wealthfront/accounts'],
     params: ['email', 'password'],
     params_id: 'email'
+  },
+  {
+    id: 'groundfloor',
+    name: 'Groundfloor',
+    url: 'https://groundfloor.us/',
+    jobs: ['groundfloor/accounts'],
+    params: ['email', 'token'],
+    params_id: 'email'
   }
 ]

@@ -16,6 +16,7 @@ export * as bitcoin from './bitcoin.mjs'
 export * as nano from './nano.mjs'
 export * as ethereum from './ethereum.mjs'
 export * as wealthfront from './wealthfront.mjs'
+export * as groundfloor from './groundfloor.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')
