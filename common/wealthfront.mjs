@@ -63,12 +63,40 @@ export const getBalances = async ({
   )
 
   const data = await dashboard_api_response.json()
-  console.log(data)
 
-  // TODO - grab retirement accounts
+  const get_account_composition = async ({ account_id, externalized_id }) => {
+    page.goto(`https://www.wealthfront.com/accounts/${account_id}`)
+    const res = await page.waitForResponse(
+      `https://www.wealthfront.com/capitan/v1/accounts/${externalized_id}/composition`,
+      { timeout: 0 }
+    )
+    return res.json()
+  }
+
+  const investment_accounts = []
+  const i_accounts = data.accountOverviews.filter(
+    (d) => d.type === 'investment-account'
+  )
+
+  for (const account of i_accounts) {
+    const account_id = account.accountId
+    const externalized_id = account.externalizedAccountId
+    const account_composition = await get_account_composition({
+      account_id,
+      externalized_id
+    })
+    investment_accounts.push({
+      name: account.accountDisplayName,
+      account_id,
+      externalized_id,
+      type: 'investment',
+      balance: Number(account.accountValueSummary.totalValue),
+      composition: account_composition
+    })
+  }
 
   const cash_accounts = data.accountOverviews
-    .filter((d) => d.accountType === 'TRUST_CASH')
+    .filter((d) => d.type === 'cash-account')
     .map((d) => ({
       name: d.accountDisplayName,
       account_id: d.accountId,
@@ -79,5 +107,5 @@ export const getBalances = async ({
 
   await browser.close()
 
-  return [...cash_accounts]
+  return [...cash_accounts, ...investment_accounts]
 }

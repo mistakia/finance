@@ -30,7 +30,8 @@ const import_wealthfront_accounts = async ({
   log(accounts)
 
   const inserts = []
-  for (const account of accounts) {
+
+  const add_cash_account = async (account) => {
     // TODO - save APY
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
     inserts.push({
@@ -41,6 +42,39 @@ const import_wealthfront_accounts = async ({
       symbol: 'USD',
       asset_link: asset.link
     })
+  }
+
+  const add_investment_account = async (account) => {
+    for (const asset_class of account.composition.assetClasses) {
+      for (const position of asset_class.funds) {
+        const symbol = position.symbol
+        const asset = await addAsset({ symbol })
+
+        inserts.push({
+          link: `/${publicKey}/wealthfront/${symbol}/${account.type}/${account.account_id}`,
+          name: `${position.displayName}`,
+          cost_basis: position.costBasis,
+          quantity: position.quantity,
+          symbol,
+          asset_link: asset.link
+        })
+      }
+    }
+  }
+
+  for (const account of accounts) {
+    switch (account.type) {
+      case 'cash':
+        await add_cash_account(account)
+        break
+      case 'investment':
+        await add_investment_account(account)
+        break
+
+      default:
+        log(`unrecognized wealthfront account type: ${account.type}`)
+        break
+    }
   }
 
   if (inserts.length) {
