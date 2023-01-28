@@ -11,25 +11,60 @@ const log = debug('import-groundfloor-accounts')
 debug.enable('import-groundfloor-accounts')
 
 const import_groundfloor_accounts = async ({ credentials, publicKey }) => {
-  const data = await groundfloor.getStairsAccount({ ...credentials })
+  const stairs_data = await groundfloor.getStairsAccount({ ...credentials })
 
-  if (!data) {
-    return
+  const inserts = []
+
+  if (stairs_data) {
+    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    const balance = Number(stairs_data.currentBalanceCents / 100)
+    inserts.push({
+      link: `/${publicKey}/groundfloor/USD/stairs`,
+      name: 'Cash',
+      cost_basis: balance,
+      quantity: balance,
+      symbol: 'USD',
+      asset_link: asset.link
+    })
   }
 
-  const asset = await addAsset({ type: 'currency', symbol: 'USD' })
-  const balance = Number(data.currentBalanceCents / 100)
-  const insert = {
-    link: `/${publicKey}/groundfloor/USD/stairs`,
-    name: 'Cash',
-    cost_basis: balance,
-    quantity: balance,
-    symbol: 'USD',
-    asset_link: asset.link
+  const groundfloor_data = await groundfloor.getGroundfloorBalances({
+    ...credentials
+  })
+
+  if (groundfloor_data) {
+    if (groundfloor_data.moneyAtWorkAmountCents) {
+      const asset = await addAsset({ type: 'loan-mortgage', symbol: 'LOAN' })
+      const balance = Number(groundfloor_data.moneyAtWorkAmountCents / 100)
+      inserts.push({
+        link: `/${publicKey}/groundfloor/LOAN`,
+        name: 'First Lien Mortgage',
+        cost_basis: balance,
+        quantity: balance,
+        symbol: 'LOAN',
+        asset_link: asset.link
+      })
+    }
+
+    if (groundfloor_data.investableFundsAmountCents) {
+      const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+      const balance = Number(groundfloor_data.investableFundsAmountCents / 100)
+
+      inserts.push({
+        link: `/${publicKey}/groundfloor/USD`,
+        name: 'Cash',
+        cost_basis: balance,
+        quantity: balance,
+        symbol: 'USD',
+        asset_link: asset.link
+      })
+    }
   }
 
-  log('saving groundfloor stairs account')
-  await db('holdings').insert(insert).onConflict().merge()
+  if (inserts.length) {
+    log(`saving ${inserts.length} groundfloor holdings`)
+    await db('holdings').insert(inserts).onConflict().merge()
+  }
 }
 
 const main = async () => {
