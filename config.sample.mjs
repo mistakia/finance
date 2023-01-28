@@ -61,6 +61,9 @@ export default {
     nano: {
       address: ''
     },
+    stellar: {
+      address: ''
+    },
     ethereum: {
       address: ''
     },

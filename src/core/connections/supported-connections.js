@@ -64,6 +64,14 @@ export const CONNECTIONS = [
     params_id: 'address'
   },
   {
+    id: 'stellar',
+    name: 'Stellar',
+    jobs: ['stellar/accounts'],
+    url: 'https://stellar.org/',
+    params: ['address'],
+    params_id: 'address'
+  },
+  {
     id: 'ethereum',
     name: 'Ethereum',
     jobs: ['ethereum/accounts'],

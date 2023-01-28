@@ -18,6 +18,7 @@ export * as ethereum from './ethereum.mjs'
 export * as wealthfront from './wealthfront.mjs'
 export * as groundfloor from './groundfloor.mjs'
 export * as schwab from './schwab.mjs'
+export * as stellar from './stellar.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')
