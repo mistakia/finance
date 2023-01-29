@@ -58,6 +58,9 @@ export default {
     bitcoin: {
       address: ''
     },
+    litecoin: {
+      address: ''
+    },
     nano: {
       address: ''
     },

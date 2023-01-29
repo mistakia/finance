@@ -56,6 +56,14 @@ export const CONNECTIONS = [
     params_id: 'address'
   },
   {
+    id: 'litecoin',
+    name: 'Litecoin',
+    jobs: ['litecoin/account'],
+    url: 'https://litecoin.org/',
+    params: ['address'],
+    params_id: 'address'
+  },
+  {
     id: 'nano',
     name: 'Nano',
     jobs: ['nano/accounts'],
