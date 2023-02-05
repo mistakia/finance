@@ -144,6 +144,6 @@ export const connectionSagas = [
   fork(watchConnectionPromptRequest),
   fork(watchConnectionPromptResponse),
   fork(watchSetConnectionSession),
-  fork(watchWebsocketOpen),
+  // fork(watchWebsocketOpen),
   fork(watchSetConnectionLastConnection)
 ]

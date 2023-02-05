@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js'
+import { Asset } from './asset.js'
 
 export function getAssets(state) {
   return state.get('assets')
@@ -50,8 +51,9 @@ export function getAssetClassSummary(state, { asset_class }) {
     null,
     values.map((a) => a.balance)
   )
-  return {
+
+  return new Asset({
     symbol: asset_class,
     balance: balance.toNumber()
-  }
+  })
 }

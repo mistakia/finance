@@ -31,7 +31,7 @@ const mapStateToProps = createSelector(
 )
 
 function AssetClass(props) {
-  const [open, setOpen] = React.useState(false)
+  const [asset_class_open, set_asset_class_open] = React.useState(false)
   const { summary, assets, asset_classes, asset_class } = props
   const rows = []
 
@@ -56,12 +56,12 @@ function AssetClass(props) {
       <Asset
         asset={summary}
         key={summary.symbol}
-        setOpen={setOpen}
-        open={open}
+        set_asset_class_open={set_asset_class_open}
+        asset_class_open={asset_class_open}
       />
       <TableRow>
         <TableCell style={{ padding: 0 }} colSpan={4}>
-          <Collapse in={open} timeout='auto' unmountOnExit>
+          <Collapse in={asset_class_open} timeout='auto' unmountOnExit>
             <TableContainer>
               <Table sx={{ minWidth: 750 }} size='small'>
                 <TableBody>{rows}</TableBody>
@@ -75,7 +75,7 @@ function AssetClass(props) {
 }
 
 AssetClass.propTypes = {
-  summary: PropTypes.object,
+  summary: ImmutablePropTypes.record,
   assets: ImmutablePropTypes.map,
   asset_classes: ImmutablePropTypes.list,
   asset_class: PropTypes.string
