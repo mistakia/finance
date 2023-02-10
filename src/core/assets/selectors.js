@@ -51,11 +51,29 @@ export function getAssetClassesByAssetClass(state, { asset_class }) {
     .toList()
 
   return classes
+    .map((asset_class) => {
+      const balance = assets
+        .filter((a) => a.asset_class.includes(asset_class))
+        .map((a) => a.quantity * a.market_value_usd)
+        .reduce((sum, a) => sum + a, 0)
+
+      return {
+        balance,
+        asset_class
+      }
+    })
+    .sort((a, b) => b.balance - a.balance)
+    .map((a) => a.asset_class)
 }
 
 export function getAssetsByClass(state, { asset_class }) {
   const assets = getAssets(state)
-  return assets.filter((a) => a.asset_class.startsWith(asset_class))
+  return assets
+    .filter((a) => a.asset_class.startsWith(asset_class))
+    .sort(
+      (a, b) =>
+        b.quantity * b.market_value_usd - a.quantity * a.market_value_usd
+    )
 }
 
 export function getAssetClassSummary(state, { asset_class }) {
