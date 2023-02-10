@@ -50,7 +50,8 @@ function AssetClass(props) {
 
   const classname = `asset_class ${asset_class
     .replace('/', '')
-    .replace('-', '_')}`
+    .replaceAll('/', '_')
+    .replaceAll('-', '_')}`
   return (
     <>
       <div className={classname}>

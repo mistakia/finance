@@ -15,8 +15,8 @@ export default function Holding({ holding, total_balance, asset }) {
     <div className='row' key={holding.link}>
       <div className='cell asset_expand' />
       <div className='cell'>{paths.slice(2).join('/')}</div>
-      <div className='cell asset_balance'>{balance}</div>
-      <div className='cell asset_allocation'>{allocation}%</div>
+      <div className='cell asset_balance metric'>{balance}</div>
+      <div className='cell asset_allocation metric'>{allocation}%</div>
     </div>
   )
 }

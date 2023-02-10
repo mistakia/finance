@@ -1,23 +1,29 @@
+$teal = #469990
+$maroon = #800000
+$brown = #9A6324
+$blue = #4363d8
+$orange = #f58231
+
 .asset_class
   border-bottom 1px solid transparent
   border-left 6px solid $borderColor
 
   &.crypto_currency
-    border-color #800000
-    background lighten(#800000, 97%)
+    border-color $maroon
+    background lighten($maroon, 97%)
 
   &.currency
-    border-color #9A6324 //#aaffc3
-    background lighten(#9A6324, 97%)
+    border-color $brown
+    background lighten($brown, 97%)
 
   &.misc
-    border-color #4363d8
-    background lighten(#4363d8, 97%)
+    border-color $blue
+    background lighten($blue, 97%)
 
   &.parcel
-    border-color #469990 //#fabed4
-    background lighten(#469990, 97%)
+    border-color $teal
+    background lighten($teal, 97%)
 
   &.public_equity
-    border-color #f58231
-    background lighten(#f58231, 97%)
+    border-color $orange
+    background lighten($orange, 97%)

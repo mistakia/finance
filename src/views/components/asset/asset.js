@@ -49,10 +49,10 @@ export default function Asset({
             </IconButton>
           </div>
           <div className='cell'>{asset.symbol}</div>
-          <div className='cell asset_balance' style={{ width: 120 }}>
+          <div className='cell asset_balance metric' style={{ width: 120 }}>
             {BigNumber(asset.balance).toFormat(2)}
           </div>
-          <div className='cell asset_allocation' style={{ width: 120 }}>
+          <div className='cell asset_allocation metric' style={{ width: 120 }}>
             {BigNumber(allocation * 100).toFormat(2)}%
           </div>
         </div>
