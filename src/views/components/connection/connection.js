@@ -2,14 +2,14 @@ import React from 'react'
 import * as timeago from 'timeago.js'
 import PropTypes from 'prop-types'
 import PopupState, { bindTrigger, bindMenu } from 'material-ui-popup-state'
-import TableCell from '@mui/material/TableCell'
-import TableRow from '@mui/material/TableRow'
 import IconButton from '@mui/material/IconButton'
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 
 import { CONNECTIONS } from '@core/connections'
+
+import './connection.styl'
 
 export default class Connection extends React.Component {
   handleSync = (close) => {
@@ -35,8 +35,8 @@ export default class Connection extends React.Component {
   render() {
     const { connection } = this.props
     return (
-      <TableRow hover tabIndex={-1} key={connection.id}>
-        <TableCell component='th' scope='row' sx={{ paddingLeft: '0px' }}>
+      <div className='row' key={connection.id}>
+        <div className='cell connection_menu'>
           <PopupState variant='popover' popupId='connection-context-menu'>
             {(popupState) => (
               <React.Fragment>
@@ -58,13 +58,13 @@ export default class Connection extends React.Component {
               </React.Fragment>
             )}
           </PopupState>
-          {connection.id}
-        </TableCell>
-        <TableCell align='right'>{connection.connection}</TableCell>
-        <TableCell align='right'>
+        </div>
+        <div className='cell'>{connection.id}</div>
+        <div className='cell connection_type'>{connection.connection}</div>
+        <div className='cell connection_time'>
           {timeago.format(connection.last_connection * 1000)}
-        </TableCell>
-      </TableRow>
+        </div>
+      </div>
     )
   }
 }

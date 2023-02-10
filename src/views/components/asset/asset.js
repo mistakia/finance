@@ -41,7 +41,7 @@ export default function Asset({
   const is_open = set_asset_class_open ? asset_class_open : holdings_open
   return (
     <>
-      <div className='asset' hover tabIndex={-1} key={asset.link}>
+      <div className='asset' tabIndex={-1} key={asset.link}>
         <div className='row'>
           <div className='cell asset_expand'>
             <IconButton size='small' onClick={() => set_open(!is_open)}>
