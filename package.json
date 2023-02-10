@@ -91,6 +91,7 @@
     "stream-browserify": "^3.0.0",
     "style-loader": "^3.3.1",
     "stylus-loader": "^6.2.0",
+    "timeago.js": "^4.0.2",
     "webpack": "^5.70.0",
     "webpack-dev-server": "^4.7.4",
     "ws": "^8.5.0",

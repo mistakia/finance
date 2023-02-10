@@ -1,4 +1,5 @@
 import React from 'react'
+import * as timeago from 'timeago.js'
 import PropTypes from 'prop-types'
 import PopupState, { bindTrigger, bindMenu } from 'material-ui-popup-state'
 import TableCell from '@mui/material/TableCell'
@@ -60,7 +61,9 @@ export default class Connection extends React.Component {
           {connection.id}
         </TableCell>
         <TableCell align='right'>{connection.connection}</TableCell>
-        <TableCell align='right'>{connection.last_connection}</TableCell>
+        <TableCell align='right'>
+          {timeago.format(connection.last_connection * 1000)}
+        </TableCell>
       </TableRow>
     )
   }
