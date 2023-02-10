@@ -5,6 +5,8 @@ export const appActions = {
   NEW_KEY: 'NEW_KEY',
   LOAD_KEY: 'LOAD_KEY',
 
+  LOAD_FROM_PRIVATE: 'LOAD_FROM_PRIVATE',
+
   TOGGLE_HIDE_BALANCES: 'TOGGLE_HIDE_BALANCES',
 
   toggle_hide_balances: () => ({ type: appActions.TOGGLE_HIDE_BALANCES }),
@@ -27,6 +29,14 @@ export const appActions = {
 
   loadKey: ({ privateKey, publicKey }) => ({
     type: appActions.LOAD_KEY,
+    payload: {
+      privateKey,
+      publicKey
+    }
+  }),
+
+  load_from_private: ({ privateKey, publicKey }) => ({
+    type: appActions.LOAD_FROM_PRIVATE,
     payload: {
       privateKey,
       publicKey

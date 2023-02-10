@@ -35,7 +35,7 @@ async function loadKeys() {
   }
 }
 
-export function* load() {
+export function* init_load() {
   const { privateKey, publicKey } = yield call(loadKeys)
 
   yield delay(1500)
@@ -50,6 +50,14 @@ export function* load() {
   }
 
   yield put(appActions.loaded())
+}
+
+export function* load_from_private({ payload }) {
+  const { privateKey, publicKey } = payload
+  yield put(appActions.loadKey({ privateKey, publicKey }))
+  localStorageAdapter.setItem('privateKey', privateKey)
+  localStorageAdapter.setItem('publicKey', publicKey)
+  yield put(push('/'))
 }
 
 export function* save({ payload }) {
@@ -70,7 +78,7 @@ export function reset() {
 // -------------------------------------
 
 export function* watchInitApp() {
-  yield takeLatest(appActions.APP_LOAD, load)
+  yield takeLatest(appActions.APP_LOAD, init_load)
 }
 
 export function* watchLocationChange() {
@@ -81,6 +89,10 @@ export function* watchNewKey() {
   yield takeLatest(appActions.NEW_KEY, save)
 }
 
+export function* watchLoadFromPrivate() {
+  yield takeLatest(appActions.LOAD_FROM_PRIVATE, load_from_private)
+}
+
 //= ====================================
 //  ROOT
 // -------------------------------------
@@ -88,5 +100,6 @@ export function* watchNewKey() {
 export const appSagas = [
   fork(watchInitApp),
   fork(watchLocationChange),
-  fork(watchNewKey)
+  fork(watchNewKey),
+  fork(watchLoadFromPrivate)
 ]
