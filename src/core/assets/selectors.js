@@ -23,7 +23,21 @@ export function getAssetClasses(state) {
     .map((a) => `/${a}`)
     .toSet()
     .toList()
+
   return classes
+    .map((asset_class) => {
+      const balance = assets
+        .filter((a) => a.asset_class.includes(asset_class))
+        .map((a) => a.quantity * a.market_value_usd)
+        .reduce((sum, a) => sum + a, 0)
+
+      return {
+        balance,
+        asset_class
+      }
+    })
+    .sort((a, b) => b.balance - a.balance)
+    .map((a) => a.asset_class)
 }
 
 export function getAssetClassesByAssetClass(state, { asset_class }) {
