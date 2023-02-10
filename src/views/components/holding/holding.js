@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import BigNumber from 'bignumber.js'
 
+import Balance from '@components/balance'
+
 export default function Holding({ holding, total_balance, asset }) {
   const balance = BigNumber(holding.quantity * asset.market_value_usd).toFormat(
     2
@@ -15,7 +17,9 @@ export default function Holding({ holding, total_balance, asset }) {
     <div className='row' key={holding.link}>
       <div className='cell asset_expand' />
       <div className='cell'>{paths.slice(2).join('/')}</div>
-      <div className='cell asset_balance metric'>{balance}</div>
+      <div className='cell asset_balance metric'>
+        <Balance amount={balance} />
+      </div>
       <div className='cell asset_allocation metric'>{allocation}%</div>
     </div>
   )

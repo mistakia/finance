@@ -5,6 +5,10 @@ export const appActions = {
   NEW_KEY: 'NEW_KEY',
   LOAD_KEY: 'LOAD_KEY',
 
+  TOGGLE_HIDE_BALANCES: 'TOGGLE_HIDE_BALANCES',
+
+  toggle_hide_balances: () => ({ type: appActions.TOGGLE_HIDE_BALANCES }),
+
   load: () => ({
     type: appActions.APP_LOAD
   }),

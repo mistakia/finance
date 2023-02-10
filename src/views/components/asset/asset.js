@@ -7,6 +7,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
 
+import Balance from '@components/balance'
 import Holding from '@components/holding'
 
 import './asset.styl'
@@ -50,7 +51,7 @@ export default function Asset({
           </div>
           <div className='cell'>{asset.symbol}</div>
           <div className='cell asset_balance metric' style={{ width: 120 }}>
-            {BigNumber(asset.balance).toFormat(2)}
+            <Balance amount={BigNumber(asset.balance).toFormat(2)} />
           </div>
           <div className='cell asset_allocation metric' style={{ width: 120 }}>
             {BigNumber(allocation * 100).toFormat(2)}%

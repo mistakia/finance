@@ -6,6 +6,7 @@ import BigNumber from 'bignumber.js'
 
 import Assets from '@components/assets'
 import Connections from '@components/connections'
+import Balance from '@components/balance'
 
 import './home.styl'
 
@@ -42,56 +43,53 @@ Performance.propTypes = {
   data: PropTypes.object
 }
 
-export default class HomePage extends React.Component {
-  render() {
-    const { balance } = this.props
-    // placeholder data
-    const data = {
-      performance: [
-        {
-          label: '1d',
-          value: 0.13
-        },
-        {
-          label: '1w',
-          value: 1.29
-        },
-        {
-          label: '1m',
-          value: 7.15
-        },
-        {
-          label: '3m',
-          value: -5.23
-        },
-        {
-          label: '6m',
-          value: -0.67
-        },
-        {
-          label: '1y',
-          value: 10.47
-        }
-      ]
-    }
-
-    return (
-      <Container maxWidth='md' className='home__container'>
-        <Grid container className='home__header'>
-          <Grid item xs={3} className='balance__box'>
-            {`$${BigNumber(balance).toFormat(2)}`}
-          </Grid>
-          <Grid item xs={9} container spacing={2}>
-            {data.performance.map((item, idx) => (
-              <Performance data={item} key={idx} />
-            ))}
-          </Grid>
+export default function HomePage({ balance }) {
+  // placeholder data
+  /* const data = {
+   *   performance: [
+   *     {
+   *       label: '1d',
+   *       value: 0.13
+   *     },
+   *     {
+   *       label: '1w',
+   *       value: 1.29
+   *     },
+   *     {
+   *       label: '1m',
+   *       value: 7.15
+   *     },
+   *     {
+   *       label: '3m',
+   *       value: -5.23
+   *     },
+   *     {
+   *       label: '6m',
+   *       value: -0.67
+   *     },
+   *     {
+   *       label: '1y',
+   *       value: 10.47
+   *     }
+   *   ]
+   * }
+   */
+  return (
+    <Container maxWidth='md' className='home__container'>
+      <Grid container className='home__header'>
+        <Grid item xs={3} className='balance__box'>
+          <Balance amount={`$${BigNumber(balance).toFormat(2)}`} />
         </Grid>
-        <Assets />
-        <Connections />
-      </Container>
-    )
-  }
+        <Grid item xs={9} container spacing={2}>
+          {/* {data.performance.map((item, idx) => (
+              <Performance data={item} key={idx} />
+              ))} */}
+        </Grid>
+      </Grid>
+      <Assets />
+      <Connections />
+    </Container>
+  )
 }
 
 HomePage.propTypes = {

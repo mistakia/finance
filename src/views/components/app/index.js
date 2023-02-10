@@ -10,7 +10,8 @@ const mapStateToProps = createSelector(getApp, (app) => ({
 }))
 
 const mapDispatchToProps = {
-  load: appActions.load
+  load: appActions.load,
+  toggle_hide_balances: appActions.toggle_hide_balances
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(App)
