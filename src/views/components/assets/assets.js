@@ -1,14 +1,10 @@
 import React from 'react'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import Box from '@mui/material/Box'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableHead from '@mui/material/TableHead'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableRow from '@mui/material/TableRow'
 
 import AssetClass from '@components/asset-class'
+
+import './assets.styl'
 
 export default class Assets extends React.Component {
   render() {
@@ -21,19 +17,13 @@ export default class Assets extends React.Component {
 
     return (
       <Box sx={{ width: '100%', paddingTop: '35px' }}>
-        <TableContainer>
-          <Table sx={{ minWidth: 750 }} size='small'>
-            <TableHead>
-              <TableRow>
-                <TableCell></TableCell>
-                <TableCell>Asset Class</TableCell>
-                <TableCell align='right'>Balance</TableCell>
-                <TableCell align='right'>Allocation</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>{items}</TableBody>
-          </Table>
-        </TableContainer>
+        <div className='row head'>
+          <div className='cell asset_expand'></div>
+          <div className='cell'>Asset Class</div>
+          <div className='cell asset_balance'>Balance</div>
+          <div className='cell asset_allocation'>Allocation</div>
+        </div>
+        {items}
       </Box>
     )
   }

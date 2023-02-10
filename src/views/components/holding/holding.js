@@ -1,8 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
 import BigNumber from 'bignumber.js'
 
 export default function Holding({ holding, total_balance, asset }) {
@@ -14,18 +12,12 @@ export default function Holding({ holding, total_balance, asset }) {
   ).toFormat(2)
   const paths = holding.link.split('/')
   return (
-    <TableRow hover tabIndex={-1} key={holding.link}>
-      <TableCell style={{ width: 66 }} />
-      <TableCell component='th' scope='row'>
-        {paths.slice(2).join('/')}
-      </TableCell>
-      <TableCell align='right' style={{ width: 120 }}>
-        {balance}
-      </TableCell>
-      <TableCell align='right' style={{ width: 120 }}>
-        {allocation}%
-      </TableCell>
-    </TableRow>
+    <div className='row' key={holding.link}>
+      <div className='cell asset_expand' />
+      <div className='cell'>{paths.slice(2).join('/')}</div>
+      <div className='cell asset_balance'>{balance}</div>
+      <div className='cell asset_allocation'>{allocation}%</div>
+    </div>
   )
 }
 

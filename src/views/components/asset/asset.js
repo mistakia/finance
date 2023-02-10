@@ -6,13 +6,10 @@ import IconButton from '@mui/material/IconButton'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import TableBody from '@mui/material/TableBody'
-import Table from '@mui/material/Table'
-import TableContainer from '@mui/material/TableContainer'
 
 import Holding from '@components/holding'
+
+import './asset.styl'
 
 function Holdings({ holdings, asset }) {
   const rows = []
@@ -23,7 +20,7 @@ function Holdings({ holdings, asset }) {
       rows.push(<Holding holding={holding} key={index} asset={asset} />)
     })
 
-  return <TableBody>{rows}</TableBody>
+  return <>{rows}</>
 }
 
 Holdings.propTypes = {
@@ -44,33 +41,25 @@ export default function Asset({
   const is_open = set_asset_class_open ? asset_class_open : holdings_open
   return (
     <>
-      <TableRow hover tabIndex={-1} key={asset.link}>
-        <TableCell style={{ width: 66 }}>
-          <IconButton size='small' onClick={() => set_open(!is_open)}>
-            {is_open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
-        <TableCell component='th' scope='row'>
-          {asset.symbol}
-        </TableCell>
-        <TableCell align='right' style={{ width: 120 }}>
-          {BigNumber(asset.balance).toFormat(2)}
-        </TableCell>
-        <TableCell align='right' style={{ width: 120 }}>
-          {BigNumber(allocation * 100).toFormat(2)}%
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell style={{ padding: 0 }} colSpan={4}>
-          <Collapse in={holdings_open} timeout='auto' unmountOnExit>
-            <TableContainer>
-              <Table sx={{ minWidth: 750 }} size='small'>
-                <Holdings holdings={asset.holdings} asset={asset} />
-              </Table>
-            </TableContainer>
-          </Collapse>
-        </TableCell>
-      </TableRow>
+      <div className='asset' hover tabIndex={-1} key={asset.link}>
+        <div className='row'>
+          <div className='cell asset_expand'>
+            <IconButton size='small' onClick={() => set_open(!is_open)}>
+              {is_open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            </IconButton>
+          </div>
+          <div className='cell'>{asset.symbol}</div>
+          <div className='cell asset_balance' style={{ width: 120 }}>
+            {BigNumber(asset.balance).toFormat(2)}
+          </div>
+          <div className='cell asset_allocation' style={{ width: 120 }}>
+            {BigNumber(allocation * 100).toFormat(2)}%
+          </div>
+        </div>
+        <Collapse in={holdings_open} timeout='auto' unmountOnExit>
+          <Holdings holdings={asset.holdings} asset={asset} />
+        </Collapse>
+      </div>
     </>
   )
 }

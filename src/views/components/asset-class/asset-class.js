@@ -2,11 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ImmutablePropTypes from 'react-immutable-proptypes'
 import Collapse from '@mui/material/Collapse'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
-import TableBody from '@mui/material/TableBody'
-import Table from '@mui/material/Table'
-import TableContainer from '@mui/material/TableContainer'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
 import {
@@ -16,6 +11,8 @@ import {
 } from '@core/assets'
 
 import Asset from '@components/asset'
+
+import './asset-class.styl'
 
 const mapStateToProps = createSelector(
   getAssetClassSummary,
@@ -51,25 +48,22 @@ function AssetClass(props) {
     })
   }
 
+  const classname = `asset_class ${asset_class
+    .replace('/', '')
+    .replace('-', '_')}`
   return (
     <>
-      <Asset
-        asset={summary}
-        key={summary.symbol}
-        set_asset_class_open={set_asset_class_open}
-        asset_class_open={asset_class_open}
-      />
-      <TableRow>
-        <TableCell style={{ padding: 0 }} colSpan={4}>
-          <Collapse in={asset_class_open} timeout='auto' unmountOnExit>
-            <TableContainer>
-              <Table sx={{ minWidth: 750 }} size='small'>
-                <TableBody>{rows}</TableBody>
-              </Table>
-            </TableContainer>
-          </Collapse>
-        </TableCell>
-      </TableRow>
+      <div className={classname}>
+        <Asset
+          asset={summary}
+          key={summary.symbol}
+          set_asset_class_open={set_asset_class_open}
+          asset_class_open={asset_class_open}
+        />
+        <Collapse in={asset_class_open} timeout='auto' unmountOnExit>
+          {rows}
+        </Collapse>
+      </div>
     </>
   )
 }

@@ -12,6 +12,7 @@ import SeedPage from '@pages/seed'
 import '@styles/normalize.css'
 import '@styles/typography.styl'
 import '@styles/empty.styl'
+import '@styles/table.styl'
 
 import './app.styl'
 
