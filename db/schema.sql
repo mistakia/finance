@@ -64,3 +64,45 @@ CREATE TABLE `transactions` (
   `desc` varchar(200) DEFAULT NULL,
   UNIQUE KEY `link` (`link`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+DROP TABLE `eod_option_quotes`;
+
+CREATE TABLE `eod_option_quotes` (
+  `symbol` varchar(20) NOT NULL,
+
+  `quote_unixtime` INT,
+  `quote_readtime` DATETIME,
+  `quote_date` DATE,
+  `quote_time_hours` TIME,
+  `underlying_last` FLOAT,
+  `expire_date` DATE,
+  `expire_unix` INT,
+  `dte` INT,
+  `c_delta` FLOAT,
+  `c_gamma` FLOAT,
+  `c_vega` FLOAT,
+  `c_theta` FLOAT,
+  `c_rho` FLOAT,
+  `c_iv` FLOAT,
+  `c_volume` INT,
+  `c_last` FLOAT,
+  `c_size` INT,
+  `c_bid` FLOAT,
+  `c_ask` FLOAT,
+  `strike` FLOAT,
+  `p_bid` FLOAT,
+  `p_ask` FLOAT,
+  `p_size` INT,
+  `p_last` FLOAT,
+  `p_delta` FLOAT,
+  `p_gamma` FLOAT,
+  `p_vega` FLOAT,
+  `p_theta` FLOAT,
+  `p_rho` FLOAT,
+  `p_iv` FLOAT,
+  `p_volume` INT,
+  `strike_distance` FLOAT,
+  `strike_distance_pct` FLOAT,
+
+  PRIMARY KEY (`symbol`,`quote_date`,`expire_date`,`strike`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;

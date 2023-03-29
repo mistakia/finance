@@ -17,7 +17,7 @@ class WheelAlgorithm(QCAlgorithm):
         self.SetEndDate(2023, 3, 25)
         self.SetCash(100000)
         
-        self.resolution = Resolution.Minute
+        self.resolution = Resolution.Hour
         self.call, self.put, self.takeProfitTicket = None, None, None
 
         # disable margin calls

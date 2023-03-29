@@ -4,7 +4,9 @@
     "#scripts/*": "./scripts/*",
     "#common": "./common/index.mjs",
     "#config": "./config.mjs",
-    "#db": "./db/index.mjs"
+    "#db": "./db/index.mjs",
+    "#trading": "./trading/index.mjs",
+    "#libs-server": "./libs-server/index.mjs"
   },
   "scripts": {
     "dev": "concurrently \"yarn start\" \"yarn start:api\"",
@@ -41,6 +43,7 @@
     "cross-env": "^7.0.3",
     "crypto-browserify": "^3.12.0",
     "css-loader": "^6.7.1",
+    "csv-parser": "^3.0.0",
     "dayjs": "^1.11.0",
     "debug": "^4.3.3",
     "deep-extend": "^0.6.0",
