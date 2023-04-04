@@ -13,6 +13,8 @@ export default {
   ethplorer_api: '',
 
   alphavantage: '',
+  finnhub_api_key: '',
+
   mysql: {
     client: 'mysql2',
     connection: {
