@@ -1,7 +1,7 @@
 import debug from 'debug'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import yahooStockPrices from 'yahoo-stock-prices'
+import yahoo_finance from 'yahoo-finance2'
 import dayjs from 'dayjs'
 
 import db from '#db'
@@ -12,12 +12,12 @@ const log = debug('import-historical-prices-yahoo')
 debug.enable('import-historical-prices-yahoo')
 
 const getItem = (item) => ({
-  d: dayjs(item.date * 1000).format('YYYY-MM-DD'),
+  d: dayjs(item.date).format('YYYY-MM-DD'),
   o: parseFloat(item.open),
   h: parseFloat(item.high),
   l: parseFloat(item.low),
   c: parseFloat(item.close),
-  v: parseInt(item.volume, 10)
+  v: Number(item.volume)
 })
 
 const requestData = async ({ symbol, startYear, endYear }) => {
@@ -26,16 +26,10 @@ const requestData = async ({ symbol, startYear, endYear }) => {
   const startDay = 1
   const endMonth = 12
   const endDay = 31
-  const prices = await yahooStockPrices.getHistoricalPrices(
-    startMonth,
-    startDay,
-    startYear,
-    endMonth,
-    endDay,
-    endYear,
-    symbol,
-    '1d'
-  )
+  const prices = await yahoo_finance.historical(symbol, {
+    period1: `${startYear}-${startMonth}-${startDay}`,
+    period2: `${endYear}-${endMonth}-${endDay}`,
+  })
 
   const inserts = prices.map((i) => ({
     symbol,
