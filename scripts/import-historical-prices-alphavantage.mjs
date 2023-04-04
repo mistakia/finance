@@ -17,8 +17,8 @@ const getItem = (item) => ({
   v: parseInt(item['5. volume'], 10)
 })
 
-const runOne = async (symbol) => {
-  const data = alphavantage.getDailyTimeSeries({ symbol })
+const runOne = async ({ symbol }) => {
+  const data = await alphavantage.getDailyTimeSeries({ symbol })
   const inserts = []
   for (const [date, item] of Object.entries(data['Time Series (Daily)'])) {
     inserts.push({
@@ -42,7 +42,7 @@ const run = async () => {
 
   for (const { symbol } of funds) {
     try {
-      await runOne(symbol)
+      await runOne({ symbol })
     } catch (err) {
       log(err)
     }
