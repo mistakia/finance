@@ -11,6 +11,29 @@ CREATE TABLE `adjusted_daily_prices` (
   UNIQUE KEY `symbol` (`symbol`,`d`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `daily_prices`;
+
+CREATE TABLE `daily_prices` (
+  `symbol` varchar(10) NOT NULL,
+  `d` datetime NOT NULL,
+  `o` decimal(12,2) NOT NULL,
+  `h` decimal(12,2) NOT NULL,
+  `l` decimal(12,2) NOT NULL,
+  `c` decimal(12,2) NOT NULL,
+  `v` bigint unsigned NOT NULL,
+
+  `change_in_7d` decimal(6,3) DEFAULT NULL,
+  `change_in_14d` decimal(6,3) DEFAULT NULL,
+  `change_in_30d` decimal(6,3) DEFAULT NULL,
+  `change_in_40d` decimal(6,3) DEFAULT NULL,
+
+  `wma_diff_pct` decimal(6,3) DEFAULT NULL,
+
+  `rsi` tinyint unsigned DEFAULT NULL,
+
+  UNIQUE KEY `symbol` (`symbol`,`d`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `assets`;
 
 CREATE TABLE `assets` (
@@ -38,7 +61,7 @@ CREATE TABLE `holdings` (
   `cost_basis` decimal(65,30) DEFAULT NULL,
   `quantity` decimal(65,30) NOT NULL,
   `symbol` varchar(20) DEFAULT NULL,
-  `asset_link` varchar(2000 NOT NULL,
+  `asset_link` varchar(2000) NOT NULL,
   UNIQUE KEY `link` (`link`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -65,7 +88,7 @@ CREATE TABLE `transactions` (
   UNIQUE KEY `link` (`link`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-DROP TABLE `eod_option_quotes`;
+DROP TABLE IF EXISTS `eod_option_quotes`;
 
 CREATE TABLE `eod_option_quotes` (
   `symbol` varchar(20) NOT NULL,
@@ -103,6 +126,10 @@ CREATE TABLE `eod_option_quotes` (
   `p_volume` INT,
   `strike_distance` FLOAT,
   `strike_distance_pct` FLOAT,
+
+  `expire_quote` FLOAT,
+  `expire_distance` FLOAT,
+  `expire_distance_pct` FLOAT,
 
   PRIMARY KEY (`symbol`,`quote_date`,`expire_date`,`strike`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
