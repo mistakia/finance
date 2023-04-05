@@ -28,7 +28,7 @@ const requestData = async ({ symbol, startYear, endYear }) => {
   const endDay = 31
   const prices = await yahoo_finance.historical(symbol, {
     period1: `${startYear}-${startMonth}-${startDay}`,
-    period2: `${endYear}-${endMonth}-${endDay}`,
+    period2: `${endYear}-${endMonth}-${endDay}`
   })
 
   const inserts = prices.map((i) => ({
