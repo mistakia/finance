@@ -28,7 +28,7 @@ const get_underylying_price_at_date = ({ underlying_eod_quotes, date }) => {
 const calculate_option_metrics = async ({ symbol }) => {
   log(`Calculating option metrics for ${symbol}...`)
 
-  const batchSize = 1000
+  const batchSize = 100000
   let offset = 0
 
   while (true) {
