@@ -66,7 +66,7 @@ const calculate_option_metrics = async ({ symbol }) => {
         date: row.expire_date
       })
       const expire_distance = Math.abs(expire_quote - row.strike) || null
-      const expire_distance_pct = (expire_distance / row.strike) || null
+      const expire_distance_pct = expire_distance / row.strike || null
       return {
         ...row,
         expire_quote,

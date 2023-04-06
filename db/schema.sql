@@ -131,5 +131,7 @@ CREATE TABLE `eod_option_quotes` (
   `expire_distance` FLOAT,
   `expire_distance_pct` FLOAT,
 
+  `days_to_breakeven` INT,
+
   PRIMARY KEY (`symbol`,`quote_date`,`expire_date`,`strike`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
