@@ -23,20 +23,20 @@ const run = async ({ start, adjusted = true }) => {
     cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.v
   })
 
-  const query = db('adjusted_daily_prices').orderBy('d', 'asc')
+  const query = db('adjusted_daily_prices').orderBy('quote_date', 'asc')
   if (start) {
-    query.where('d', '>', start)
+    query.where('quote_date', '>', start)
   }
 
   let data = await query
   const data_map = {}
-  data = data.map(({ d, ...i }) => {
-    const date = dayjs(d)
+  data = data.map(({ quote_date, ...i }) => {
+    const date = dayjs(quote_date)
     data_map[date.format('YYYY-MM-DD')] = i.c
 
     return {
-      d: date,
-      cpi_d: dayjs(d).date(1).format('YYYY-MM-DD'),
+      quote_date: date,
+      cpi_quote_date: dayjs(quote_date).date(1).format('YYYY-MM-DD'),
       ...i
     }
   })
@@ -76,7 +76,7 @@ const run = async ({ start, adjusted = true }) => {
   for (let i = 0; i < data.length; i++) {
     process.stdout.write(`${i} / ${data.length}\r`)
 
-    // const entry_cpi = cpi_map[data[i].cpi_d]
+    // const entry_cpi = cpi_map[data[i].cpi_quote_date]
     const future_closes = {}
     return_years.forEach((years) => {
       future_closes[`return${years}_close`] = getFutureClose({

@@ -51,9 +51,9 @@ const calculate_option_metrics = async ({ symbol }) => {
 
     const underlying_eod_quotes = await db('eod_equity_quotes')
       .where({ symbol })
-      .where('d', '>=', batch[0].quote_date)
-      .where('d', '<=', batch[batch.length - 1].expire_date)
-      .orderBy('d', 'asc')
+      .where('quote_date', '>=', batch[0].quote_date)
+      .where('quote_date', '<=', batch[batch.length - 1].expire_date)
+      .orderBy('quote_date', 'asc')
 
     log(
       `Found ${underlying_eod_quotes.length} underlying quotes for ${symbol} starting at ${underlying_eod_quotes[0].quote_date}`

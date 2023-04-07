@@ -13,7 +13,7 @@ const log = debug('import-cpi')
 debug.enable('import-cpi')
 
 const getItem = (item) => ({
-  d: dayjs(item.date).utc().format('YYYY-MM-DD'),
+  quote_date: dayjs(item.date).utc().format('YYYY-MM-DD'),
   v: parseFloat(item.value)
 })
 

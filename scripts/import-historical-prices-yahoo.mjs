@@ -12,7 +12,7 @@ const log = debug('import-historical-prices-yahoo')
 debug.enable('import-historical-prices-yahoo')
 
 const getItem = (item) => ({
-  d: dayjs(item.date).format('YYYY-MM-DD'),
+  quote_date: dayjs(item.date).format('YYYY-MM-DD'),
   o: parseFloat(item.open),
   h: parseFloat(item.high),
   l: parseFloat(item.low),

@@ -43,7 +43,7 @@ const get_future_price_change = ({ prices, price, index, days }) => {
   if (!future_price) {
     return {
       c: null,
-      d: null,
+      quote_date: null,
       pct: null
     }
   }
@@ -54,7 +54,7 @@ const get_future_price_change = ({ prices, price, index, days }) => {
 
   return {
     c: future_price.c,
-    d: future_price.quote_date,
+    quote_date: future_price.quote_date,
     pct: change_in_price_percent
   }
 }
@@ -114,8 +114,8 @@ const calculate_option_probability = async ({
 
   const prices = await db('adjusted_daily_prices')
     .where({ symbol })
-    .andWhere('d', '>=', `${start_year}-01-01`)
-    .orderBy('d', 'asc')
+    .andWhere('quote_date', '>=', `${start_year}-01-01`)
+    .orderBy('quote_date', 'asc')
 
   let index = 0
   const supertrend = indicator_results()

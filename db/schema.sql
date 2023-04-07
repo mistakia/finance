@@ -2,13 +2,13 @@ DROP TABLE IF EXISTS `adjusted_daily_prices`;
 
 CREATE TABLE `adjusted_daily_prices` (
   `symbol` varchar(10) NOT NULL,
-  `d` datetime NOT NULL,
+  `quote_date` datetime NOT NULL,
   `o` decimal(12,2) NOT NULL,
   `h` decimal(12,2) NOT NULL,
   `l` decimal(12,2) NOT NULL,
   `c` decimal(12,2) NOT NULL,
   `v` bigint unsigned NOT NULL,
-  UNIQUE KEY `symbol` (`symbol`,`d`)
+  UNIQUE KEY `symbol` (`symbol`,`quote_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `eod_equity_quotes`;
@@ -31,7 +31,7 @@ CREATE TABLE `eod_equity_quotes` (
 
   `rsi` tinyint unsigned DEFAULT NULL,
 
-  UNIQUE KEY `symbol` (`symbol`,`d`)
+  UNIQUE KEY `symbol` (`symbol`,`quote_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `assets`;
@@ -48,9 +48,9 @@ CREATE TABLE `assets` (
 DROP TABLE IF EXISTS `cpi`;
 
 CREATE TABLE `cpi` (
-  `d` datetime NOT NULL,
+  `quote_date` datetime NOT NULL,
   `v` int unsigned NOT NULL,
-  UNIQUE KEY `date` (`d`)
+  UNIQUE KEY `date` (`quote_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `holdings`;

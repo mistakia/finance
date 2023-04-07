@@ -23,7 +23,7 @@ const runOne = async ({ symbol }) => {
   for (const [date, item] of Object.entries(data['Time Series (Daily)'])) {
     inserts.push({
       symbol,
-      d: date,
+      quote_date: date,
       ...getItem(item)
     })
   }

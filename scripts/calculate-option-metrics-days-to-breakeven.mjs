@@ -17,9 +17,9 @@ dayjs.extend(isSameOrAfter)
 const get_underyling_quotes = async ({ symbol, start_date, end_date }) =>
   db('eod_equity_quotes')
     .where({ symbol })
-    .where('d', '>=', start_date)
-    .where('d', '<=', end_date)
-    .orderBy('d', 'asc')
+    .where('quote_date', '>=', start_date)
+    .where('quote_date', '<=', end_date)
+    .orderBy('quote_date', 'asc')
 
 const get_days_to_breakeven = async ({
   option_quote,

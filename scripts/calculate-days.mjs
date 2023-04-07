@@ -16,19 +16,19 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
   const cpi = await db('cpi')
   const cpi_map = {}
   cpi.forEach((i) => {
-    cpi_map[dayjs(i.d).format('YYYY-MM-DD')] = i.v
+    cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.v
   })
 
-  const query = db('adjusted_daily_prices').orderBy('d', 'asc')
+  const query = db('adjusted_daily_prices').orderBy('quote_date', 'asc')
   if (start) {
-    query.where('d', '>', start)
+    query.where('quote_date', '>', start)
   }
 
   let data = await query
 
-  data = data.map(({ d, ...i }) => ({
-    d: dayjs(d),
-    cpi_d: dayjs(d).date(1).format('YYYY-MM-DD'),
+  data = data.map(({ quote_date, ...i }) => ({
+    quote_date: dayjs(quote_date),
+    cpi_quote_date: dayjs(quote_date).date(1).format('YYYY-MM-DD'),
     ...i
   }))
 
@@ -36,7 +36,7 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
   for (let i = 0; i < data.length; i++) {
     process.stdout.write(`${i} / ${data.length}\r`)
 
-    const entry_cpi = cpi_map[data[i].cpi_d]
+    const entry_cpi = cpi_map[data[i].cpi_quote_date]
     let days = Infinity
     let date
     let price
@@ -44,7 +44,7 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
     for (let j = i; j < data.length; j++) {
       let target_value = data[i].c * rate
       if (adjusted) {
-        const cpi_value = cpi_map[data[j].cpi_d]
+        const cpi_value = cpi_map[data[j].cpi_quote_date]
         if (!cpi_value) continue
         const cpi_rate = (cpi_value - entry_cpi) / entry_cpi
         target_value = target_value * (1 + cpi_rate)
