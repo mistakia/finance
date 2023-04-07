@@ -5,17 +5,26 @@ import debug from 'debug'
 // import db from '#db'
 // import config from '#config'
 import { isMain } from '#common'
-import { Wheel_Strategy, Portfolio, Backtest } from '#trading'
+import {
+  Wheel_Trading_Strategy,
+  Buy_And_Hold_Trading_Strategy,
+  Holdings,
+  Backtest
+} from '#trading'
 
 // const argv = yargs(hideBin(process.argv)).argv
 const log = debug('backtest_wheel')
-debug.enable('backtest_wheel')
+debug.enable('backtest_wheel,backtest,holdings')
 
 const backtest_wheel = async () => {
-  const portfolio = new Portfolio({ cash: 100000 })
-  const wheel_1 = new Wheel_Strategy({ portfolio })
+  const wheel_1 = new Wheel_Trading_Strategy({
+    holdings: new Holdings({ cash: 100000 })
+  })
+  const buy_and_hold = new Buy_And_Hold_Trading_Strategy({
+    holdings: new Holdings({ cash: 100000 })
+  })
   const backtest = new Backtest({
-    accounts: [wheel_1],
+    accounts: [wheel_1, buy_and_hold],
     start: '2020-01-01',
     end: '2020-12-31'
   })

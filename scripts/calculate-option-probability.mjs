@@ -26,14 +26,14 @@ dayjs.extend(isSameOrAfter)
 const get_future_price = ({ prices, index, future_date }) => {
   for (let i = index; i < prices.length; i += 1) {
     const price = prices[i]
-    if (dayjs(price.d).isSameOrAfter(future_date)) {
+    if (dayjs(price.quote_date).isSameOrAfter(future_date)) {
       return price
     }
   }
 }
 
 const get_future_price_change = ({ prices, price, index, days }) => {
-  const future_date = dayjs(price.d).add(days, 'day')
+  const future_date = dayjs(price.quote_date).add(days, 'day')
   const future_price = get_future_price({
     prices,
     future_date,
@@ -54,7 +54,7 @@ const get_future_price_change = ({ prices, price, index, days }) => {
 
   return {
     c: future_price.c,
-    d: future_price.d,
+    d: future_price.quote_date,
     pct: change_in_price_percent
   }
 }
@@ -138,7 +138,7 @@ const calculate_option_probability = async ({
       index += 1
 
       // if (is_bearish) {
-      //   last_bearish_candle = price.d
+      //   last_bearish_candle = price.quote_date
       // }
 
       // if (count_day) {
@@ -159,7 +159,7 @@ const calculate_option_probability = async ({
     // check if its been more than x days since the last bearish candle
     // if (last_bearish_candle) {
     //   const last_bearish_date = dayjs(last_bearish_candle)
-    //   const current_date = dayjs(price.d)
+    //   const current_date = dayjs(price.quote_date)
     //   const diff = current_date.diff(last_bearish_date, 'day')
     //   if (diff < 70) {
     //     on_finish()
@@ -284,7 +284,7 @@ const calculate_option_probability = async ({
   // const rsi_avg = rsi_values.reduce((a, b) => a + b, 0) / rsi_values.length
   // log({ rsi_min, rsi_max, rsi_avg })
 
-  await db('daily_prices').insert(inserts).onConflict().merge()
+  await db('eod_equity_quotes').insert(inserts).onConflict().merge()
 }
 
 const main = async () => {

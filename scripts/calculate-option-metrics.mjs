@@ -17,7 +17,7 @@ dayjs.extend(isSameOrAfter)
 const get_underylying_price_at_date = ({ underlying_eod_quotes, date }) => {
   for (let i = 0; i < underlying_eod_quotes.length; i += 1) {
     const eod_quote = underlying_eod_quotes[i]
-    if (dayjs(eod_quote.d).isSameOrAfter(date)) {
+    if (dayjs(eod_quote.quote_date).isSameOrAfter(date)) {
       return eod_quote.c || null
     }
   }
@@ -49,14 +49,14 @@ const calculate_option_metrics = async ({ symbol }) => {
       `Processing ${batch.length} rows for ${symbol} starting at ${batch[0].quote_date}`
     )
 
-    const underlying_eod_quotes = await db('daily_prices')
+    const underlying_eod_quotes = await db('eod_equity_quotes')
       .where({ symbol })
       .where('d', '>=', batch[0].quote_date)
       .where('d', '<=', batch[batch.length - 1].expire_date)
       .orderBy('d', 'asc')
 
     log(
-      `Found ${underlying_eod_quotes.length} underlying quotes for ${symbol} starting at ${underlying_eod_quotes[0].d}`
+      `Found ${underlying_eod_quotes.length} underlying quotes for ${symbol} starting at ${underlying_eod_quotes[0].quote_date}`
     )
 
     // calculate the underlying price at expiration and the percent difference from the strike for each option quote in the batch

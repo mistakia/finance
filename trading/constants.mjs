@@ -1,11 +1,15 @@
 export const RESOLUTION = {
-  MINUTE: 'minute',
-  HOUR: 'hour',
-  DAY: 'day',
-  DAY_ADJUSTED: 'day_adjusted'
+  MINUTE: 'MINUTE',
+  HOUR: 'HOUR',
+  DAY: 'DAY',
+  DAY_ADJUSTED: 'DAY_ADJUSTED'
 }
 
-export const HOLDINGS = {
-  EQUITY: 'equity',
-  OPTION: 'option'
+export const HOLDING_TYPE = {
+  EQUITY: 'EQUITY',
+  OPTION: 'OPTION'
+}
+
+export const TRANSACTION_TYPE = {
+  BUY_EQUITY: 'BUY_EQUITY'
 }

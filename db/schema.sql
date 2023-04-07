@@ -11,11 +11,11 @@ CREATE TABLE `adjusted_daily_prices` (
   UNIQUE KEY `symbol` (`symbol`,`d`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `daily_prices`;
+DROP TABLE IF EXISTS `eod_equity_quotes`;
 
-CREATE TABLE `daily_prices` (
+CREATE TABLE `eod_equity_quotes` (
   `symbol` varchar(10) NOT NULL,
-  `d` datetime NOT NULL,
+  `quote_date` datetime NOT NULL,
   `o` decimal(12,2) NOT NULL,
   `h` decimal(12,2) NOT NULL,
   `l` decimal(12,2) NOT NULL,

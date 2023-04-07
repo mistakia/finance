@@ -15,7 +15,7 @@ debug.enable('calculate-days-to-breakeven')
 dayjs.extend(isSameOrAfter)
 
 const get_underyling_quotes = async ({ symbol, start_date, end_date }) =>
-  db('daily_prices')
+  db('eod_equity_quotes')
     .where({ symbol })
     .where('d', '>=', start_date)
     .where('d', '<=', end_date)
@@ -28,7 +28,7 @@ const get_days_to_breakeven = async ({
   const cost_basis = option_quote.strike - option_quote.p_last
 
   const start_index = underlying_eod_quotes.findIndex((q) =>
-    dayjs(q.d).isSameOrAfter(option_quote.expire_date)
+    dayjs(q.quote_date).isSameOrAfter(option_quote.expire_date)
   )
 
   for (let d = start_index; d < underlying_eod_quotes.length; d++) {
@@ -38,7 +38,8 @@ const get_days_to_breakeven = async ({
   }
 
   // load more underlying_quotes and recursively call this function again
-  const start_date = underlying_eod_quotes[underlying_eod_quotes.length - 1].d
+  const start_date =
+    underlying_eod_quotes[underlying_eod_quotes.length - 1].quote_date
   const end_date = dayjs(start_date).add(2, 'year').format('YYYY-MM-DD')
   const symbol = option_quote.symbol
   const more_underlying_eod_quotes = await get_underyling_quotes({
@@ -94,7 +95,7 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
     })
 
     log(
-      `Found ${underlying_eod_quotes.length} underlying quotes for ${symbol} starting at ${underlying_eod_quotes[0].d}`
+      `Found ${underlying_eod_quotes.length} underlying quotes for ${symbol} starting at ${underlying_eod_quotes[0].quote_date}`
     )
 
     const inserts = []

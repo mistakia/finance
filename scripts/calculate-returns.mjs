@@ -20,7 +20,7 @@ const run = async ({ start, adjusted = true }) => {
   const cpi = await db('cpi')
   const cpi_map = {}
   cpi.forEach((i) => {
-    cpi_map[dayjs(i.d).format('YYYY-MM-DD')] = i.v
+    cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.v
   })
 
   const query = db('adjusted_daily_prices').orderBy('d', 'asc')
@@ -40,7 +40,7 @@ const run = async ({ start, adjusted = true }) => {
       ...i
     }
   })
-  const max_date = data[data.length - 1].d
+  const max_date = data[data.length - 1].quote_date
 
   const getFutureClose = ({ date, years, months }) => {
     let pointer = date
@@ -80,7 +80,7 @@ const run = async ({ start, adjusted = true }) => {
     const future_closes = {}
     return_years.forEach((years) => {
       future_closes[`return${years}_close`] = getFutureClose({
-        date: data[i].d,
+        date: data[i].quote_date,
         years
       })
     })
@@ -96,7 +96,7 @@ const run = async ({ start, adjusted = true }) => {
 
     const dca_basis = {}
     dca_intervals.forEach((intervals) => {
-      dca_basis[intervals] = getBasis(data[i].d, intervals)
+      dca_basis[intervals] = getBasis(data[i].quote_date, intervals)
     })
 
     const future_dca_returns = {}
@@ -112,7 +112,7 @@ const run = async ({ start, adjusted = true }) => {
     })
 
     results.push({
-      entry_date: data[i].d.format('YYYY-MM-DD'),
+      entry_date: data[i].quote_date.format('YYYY-MM-DD'),
       entry_price: data[i].c,
       ...future_returns_lump,
       ...future_dca_returns
