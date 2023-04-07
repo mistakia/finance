@@ -34,7 +34,7 @@ const calculate_option_metrics = async ({ symbol }) => {
   while (true) {
     // retrieve the next batch of option quotes
     const batch = await db('eod_option_quotes')
-      .where({ underyling_symbol: symbol })
+      .where({ underlying_symbol: symbol })
       .orderBy('quote_unixtime', 'asc')
       .limit(batchSize)
       .offset(offset)
@@ -77,7 +77,7 @@ const calculate_option_metrics = async ({ symbol }) => {
 
     await db('eod_option_quotes')
       .insert(metrics)
-      .onConflict(['underyling_symbol', 'quote_date', 'expire_date', 'strike'])
+      .onConflict(['underlying_symbol', 'quote_date', 'expire_date', 'strike'])
       .merge()
   }
 }

@@ -14,7 +14,7 @@ debug.enable('calculate-days-to-breakeven')
 
 dayjs.extend(isSameOrAfter)
 
-const get_underyling_quotes = async ({ symbol, start_date, end_date }) =>
+const get_underlying_quotes = async ({ symbol, start_date, end_date }) =>
   db('eod_equity_quotes')
     .where({ symbol })
     .where('quote_date', '>=', start_date)
@@ -42,7 +42,7 @@ const get_days_to_breakeven = async ({
     underlying_eod_quotes[underlying_eod_quotes.length - 1].quote_date
   const end_date = dayjs(start_date).add(2, 'year').format('YYYY-MM-DD')
   const symbol = option_quote.symbol
-  const more_underlying_eod_quotes = await get_underyling_quotes({
+  const more_underlying_eod_quotes = await get_underlying_quotes({
     symbol,
     start_date,
     end_date
@@ -66,7 +66,7 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
 
   while (true) {
     const batch = await db('eod_option_quotes')
-      .where({ underyling_symbol: symbol })
+      .where({ underlying_symbol: symbol })
       .where(db.raw('strike > expire_quote'))
       .where(db.raw('strike < underlying_last'))
       .orderBy('expire_unix', 'asc')
@@ -88,7 +88,7 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
     const end_date = dayjs(batch[batch.length - 1].expire_date)
       .add(1, 'year')
       .format('YYYY-MM-DD')
-    const underlying_eod_quotes = await get_underyling_quotes({
+    const underlying_eod_quotes = await get_underlying_quotes({
       symbol,
       start_date,
       end_date
@@ -109,7 +109,7 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
 
       if (days_to_breakeven !== null) {
         inserts.push({
-          underyling_symbol: option_quote.underyling_symbol,
+          underlying_symbol: option_quote.underlying_symbol,
           quote_date: option_quote.quote_date,
           expire_date: option_quote.expire_date,
           strike: option_quote.strike,
