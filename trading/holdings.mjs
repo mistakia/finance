@@ -11,6 +11,48 @@ export default class Holdings {
     this.transactions = []
   }
 
+  get unrealized_gains() {
+    // let unrealized_gains = 0
+    // for (const holding_id in this.holdings) {
+    //   const holding = this.holdings[holding_id]
+    // }
+
+    return null
+  }
+
+  get total_value() {
+    let result = this.cash
+    for (const holding_id in this.holdings) {
+      const holding = this.holdings[holding_id]
+      if (holding.latest_quote) {
+        result += holding.latest_quote.c * holding.quantity
+      }
+    }
+
+    return result
+  }
+
+  stats() {
+    const stats = {
+      cash: this.cash,
+      total_value: this.total_value,
+      // unrealized_gains: this.unrealized_gains(),
+      holdings: {}
+    }
+
+    for (const holding_id in this.holdings) {
+      const holding = this.holdings[holding_id]
+      stats.holdings[holding_id] = {
+        holding_type: holding.holding_type,
+        ticker: holding.ticker,
+        resolution: holding.resolution,
+        quantity: holding.quantity
+      }
+    }
+
+    return stats
+  }
+
   register_holding({ holding_type, ticker, resolution } = {}) {
     if (!holding_type) {
       throw new Error('Holding type is required')
@@ -36,7 +78,8 @@ export default class Holdings {
       holding_type,
       ticker,
       resolution,
-      quantity: 0
+      quantity: 0,
+      latest_quote: null
     }
   }
 

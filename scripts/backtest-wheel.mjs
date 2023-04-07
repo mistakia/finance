@@ -6,8 +6,8 @@ import debug from 'debug'
 // import config from '#config'
 import { isMain } from '#common'
 import {
-  Wheel_Trading_Strategy,
-  Buy_And_Hold_Trading_Strategy,
+  Wheel_Trading_Account,
+  Buy_And_Hold_Trading_Account,
   Holdings,
   Backtest
 } from '#trading'
@@ -17,10 +17,12 @@ const log = debug('backtest_wheel')
 debug.enable('backtest_wheel,backtest,holdings')
 
 const backtest_wheel = async () => {
-  const wheel_1 = new Wheel_Trading_Strategy({
+  const wheel_1 = new Wheel_Trading_Account({
+    name: 'wheel_1',
     holdings: new Holdings({ cash: 100000 })
   })
-  const buy_and_hold = new Buy_And_Hold_Trading_Strategy({
+  const buy_and_hold = new Buy_And_Hold_Trading_Account({
+    name: 'buy_and_hold',
     holdings: new Holdings({ cash: 100000 })
   })
   const backtest = new Backtest({

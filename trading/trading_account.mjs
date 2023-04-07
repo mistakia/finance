@@ -1,9 +1,14 @@
 import Holdings from './holdings.mjs'
 import * as constants from './constants.mjs'
 
-class Trading_Strategy {
+class Trading_Account {
   constructor(params) {
+    this.name = params.name || 'Default Trading Account'
     this.Holdings = params.holdings || new Holdings()
+  }
+
+  stats() {
+    return this.Holdings.stats()
   }
 
   register_equity({ ticker, resolution } = {}) {
@@ -35,7 +40,7 @@ class Trading_Strategy {
   }
 }
 
-export class Wheel_Trading_Strategy extends Trading_Strategy {
+export class Wheel_Trading_Account extends Trading_Account {
   constructor(params) {
     super(params)
 
@@ -72,7 +77,7 @@ export class Wheel_Trading_Strategy extends Trading_Strategy {
   sell_covered_put(quote_data) {}
 }
 
-export class Buy_And_Hold_Trading_Strategy extends Trading_Strategy {
+export class Buy_And_Hold_Trading_Account extends Trading_Account {
   constructor(params) {
     super(params)
 

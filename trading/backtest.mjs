@@ -27,17 +27,37 @@ export default class Backtest {
     this.start = start
     this.end = end
 
+    this.is_complete = false
+    this.batch_offset = 0
+
     this.data_tables = {}
     this.quote_data = []
   }
 
   async run() {
+    log(
+      'Running backtest for accounts: ',
+      this.accounts.map((a) => a.name)
+    )
+    log('Start: ', this.start)
+    log('End: ', this.end)
     this.load_holdings()
-    await this.process_quote_data_batch()
+    await this.next_quote_data_batch()
+    await this.get_final_quotes()
+
+    return this.stats()
   }
 
-  async process_quote_data_batch() {
-    log('Processing quote data batch...')
+  stats() {
+    const stats = {}
+    for (const account of this.accounts) {
+      stats[account.name] = account.stats()
+    }
+    return stats
+  }
+
+  async next_quote_data_batch() {
+    log('Loading quote data batch...')
     await this.load_quote_data_batch()
     for (const tick of this.quote_data) {
       for (const account of this.accounts) {
@@ -45,12 +65,8 @@ export default class Backtest {
       }
     }
 
-    const is_complete = Object.values(this.data_tables).every(
-      (data_table) => data_table.is_loaded
-    )
-
-    if (!is_complete) {
-      await this.process_quote_data_batch()
+    if (!this.is_complete) {
+      await this.next_quote_data_batch()
     }
   }
 
@@ -64,7 +80,6 @@ export default class Backtest {
       this.data_tables[table_name] = {
         table_name,
         tickers: { [ticker]: true },
-        batch_offset: 0,
         quote_type
       }
     }
@@ -80,47 +95,92 @@ export default class Backtest {
   }
 
   async load_quote_data_batch() {
+    const table_names = Object.keys(this.data_tables)
+    const all_columns = await db('information_schema.columns')
+      .select('table_name as table_name', 'column_name as column_name')
+      .whereIn('table_name', table_names)
+
+    const unique_columns = [...new Set(all_columns.map((c) => c.column_name))]
+    const column_index = {}
+    for (const column of all_columns) {
+      const { table_name, column_name } = column
+      const key = `${table_name}.${column_name}`
+      column_index[key] = true
+    }
+
+    const table_queries = []
     for (const data_table of Object.values(this.data_tables)) {
-      const { table_name, tickers, batch_offset, is_loaded, quote_type } =
-        data_table
-      if (is_loaded) {
-        log(`Finished loading quote_data for ${quote_type}`)
-        continue
-      }
+      const { table_name, tickers, quote_type } = data_table
+      const table_columns = unique_columns.map((c) => {
+        if (column_index[`${table_name}.${c}`]) {
+          return c
+        } else {
+          return db.raw(`null as ${c}`)
+        }
+      })
 
       const symbols = Object.keys(tickers)
-      const data = await db(table_name)
+      const table_query = db(table_name)
+        .select(
+          db.raw(`${table_columns.join(', ')}, '${quote_type}' as quote_type`)
+        )
         .whereIn('symbol', symbols)
         .where('quote_date', '>=', this.start)
         .where('quote_date', '<=', this.end)
-        .orderBy('quote_date', 'asc')
-        .limit(batch_size)
-        .offset(batch_offset)
 
-      log(
-        `Loaded ${data.length} rows of quote_data for ${quote_type} from ${table_name}`
-      )
-
-      this.data_tables[table_name].batch_offset += data.length
-
-      if (data.length < batch_size) {
-        this.data_tables[table_name].is_loaded = true
-      }
-
-      if (data.length === 0) {
-        continue
-      }
-
-      const formatted_data = data.map((row) => ({
-        ...row,
-        quote_type
-      }))
-
-      this.quote_data.push(...formatted_data)
+      table_queries.push(table_query)
     }
 
-    this.quote_data.sort((a, b) => {
-      return a.quote_date - b.quote_date
-    })
+    let data
+    if (table_queries.length === 1) {
+      data = await table_queries[0]
+    } else {
+      const raw_response = await db.raw(
+        `${table_queries
+          .map((query) => query.toQuery())
+          .join(
+            ' union '
+          )} order by quote_date asc limit ${batch_size} offset ${
+          this.batch_offset
+        }`
+      )
+      data = raw_response[0]
+    }
+
+    log(
+      `Loaded ${data.length} rows of quote data from ${table_queries.length} tables`
+    )
+
+    this.batch_offset += data.length
+
+    if (data.length < batch_size) {
+      this.is_complete = true
+    }
+
+    if (data.length === 0) {
+      return
+    }
+
+    this.quote_data = data
+  }
+
+  async get_final_quotes() {
+    for (const account of this.accounts) {
+      for (const holding_id in account.Holdings.holdings) {
+        const holding = account.Holdings.holdings[holding_id]
+        const { quote_type, ticker } = holding
+        const table_name = get_data_table_name(quote_type)
+        const latest_quote = await db(table_name)
+          .select('*')
+          .where({ symbol: ticker })
+          .where('quote_date', '<=', this.end)
+          .orderBy('quote_date', 'desc')
+          .first()
+
+        if (latest_quote) {
+          holding.latest_quote = latest_quote
+        }
+      }
+    }
   }
 }
