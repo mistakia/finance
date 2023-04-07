@@ -23,3 +23,5 @@ export const OPTION_OPEN_TYPE = {
   LONG: 'LONG',
   SHORT: 'SHORT'
 }
+
+export const OPTION_MULTIPLIER = 100

@@ -21,6 +21,7 @@ CREATE TABLE `eod_equity_quotes` (
   `l` decimal(12,2) NOT NULL,
   `c` decimal(12,2) NOT NULL,
   `v` bigint unsigned NOT NULL,
+  `quote_unixtime` bigint unsigned DEFAULT NULL,
 
   `change_in_7d` decimal(6,3) DEFAULT NULL,
   `change_in_14d` decimal(6,3) DEFAULT NULL,
@@ -136,4 +137,28 @@ CREATE TABLE `eod_option_quotes` (
   `days_to_breakeven` INT,
 
   PRIMARY KEY (`underlying_symbol`,`quote_date`,`expire_date`,`strike`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `backtests`;
+
+CREATE TABLE `backtests` (
+  `name` varchar(200) NOT NULL,
+  `start_date` datetime NOT NULL,
+  `end_date` datetime NOT NULL,
+  `start_value` decimal(15,2) NOT NULL,
+  `end_value` decimal(15,2) NOT NULL,
+  `return_pct` decimal(15,2) NOT NULL,
+  `max_drawdown` decimal(6,3) NOT NULL,
+  `transactions` int(11) NOT NULL,
+  `win_transactions` int(11) NOT NULL,
+  `loss_transactions` int(11) NOT NULL,
+  `win_pct` decimal(6,3) NOT NULL,
+  `avg_win_pct` decimal(6,3) NOT NULL,
+  `avg_loss_pct` decimal(6,3) NOT NULL,
+  `avg_win_loss_pct` decimal(6,3) NOT NULL,
+  `cagr` decimal(6,3) NOT NULL,
+  `sharpe` decimal(6,3) NOT NULL,
+  `sortino` decimal(6,3) NOT NULL,
+  `calmar` decimal(6,3) NOT NULL,
+  `profit_factor` decimal(6,3) NOT NULL,
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;

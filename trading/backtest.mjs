@@ -6,7 +6,7 @@ import * as constants from './constants.mjs'
 const log = debug('backtest')
 debug.enable('backtest')
 
-const batch_size = 1000
+const batch_size = 500000
 
 const get_data_table_name = (quote_type) => {
   switch (quote_type) {
@@ -32,6 +32,7 @@ export default class Backtest {
 
     this.data_tables = {}
     this.quote_data = []
+    this.option_quote_data = null
   }
 
   async run() {
@@ -41,28 +42,93 @@ export default class Backtest {
     )
     log('Start: ', this.start)
     log('End: ', this.end)
-    this.load_holdings()
+    this.register_quote_queries()
     await this.next_quote_data_batch()
-    await this.get_final_quotes()
 
-    return this.stats()
+    return this.summary()
   }
 
-  stats() {
-    const stats = {}
+  summary() {
+    const result = {}
     for (const account of this.accounts) {
-      stats[account.name] = account.stats()
+      result[account.name] = account.summary
     }
-    return stats
+    return result
   }
 
   async next_quote_data_batch() {
     log('Loading quote data batch...')
     await this.load_quote_data_batch()
-    for (const tick of this.quote_data) {
+
+    const emit_quote_data = (quote_data) => {
       for (const account of this.accounts) {
-        account.on_quote_data(tick)
+        account.on_quote_data(quote_data)
       }
+    }
+
+    for (const quote_data of this.quote_data) {
+      const { underlying_symbol, quote_type, quote_unixtime } = quote_data
+
+      // if new day, make end of day adjustments
+      if (
+        this.last_quote_unixtime &&
+        this.last_quote_unixtime !== quote_unixtime
+      ) {
+        this.on_end_of_day({
+          current_date: this.last_quote_unixtime,
+          next_date: quote_unixtime
+        })
+      }
+
+      this.last_quote_unixtime = quote_unixtime
+
+      if (quote_type.includes(constants.HOLDING_TYPE.OPTION)) {
+        if (!this.option_quote_data) {
+          this.option_quote_data = {
+            quote_type,
+            underlying_symbol,
+            quote_unixtime,
+            option_chain: [quote_data]
+          }
+        } else if (
+          this.option_quote_data.quote_unixtime !== quote_unixtime ||
+          this.option_quote_data.underlying_symbol !== underlying_symbol
+        ) {
+          emit_quote_data(this.option_quote_data)
+          this.option_quote_data = {
+            quote_type,
+            underlying_symbol,
+            quote_unixtime,
+            option_chain: [quote_data]
+          }
+        } else {
+          this.option_quote_data.option_chain.push(quote_data)
+        }
+
+        // check if quote is for any holdings in any accounts
+        const put_holding_id = `${constants.HOLDING_TYPE.OPTION}_${quote_data.put_symbol}`
+        const call_holding_id = `${constants.HOLDING_TYPE.OPTION}_${quote_data.call_symbol}`
+        for (const account of this.accounts) {
+          if (account.Holdings.holdings[put_holding_id]) {
+            account.Holdings.holdings[put_holding_id].latest_quote = quote_data
+          }
+
+          if (account.Holdings.holdings[call_holding_id]) {
+            account.Holdings.holdings[call_holding_id].latest_quote = quote_data
+          }
+        }
+
+        continue
+      }
+
+      const holding_id = `${constants.HOLDING_TYPE.EQUITY}_${quote_data.symbol}`
+      for (const account of this.accounts) {
+        if (account.Holdings.holdings[holding_id]) {
+          account.Holdings.holdings[holding_id].latest_quote = quote_data
+        }
+      }
+
+      emit_quote_data(quote_data)
     }
 
     if (!this.is_complete) {
@@ -70,26 +136,30 @@ export default class Backtest {
     }
   }
 
-  register_quote_type({ quote_type, ticker }) {
-    log(`Registering quote type ${quote_type} for ticker ${ticker}`)
+  register_quote_type({ quote_type, query_func, params }) {
     const table_name = get_data_table_name(quote_type)
 
-    if (this.data_tables[table_name]) {
-      this.data_tables[table_name].tickers[ticker] = true
-    } else {
+    if (!this.data_tables[table_name]) {
       this.data_tables[table_name] = {
         table_name,
-        tickers: { [ticker]: true },
-        quote_type
+        quote_type,
+        queries: []
       }
+    }
+
+    if (query_func) {
+      this.data_tables[table_name].queries.push(query_func)
+    }
+
+    if (params) {
+      this.data_tables[table_name].queries.push(params)
     }
   }
 
-  load_holdings() {
+  register_quote_queries() {
     for (const account of this.accounts) {
-      for (const holding of Object.values(account.Holdings.holdings)) {
-        const { quote_type, ticker } = holding
-        this.register_quote_type({ quote_type, ticker })
+      for (const quote_query of account.quote_queries) {
+        this.register_quote_type(quote_query)
       }
     }
   }
@@ -110,7 +180,7 @@ export default class Backtest {
 
     const table_queries = []
     for (const data_table of Object.values(this.data_tables)) {
-      const { table_name, tickers, quote_type } = data_table
+      const { table_name, queries, quote_type } = data_table
       const table_columns = unique_columns.map((c) => {
         if (column_index[`${table_name}.${c}`]) {
           return c
@@ -119,14 +189,17 @@ export default class Backtest {
         }
       })
 
-      const symbols = Object.keys(tickers)
       const table_query = db(table_name)
         .select(
           db.raw(`${table_columns.join(', ')}, '${quote_type}' as quote_type`)
         )
-        .whereIn('symbol', symbols)
         .where('quote_date', '>=', this.start)
         .where('quote_date', '<=', this.end)
+        .where(function () {
+          for (const query of queries) {
+            this.orWhere(query)
+          }
+        })
 
       table_queries.push(table_query)
     }
@@ -140,7 +213,7 @@ export default class Backtest {
           .map((query) => query.toQuery())
           .join(
             ' union '
-          )} order by quote_date asc limit ${batch_size} offset ${
+          )} order by quote_date asc, symbol asc, quote_type asc limit ${batch_size} offset ${
           this.batch_offset
         }`
       )
@@ -164,21 +237,46 @@ export default class Backtest {
     this.quote_data = data
   }
 
-  async get_final_quotes() {
+  on_end_of_day({ next_date }) {
     for (const account of this.accounts) {
+      // update expired option holdings
       for (const holding_id in account.Holdings.holdings) {
         const holding = account.Holdings.holdings[holding_id]
-        const { quote_type, ticker } = holding
-        const table_name = get_data_table_name(quote_type)
-        const latest_quote = await db(table_name)
-          .select('*')
-          .where({ symbol: ticker })
-          .where('quote_date', '<=', this.end)
-          .orderBy('quote_date', 'desc')
-          .first()
+        if (
+          holding.holding_type === constants.HOLDING_TYPE.OPTION &&
+          !holding.expired
+        ) {
+          if (!holding.exercised) {
+            const underlying_holding_id = `${constants.HOLDING_TYPE.EQUITY}_${holding.underlying_symbol}`
+            const underlying_quote =
+              account.Holdings.holdings[underlying_holding_id].latest_quote.c
 
-        if (latest_quote) {
-          holding.latest_quote = latest_quote
+            // const log_params = {
+            //   holding_id,
+            //   underlying_quote,
+            //   strike: holding.strike,
+            //   option_type: holding.option_type,
+            //   date: next_date
+            // }
+            // log(`checking expired option`, log_params)
+
+            // check if option should be exercised
+            if (
+              holding.option_type === constants.OPTION_TYPE.CALL &&
+              holding.strike < underlying_quote
+            ) {
+              account.Holdings.exercise_option({ holding_id, date: next_date })
+            } else if (
+              holding.option_type === constants.OPTION_TYPE.PUT &&
+              holding.strike > underlying_quote
+            ) {
+              account.Holdings.exercise_option({ holding_id, date: next_date })
+            }
+          }
+
+          if (holding.expire_unix < next_date) {
+            holding.expired = true
+          }
         }
       }
     }
