@@ -26,7 +26,7 @@ const get_underylying_price_at_date = ({ underlying_eod_quotes, date }) => {
 }
 
 const calculate_option_metrics = async ({ symbol }) => {
-  log(`Calculating option metrics for ${symbol}...`)
+  log(`Calculating option metrics for options on ${symbol}...`)
 
   const batchSize = 100000
   let offset = 0
@@ -34,7 +34,7 @@ const calculate_option_metrics = async ({ symbol }) => {
   while (true) {
     // retrieve the next batch of option quotes
     const batch = await db('eod_option_quotes')
-      .where({ symbol })
+      .where({ underyling_symbol: symbol })
       .orderBy('quote_unixtime', 'asc')
       .limit(batchSize)
       .offset(offset)
@@ -77,7 +77,7 @@ const calculate_option_metrics = async ({ symbol }) => {
 
     await db('eod_option_quotes')
       .insert(metrics)
-      .onConflict(['symbol', 'quote_date', 'expire_date', 'strike'])
+      .onConflict(['underyling_symbol', 'quote_date', 'expire_date', 'strike'])
       .merge()
   }
 }

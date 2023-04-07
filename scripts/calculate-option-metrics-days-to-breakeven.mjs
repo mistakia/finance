@@ -58,7 +58,7 @@ const get_days_to_breakeven = async ({
 }
 
 const calculate_days_to_breakeven = async ({ symbol }) => {
-  log(`Calculating days to breakeven for ${symbol}...`)
+  log(`Calculating days to breakeven for options on ${symbol}...`)
 
   // iterate over all put options that were exercised
   const batchSize = 100000
@@ -66,7 +66,7 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
 
   while (true) {
     const batch = await db('eod_option_quotes')
-      .where({ symbol })
+      .where({ underyling_symbol: symbol })
       .where(db.raw('strike > expire_quote'))
       .where(db.raw('strike < underlying_last'))
       .orderBy('expire_unix', 'asc')
@@ -81,7 +81,7 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
     }
 
     log(
-      `Processing ${batch.length} rows for ${symbol} starting at ${batch[0].quote_date}`
+      `Processing ${batch.length} rows for options on ${symbol} starting at ${batch[0].quote_date}`
     )
 
     const start_date = batch[0].expire_date
@@ -109,7 +109,7 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
 
       if (days_to_breakeven !== null) {
         inserts.push({
-          symbol: option_quote.symbol,
+          underyling_symbol: option_quote.underyling_symbol,
           quote_date: option_quote.quote_date,
           expire_date: option_quote.expire_date,
           strike: option_quote.strike,
