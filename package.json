@@ -14,7 +14,8 @@
     "start:api": "NODE_ENV=development node server.mjs",
     "build": "cross-env NODE_ENV=production webpack --config internals/webpack/webpack.prod.babel.mjs --color --progress",
     "lint": "eslint . --ext js,mjs",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "test": "NODE_ENV=test TEST=all mocha --exit"
   },
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "^7.16.7",
@@ -31,7 +32,7 @@
     "@mui/material": "^5.5.2",
     "babel-loader": "^8.2.3",
     "babel-plugin-module-resolver": "^4.1.0",
-    "bignumber.js": "^9.0.2",
+    "bignumber.js": "^9.1.1",
     "body-parser": "^1.19.2",
     "buffer": "^6.0.3",
     "candlestick": "^0.0.5",
@@ -108,11 +109,13 @@
   "devDependencies": {
     "@babel/core": "^7.17.5",
     "@babel/eslint-parser": "^7.17.0",
+    "chai": "^4.3.7",
     "eslint": "^8.12.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.0.0",
+    "mocha": "^10.2.0",
     "prettier": "^2.5.1",
     "webpack-cli": "^4.9.2"
   },

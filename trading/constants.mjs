@@ -13,3 +13,13 @@ export const HOLDING_TYPE = {
 export const TRANSACTION_TYPE = {
   BUY_EQUITY: 'BUY_EQUITY'
 }
+
+export const OPTION_TYPE = {
+  CALL: 'CALL',
+  PUT: 'PUT'
+}
+
+export const OPTION_OPEN_TYPE = {
+  LONG: 'LONG',
+  SHORT: 'SHORT'
+}

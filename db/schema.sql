@@ -91,7 +91,9 @@ CREATE TABLE `transactions` (
 DROP TABLE IF EXISTS `eod_option_quotes`;
 
 CREATE TABLE `eod_option_quotes` (
-  `symbol` varchar(20) NOT NULL,
+  `call_symbol` varchar(21) NOT NULL,
+  `put_symbol` varchar(21) NOT NULL,
+  `underyling_symbol` varchar(20) NOT NULL,
 
   `quote_unixtime` INT,
   `quote_readtime` DATETIME,
@@ -133,5 +135,5 @@ CREATE TABLE `eod_option_quotes` (
 
   `days_to_breakeven` INT,
 
-  PRIMARY KEY (`symbol`,`quote_date`,`expire_date`,`strike`)
+  PRIMARY KEY (`underyling_symbol`,`quote_date`,`expire_date`,`strike`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;

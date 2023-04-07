@@ -7,7 +7,8 @@ import path from 'path'
 import db from '#db'
 // import config from '#config'
 import { isMain } from '#common'
-import { read_csv } from '#libs-server'
+import { read_csv, get_option_symbol } from '#libs-server'
+import { constants } from '#trading'
 
 // const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-spy-eod-option-quotes')
@@ -67,14 +68,14 @@ const format_line = (line) => {
     ' [STRIKE_DISTANCE_PCT]': strike_distance_pct
   } = line
 
-  return {
-    symbol: 'SPY',
+  const row = {
+    underlying_symbol: 'SPY',
     quote_unixtime: Number(quote_unixtime) || null,
     quote_readtime: new Date(quote_readtime.trim()),
-    quote_date: new Date(quote_date.trim()),
+    quote_date: quote_date.trim(),
     quote_time_hours: parseFloat(quote_time_hours) || null,
     underlying_last: parseFloat(underlying_last) || null,
-    expire_date: new Date(expire_date.trim()),
+    expire_date: expire_date.trim(),
     expire_unix: Number(expire_unix) || null,
     dte: Number(dte) || null,
     c_delta: parseFloat(c_delta) || null,
@@ -102,6 +103,18 @@ const format_line = (line) => {
     p_volume: Number(p_volume) || null,
     strike_distance: parseFloat(strike_distance) || null,
     strike_distance_pct: parseFloat(strike_distance_pct) || null
+  }
+
+  return {
+    put_symbol: get_option_symbol({
+      option_type: constants.OPTION_TYPE.PUT,
+      ...row
+    }),
+    call_symbol: get_option_symbol({
+      option_type: constants.OPTION_TYPE.CALL,
+      ...row
+    }),
+    ...row
   }
 }
 
