@@ -2084,6 +2084,40 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tsmx/json-traverse@npm:^1.0.5, @tsmx/json-traverse@npm:^1.0.6":
+  version: 1.0.6
+  resolution: "@tsmx/json-traverse@npm:1.0.6"
+  checksum: 7501369896c23e1fbbb25fbce435a79d4682c26fe3b743214fc803ba23bedd39dee5c571e0de43efeae2f3e1a5b4d9aeffadc7e07bb8808cd5f4bd2c65a0b2fd
+  languageName: node
+  linkType: hard
+
+"@tsmx/object-hmac@npm:^1.1.1":
+  version: 1.1.3
+  resolution: "@tsmx/object-hmac@npm:1.1.3"
+  dependencies:
+    "@tsmx/json-traverse": ^1.0.5
+  checksum: dd8431af53fb1f1d703924fff7621f6cc0f5c5ef95a569f161d8dae7315428be20d293367edc0909bbfc8860acf62dbaf2a32674f517c06f4c7ea94518187d29
+  languageName: node
+  linkType: hard
+
+"@tsmx/secure-config@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "@tsmx/secure-config@npm:2.0.2"
+  dependencies:
+    "@tsmx/json-traverse": ^1.0.6
+    "@tsmx/object-hmac": ^1.1.1
+    "@tsmx/string-crypto": ^1.0.2
+  checksum: 738a6c2f99f06d9ddbdb988b6330b4f39cefde69a6c0d8170e15b9cf89ab7dd4f96a27e755fdfa3c59b4bd3f18e37f52ab3439b34242b023b3cccf848c511a0a
+  languageName: node
+  linkType: hard
+
+"@tsmx/string-crypto@npm:^1.0.2":
+  version: 1.0.5
+  resolution: "@tsmx/string-crypto@npm:1.0.5"
+  checksum: 2d7dfe5ee5df97b8fd040699c94c3b06a9988356c1e68b6dba3563abdd8da6e5f9fcf0c14906f7bb6e1410e1fd8500b2a3853c19c8db13cc5b0ac41a172c4ddd
+  languageName: node
+  linkType: hard
+
 "@types/body-parser@npm:*":
   version: 1.19.2
   resolution: "@types/body-parser@npm:1.19.2"
@@ -5451,6 +5485,7 @@ __metadata:
     "@mui/icons-material": ^5.5.1
     "@mui/lab": ^5.0.0-alpha.74
     "@mui/material": ^5.5.2
+    "@tsmx/secure-config": ^2.0.2
     babel-loader: ^8.2.3
     babel-plugin-module-resolver: ^4.1.0
     bignumber.js: ^9.1.1
