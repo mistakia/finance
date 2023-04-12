@@ -29,9 +29,17 @@ export const getBalances = async ({
 
   const elementHandle = await page.$('input#login-password')
   await elementHandle.type(password)
+
+  await page.waitForFunction(() => {
+    const submitButton = document.querySelector('button[type="submit"]')
+    return !submitButton.disabled
+  })
+
   await elementHandle.press('Enter')
 
-  await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 90000 })
+  await page.waitForTimeout(5000)
+  // disabled for now as it seems to hang
+  // await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 })
 
   // check if security step is needed
   const isSecurityStep = await page.evaluate(

@@ -1,10 +1,70 @@
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import AnonymizeUaPlugin from 'puppeteer-extra-plugin-anonymize-ua'
-import randomUseragent from 'random-useragent'
+import os from 'os'
 
 puppeteer.use(StealthPlugin())
 puppeteer.use(AnonymizeUaPlugin())
+
+/*
+ * @title user-agents-generator 🚀
+ * @desc 📝 A Minimal Package to Generate unlimited user agents 🚀
+ * @version 1.0.0
+ * @author 🧑‍💻 DropOutLab <dropoutlab@gmail.com>
+ * @license MIT
+ */
+const userAgentGenerator = {
+  chrome: function () {
+    const chromeVersion = Math.floor(Math.random() * 20) + 60
+    const webkitVersion = Math.floor(Math.random() * 700) + 500
+    const osPlatform =
+      os.platform() === 'win32'
+        ? 'Win64; x64'
+        : 'Macintosh; Intel Mac OS X 10_15_0'
+    const userAgent = `Mozilla/5.0 (${osPlatform}) AppleWebKit/${webkitVersion}.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.3163.100 Safari/${webkitVersion}.36`
+    return userAgent
+  },
+  firefox: function () {
+    const firefoxVersion = Math.floor(Math.random() * 5) + 55
+    const geckoVersion = Math.floor(Math.random() * 30) + 20100101
+    const osPlatform =
+      os.platform() === 'win32'
+        ? 'Win64; x64'
+        : 'Macintosh; Intel Mac OS X 10_15_0'
+    const userAgent = `Mozilla/5.0 (${osPlatform}; rv: ${firefoxVersion}.0) Gecko/${geckoVersion} Firefox/${firefoxVersion}.0`
+    return userAgent
+  },
+  safari: function () {
+    const safariVersion = Math.floor(Math.random() * 5) + 10
+    const osPlatform =
+      os.platform() === 'win32'
+        ? 'Win64; x64'
+        : 'Macintosh; Intel Mac OS X 10_15_0'
+    const userAgent = `Mozilla/5.0 (${osPlatform}) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${safariVersion}.1.15 Safari/605.1.15`
+    return userAgent
+  },
+  android: function () {
+    const androidVersion = Math.floor(Math.random() * 5) + 5
+    const chromeVersion = Math.floor(Math.random() * 20) + 60
+    const webkitVersion = Math.floor(Math.random() * 700) + 500
+    const osPlatform = `Linux; Android ${androidVersion}.${Math.floor(
+      Math.random() * 10
+    )}; en-us; Nexus 6 Build/LYZ28M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion}.0.3163.98 Mobile Safari/${webkitVersion}.36`
+    const userAgent = `Mozilla/5.0 (${osPlatform}`
+    return userAgent
+  },
+  ios: function () {
+    const iosVersion = Math.floor(Math.random() * 5) + 9
+    const safariVersion = Math.floor(Math.random() * 5) + 600
+    const webkitVersion = Math.floor(Math.random() * 700) + 500
+    const osPlatform = `CPU iPhone OS ${iosVersion}_${Math.floor(
+      Math.random() * 10
+    )} like Mac OS X) AppleWebKit/${webkitVersion}.60 (KHTML, like Gecko) Version/${safariVersion}.0 Mobile/15E148 Safari/${webkitVersion}.60`
+    const userAgent = `Mozilla/5.0 (${osPlatform}`
+    return userAgent
+  }
+}
+const chromeUserAgent = userAgentGenerator.chrome()
 
 export const getPage = async (
   url,
@@ -24,7 +84,7 @@ export const getPage = async (
     '--window-position=0,0',
     '--ignore-certifcate-errors',
     '--ignore-certifcate-errors-spki-list',
-    '--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36"'
+    `--user-agent="${chromeUserAgent}"`
   ]
   const browser = await puppeteer.launch({
     headless: false,
@@ -45,7 +105,7 @@ export const getPage = async (
     isMobile: false
   })
 
-  await page.setUserAgent(randomUseragent.getRandom())
+  await page.setUserAgent(chromeUserAgent)
   await page.setJavaScriptEnabled(true)
   await page.setDefaultNavigationTimeout(timeout)
 

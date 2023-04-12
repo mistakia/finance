@@ -23,7 +23,7 @@ const import_peerstreet_transactions = async ({ credentials, publicKey }) => {
 
   log(transactions)
   log(transactions[0])
-  
+
   // TODO
 }
 
