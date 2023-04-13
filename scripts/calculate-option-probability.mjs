@@ -98,10 +98,10 @@ const calculate_option_probability = async ({
   start_year = 1990
 } = {}) => {
   log({ symbol, days, percent_change, start_year })
-  // let number_of_occurrences = 0
-  // let total_number_of_days = 0
+  let number_of_occurrences = 0
+  let total_number_of_days = 0
   // const occurences = []
-  // const is_negative = percent_change < 0
+  const is_negative = percent_change < 0
 
   const supertrend_indicator = new SuperTrend()
   const rsi_indicator = new RSI()
@@ -126,12 +126,7 @@ const calculate_option_probability = async ({
   const inserts = []
 
   for (const price of prices) {
-    const on_finish = () => {
-      // {
-      // count_day = false
-      // is_bearish = false
-      // } = {}
-
+    const on_finish = ({ count_day = false, is_bearish = false } = {}) => {
       supertrend.last_value = supertrend.current_value
       rsi.last_value = rsi.current_value
       wma.last_value = wma.current_value
@@ -141,20 +136,20 @@ const calculate_option_probability = async ({
       //   last_bearish_candle = price.quote_date
       // }
 
-      // if (count_day) {
-      //   total_number_of_days += 1
-      // }
+      if (count_day) {
+        total_number_of_days += 1
+      }
     }
 
-    // const on_occurence = () => {
-    //   number_of_occurrences += 1
-    //   occurences.push({
-    //     price,
-    //     future_price,
-    //     change_in_price_percent,
-    //     indicators: JSON.parse(JSON.stringify({ supertrend, rsi }))
-    //   })
-    // }
+    const on_occurence = () => {
+      number_of_occurrences += 1
+      // occurences.push({
+      //   price,
+      //   future_price,
+      //   change_in_price_percent,
+      //   indicators: JSON.parse(JSON.stringify({ supertrend, rsi }))
+      // })
+    }
 
     // check if its been more than x days since the last bearish candle
     // if (last_bearish_candle) {
@@ -213,18 +208,23 @@ const calculate_option_probability = async ({
     //   continue
     // }
 
-    // const change_in_x_days = get_future_price_change({ prices, price, days, index })
+    const change_in_x_days = get_future_price_change({
+      prices,
+      price,
+      days,
+      index
+    })
 
-    // if (!change_in_x_days.pct) {
-    //   on_finish()
-    //   continue
-    // }
+    if (!change_in_x_days.pct) {
+      on_finish()
+      continue
+    }
 
-    // if (is_negative && change_in_x_days < percent_change) {
-    //   on_occurence()
-    // } else if (!is_negative && change_in_x_days > percent_change) {
-    //   on_occurence()
-    // }
+    if (is_negative && change_in_x_days.pct < percent_change) {
+      on_occurence()
+    } else if (!is_negative && change_in_x_days.pct > percent_change) {
+      on_occurence()
+    }
 
     const wma_diff_pct = wma.current_value
       ? ((price.c - wma.current_value) / wma.current_value) * 100
@@ -271,9 +271,9 @@ const calculate_option_probability = async ({
   }
 
   // log(occurences)
-  // log(`Number of occurrences: ${number_of_occurrences}`)
-  // log(`Total number of days: ${total_number_of_days}`)
-  // log(`Probability: ${number_of_occurrences / total_number_of_days}`)
+  log(`Number of occurrences: ${number_of_occurrences}`)
+  log(`Total number of days: ${total_number_of_days}`)
+  log(`Probability: ${number_of_occurrences / total_number_of_days}`)
 
   // get min, max, average rsi value on occurences
   // const rsi_values = occurences.map(
