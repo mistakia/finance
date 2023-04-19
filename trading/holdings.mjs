@@ -64,6 +64,9 @@ export default class Holdings {
   }
 
   get summary() {
+    const options_sold = Object.values(this.holdings).filter(
+      (h) => h.option_open_type === constants.OPTION_OPEN_TYPE.SHORT
+    ).length
     const metrics = {
       start_value: this.start_value,
       end_value: this.total_value,
@@ -72,7 +75,12 @@ export default class Holdings {
         .dividedBy(this.start_value)
         .toNumber(),
       // max_drawdown
-      transactions: this.transactions.length
+      transactions: this.transactions.length,
+      options_sold,
+      options_exercised: Object.values(this.holdings).filter((h) => h.exercised)
+        .length,
+      options_closed: Object.values(this.holdings).filter((h) => h.closed)
+        .length
       // win_transactions
       // loss_transactions
       // win_pct
@@ -125,6 +133,7 @@ export default class Holdings {
       holding_type,
       symbol,
       quantity: 0,
+      cost_basis: 0,
       latest_quote: null,
       quote_type
     }
@@ -171,10 +180,12 @@ export default class Holdings {
       symbol,
       underlying_symbol,
       quantity: 0,
+      cost_basis: 0,
       latest_quote: null,
       strike,
       expired: false,
       exercised: false,
+      closed: false,
       expire_unix,
       expire_quote
     }
@@ -212,8 +223,10 @@ export default class Holdings {
       throw new Error(`Not enough cash to buy ${quantity} shares of ${symbol}`)
     }
 
-    this.cash -= BigNumber(quantity).multipliedBy(price).toNumber()
+    const cost = BigNumber(quantity).multipliedBy(price).toNumber()
+    this.cash -= cost
     holding.quantity += quantity
+    holding.cost_basis += cost
 
     this.transactions.push({
       date,
@@ -257,6 +270,10 @@ export default class Holdings {
     }
 
     this.cash += BigNumber(quantity).multipliedBy(price).toNumber()
+    holding.cost_basis -= BigNumber(holding.cost_basis)
+      .dividedBy(holding.quantity)
+      .multipliedBy(quantity)
+      .toNumber()
     holding.quantity -= quantity
 
     this.transactions.push({
@@ -276,7 +293,7 @@ export default class Holdings {
     }
 
     if (!quantity) {
-      throw new Error('Quantity is required')
+      throw new Error(`Quantity is required, got ${quantity}`)
     }
 
     if (!option_type) {
@@ -325,6 +342,10 @@ export default class Holdings {
     }
 
     const price = get_price()
+    if (!price) {
+      throw new Error(`Invalid price ${price}`)
+    }
+
     const premium = BigNumber(quantity)
       .multipliedBy(price)
       .multipliedBy(constants.OPTION_MULTIPLIER)
@@ -337,9 +358,11 @@ export default class Holdings {
       }
 
       this.cash -= premium
+      this.holdings[holding_id].cost_basis += premium
     } else if (option_open_type === constants.OPTION_OPEN_TYPE.SHORT) {
       // check if there is enough margin
       this.cash += premium
+      this.holdings[holding_id].cost_basis -= premium
     }
 
     this.holdings[holding_id].quantity += quantity
@@ -365,7 +388,74 @@ export default class Holdings {
     )
   }
 
-  close_option({ quote_data, quantity, option_type, option_close_type }) {}
+  // TODO allow closing only a portion of the position
+  close_option({ quote_data, holding_id }) {
+    if (!quote_data) {
+      throw new Error('Quote data is required')
+    }
+
+    if (!holding_id) {
+      throw new Error('Holding ID is required')
+    }
+
+    const holding = this.holdings[holding_id]
+    if (!holding) {
+      throw new Error(`Holding ${holding_id} does not exist`)
+    }
+
+    const get_price = () => {
+      const id = `${holding.option_open_type}_${holding.option_type}`
+      switch (id) {
+        case 'LONG_CALL':
+          return quote_data.c_bid
+
+        case 'LONG_PUT':
+          return quote_data.p_bid
+
+        case 'SHORT_CALL':
+          return quote_data.c_ask
+
+        case 'SHORT_PUT':
+          return quote_data.p_ask
+
+        default:
+          throw new Error(`Unknown open type ${id}`)
+      }
+    }
+
+    const price = get_price()
+    if (!price) {
+      throw new Error(`Invalid price ${price}`)
+    }
+
+    const quantity = holding.quantity
+    const premium = BigNumber(quantity)
+      .multipliedBy(price)
+      .multipliedBy(constants.OPTION_MULTIPLIER)
+      .toNumber()
+    if (holding.option_open_type === constants.OPTION_OPEN_TYPE.LONG) {
+      this.cash += premium
+      this.holdings[holding_id].cost_basis -= premium
+    } else if (holding.option_open_type === constants.OPTION_OPEN_TYPE.SHORT) {
+      this.cash -= premium
+      this.holdings[holding_id].cost_basis += premium
+    }
+
+    this.holdings[holding_id].quantity = 0
+    this.holdings[holding_id].closed = true
+
+    this.transactions.push({
+      date: quote_data.quote_unixtime,
+      holding_id,
+      quantity,
+      price,
+      transaction_type: constants.TRANSACTION_TYPE.CLOSE_OPTION
+    })
+
+    log(
+      `Closed ${quantity} ${holding.option_type} options of ${holding.symbol} at ${price}:`
+    )
+  }
 
   exercise_option({ holding_id, date }) {
     const holding = this.holdings[holding_id]

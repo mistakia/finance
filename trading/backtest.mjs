@@ -22,10 +22,10 @@ const get_data_table_name = (quote_type) => {
 }
 
 export default class Backtest {
-  constructor({ accounts, start, end }) {
+  constructor({ accounts, start_date, end_date }) {
     this.accounts = accounts
-    this.start = start
-    this.end = end
+    this.start_date = start_date
+    this.end_date = end_date
 
     this.is_complete = false
     this.batch_offset = 0
@@ -40,8 +40,8 @@ export default class Backtest {
       'Running backtest for accounts: ',
       this.accounts.map((a) => a.name)
     )
-    log('Start: ', this.start)
-    log('End: ', this.end)
+    log('Start: ', this.start_date)
+    log('End: ', this.end_date)
     this.register_quote_queries()
     await this.next_quote_data_batch()
 
@@ -67,7 +67,8 @@ export default class Backtest {
     }
 
     for (const quote_data of this.quote_data) {
-      const { underlying_symbol, quote_type, quote_unixtime } = quote_data
+      const { underlying_symbol, quote_type, quote_unixtime, quote_date } =
+        quote_data
 
       // if new day, make end of day adjustments
       if (
@@ -88,6 +89,7 @@ export default class Backtest {
             quote_type,
             underlying_symbol,
             quote_unixtime,
+            quote_date,
             option_chain: [quote_data]
           }
         } else if (
@@ -99,6 +101,7 @@ export default class Backtest {
             quote_type,
             underlying_symbol,
             quote_unixtime,
+            quote_date,
             option_chain: [quote_data]
           }
         } else {
@@ -136,7 +139,7 @@ export default class Backtest {
     }
   }
 
-  register_quote_type({ quote_type, query_func, params }) {
+  register_quote_type({ quote_type, query_func, query_params }) {
     const table_name = get_data_table_name(quote_type)
 
     if (!this.data_tables[table_name]) {
@@ -151,8 +154,18 @@ export default class Backtest {
       this.data_tables[table_name].queries.push(query_func)
     }
 
-    if (params) {
-      this.data_tables[table_name].queries.push(params)
+    if (query_params) {
+      // check if query params already exists
+      const new_query = JSON.stringify(query_params)
+
+      for (const query of this.data_tables[table_name].queries) {
+        const existing_query = JSON.stringify(query)
+        if (existing_query === new_query) {
+          return
+        }
+      }
+
+      this.data_tables[table_name].queries.push(query_params)
     }
   }
 
@@ -193,8 +206,8 @@ export default class Backtest {
         .select(
           db.raw(`${table_columns.join(', ')}, '${quote_type}' as quote_type`)
         )
-        .where('quote_date', '>=', this.start)
-        .where('quote_date', '<=', this.end)
+        .where('quote_date', '>=', this.start_date)
+        .where('quote_date', '<=', this.end_date)
         .where(function () {
           for (const query of queries) {
             this.orWhere(query)
@@ -246,7 +259,7 @@ export default class Backtest {
           holding.holding_type === constants.HOLDING_TYPE.OPTION &&
           !holding.expired
         ) {
-          if (!holding.exercised) {
+          if (!holding.exercised && !holding.closed) {
             const underlying_holding_id = `${constants.HOLDING_TYPE.EQUITY}_${holding.underlying_symbol}`
             const underlying_quote =
               account.Holdings.holdings[underlying_holding_id].latest_quote.c

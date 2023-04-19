@@ -1,10 +1,11 @@
 import debug from 'debug'
-// import yargs from 'yargs'
-// import { hideBin } from 'yargs/helpers'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
-// import db from '#db'
+import db from '#db'
 // import config from '#config'
 import { isMain } from '#common'
+import { chunk_inserts } from '#libs-server'
 import {
   Option_Trading_Account,
   Buy_And_Hold_Trading_Account,
@@ -12,55 +13,135 @@ import {
   Backtest
 } from '#trading'
 
-// const argv = yargs(hideBin(process.argv)).argv
+const argv = yargs(hideBin(process.argv)).argv
 const log = debug('backtest_options')
 debug.enable('backtest_options,trading_account,backtest,holdings')
 
-const backtest_options = async () => {
+const backtest_options = async ({
+  start_date = '2022-12-01',
+  end_date = '2022-12-31'
+} = {}) => {
+  console.time('backtest_options')
   const options_trading = []
-  const delta_options = [
-    0.01, 0.02, 0.03, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5
+
+  const max_delta_options = [
+    0.01, 0.03, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5
   ]
-  for (const delta_option of delta_options) {
-    options_trading.push(
-      new Option_Trading_Account({
-        name: `option_delta${delta_option}`,
-        holdings: new Holdings({ cash: 200000 }),
-        max_delta: delta_option,
-        max_dte: 20,
-        min_dte: 1
-      })
-    )
+  const max_dte_options = [
+    3, 7, 14,
+    // 20,
+    30, 40, 50, 60, 90, 120
+    // 150
+  ]
+  const min_dte_options = [1, 14, 30]
+  const entry_min_day_change_options = [
+    1,
+    // 5,
+    7, 14, 30, 60, 90, 120
+  ]
+
+  const option_exit_min_profit_percentage_options = [
+    Infinity,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ]
+
+  const option_exit_dte_options = [0, 1, 5, 7, 14]
+
+  const equity_exit_min_profit_percentage_options = [
+    Infinity,
+    0,
+    // 0.01,
+    // 0.02,
+    0.05,
+    0.1,
+    // 0.15,
+    0.2,
+    0.3
+  ]
+
+  for (const min_dte of min_dte_options) {
+    for (const max_dte of max_dte_options) {
+      if (min_dte > max_dte) continue
+      for (const option_exit_dte of option_exit_dte_options) {
+        if (option_exit_dte > max_dte) continue
+        for (const option_exit_min_profit_percentage of option_exit_min_profit_percentage_options) {
+          for (const equity_exit_min_profit_percentage of equity_exit_min_profit_percentage_options) {
+            for (const max_delta of max_delta_options) {
+              for (const entry_min_day_change of entry_min_day_change_options) {
+                options_trading.push(
+                  new Option_Trading_Account({
+                    name: `option_delta${max_delta}_min_dte${min_dte}d_max_dte${max_dte}d_option_exit_min_profit_percentage${option_exit_min_profit_percentage}_option_exit_dte${option_exit_dte}_equity_exit_min_profit_percentage${equity_exit_min_profit_percentage}_entry_min_day_change${entry_min_day_change}`,
+                    holdings: new Holdings({ cash: 200000 }),
+                    max_delta,
+                    max_dte,
+                    min_dte,
+                    option_exit_min_profit_percentage,
+                    option_exit_dte,
+                    equity_exit_min_profit_percentage,
+                    entry_min_day_change
+                  })
+                )
+              }
+            }
+          }
+        }
+      }
+    }
   }
+
   const buy_and_hold = new Buy_And_Hold_Trading_Account({
     name: 'buy_and_hold',
     holdings: new Holdings({ cash: 200000 })
   })
+
   const backtest = new Backtest({
     accounts: [...options_trading, buy_and_hold],
-    start: '2022-12-01',
-    end: '2022-12-31'
+    start_date,
+    end_date
   })
 
   const backtest_results = await backtest.run()
-  log(JSON.stringify(backtest_results, null, 2))
-
   const backtest_inserts = []
   for (const [backtest_name, backtest_result] of Object.entries(
     backtest_results
   )) {
     backtest_inserts.push({
       name: backtest_name,
+      start_date,
+      end_date,
       ...backtest_result
     })
   }
-  log(backtest_inserts)
+
+  if (backtest_inserts.length) {
+    await chunk_inserts({
+      chunk_size: 200000,
+      inserts: backtest_inserts,
+      save: async (chunk) => {
+        await db('backtests').insert(chunk).onConflict().merge()
+        log(`inserted ${chunk.length} backtests`)
+      }
+    })
+  }
+
+  console.timeEnd('backtest_options')
 }
 
 const main = async () => {
   let error
   try {
-    await backtest_options()
+    await backtest_options({
+      start_date: argv.start,
+      end_date: argv.end
+    })
   } catch (err) {
     error = err
     console.log(error)
