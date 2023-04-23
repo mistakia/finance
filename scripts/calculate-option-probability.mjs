@@ -284,7 +284,9 @@ const calculate_option_probability = async ({
   // const rsi_avg = rsi_values.reduce((a, b) => a + b, 0) / rsi_values.length
   // log({ rsi_min, rsi_max, rsi_avg })
 
-  await db('eod_equity_quotes').insert(inserts).onConflict().merge()
+  if (inserts.length) {
+    await db('eod_equity_quotes').insert(inserts).onConflict().merge()
+  }
 }
 
 const main = async () => {
