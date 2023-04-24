@@ -29,7 +29,13 @@ export const getAccounts = async ({
     secret: oauth_secret
   }
 
-  return await fetch(request_data.url, {
+  const res = await fetch(request_data.url, {
     headers: oauth.toHeader(oauth.authorize(request_data, token))
-  }).then((res) => res.json())
+  })
+
+  if (res.ok) {
+    return res.json()
+  }
+
+  return null
 }

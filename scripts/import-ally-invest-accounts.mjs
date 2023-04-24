@@ -20,6 +20,12 @@ const formatAsset = ({ item, publicKey }) => ({
 
 const run = async ({ credentials, publicKey }) => {
   const data = await allyInvest.getAccounts({ ...credentials })
+
+  if (!data) {
+    log('received no data or bad status code from ally invest')
+    return
+  }
+
   const inserts =
     data.response.accounts.accountsummary.accountholdings.holding.map((item) =>
       formatAsset({ item, publicKey })
