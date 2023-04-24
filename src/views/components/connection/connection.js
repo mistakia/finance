@@ -7,16 +7,21 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 
+import ConnectionModal from '@components/connection-modal'
 import { CONNECTIONS } from '@core/connections'
 
 import './connection.styl'
 
-export default class Connection extends React.Component {
-  handleSync = (close) => {
-    const { connection } = this.props
-    const { id, params } = connection
+export default function Connection({
+  connection,
+  syncConnection,
+  delConnection
+}) {
+  const [edit_open, set_edit_open] = React.useState(false)
 
-    this.props.syncConnection({
+  const handleSync = (close) => {
+    const { id, params } = connection
+    syncConnection({
       id,
       params,
       connection: CONNECTIONS.find((c) => c.id === connection.connection)
@@ -24,17 +29,19 @@ export default class Connection extends React.Component {
     close()
   }
 
-  handleDelete = (close) => {
-    const { connection } = this.props
+  const handleDelete = (close) => {
     const { id } = connection
-    this.props.delConnection({ id })
-
+    delConnection({ id })
     close()
   }
 
-  render() {
-    const { connection } = this.props
-    return (
+  const handle_edit = (close) => {
+    close()
+    set_edit_open(true)
+  }
+
+  return (
+    <>
       <div className='row' key={connection.id}>
         <div className='cell connection_menu'>
           <PopupState variant='popover' popupId='connection-context-menu'>
@@ -47,11 +54,13 @@ export default class Connection extends React.Component {
                   <MoreVertRoundedIcon />
                 </IconButton>
                 <Menu {...bindMenu(popupState)}>
-                  <MenuItem onClick={() => this.handleSync(popupState.close)}>
+                  <MenuItem onClick={() => handleSync(popupState.close)}>
                     Sync
                   </MenuItem>
-                  <MenuItem onClick={popupState.close}>Edit</MenuItem>
-                  <MenuItem onClick={() => this.handleDelete(popupState.close)}>
+                  <MenuItem onClick={() => handle_edit(popupState.close)}>
+                    Edit
+                  </MenuItem>
+                  <MenuItem onClick={() => handleDelete(popupState.close)}>
                     Delete
                   </MenuItem>
                 </Menu>
@@ -65,8 +74,15 @@ export default class Connection extends React.Component {
           {timeago.format(connection.last_connection * 1000)}
         </div>
       </div>
-    )
-  }
+      {edit_open && (
+        <ConnectionModal
+          open={edit_open}
+          on_close={() => set_edit_open(false)}
+          connection={connection}
+        />
+      )}
+    </>
+  )
 }
 
 Connection.propTypes = {

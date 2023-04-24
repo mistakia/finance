@@ -9,7 +9,7 @@ import Collapse from '@mui/material/Collapse'
 import Badge from '@mui/material/Badge'
 
 import Connection from '@components/connection'
-import AddConnection from '@components/add-connection'
+import ConnectionModal from '@components/connection-modal'
 
 import './connections.styl'
 
@@ -63,7 +63,7 @@ export default function Connections({ connections }) {
           </StyledBadge>
         </div>
         <div className='cell connections_add'>
-          <AddConnection />
+          <ConnectionModal />
         </div>
       </div>
       <Collapse in={is_open} timeout='auto' unmountOnExit>

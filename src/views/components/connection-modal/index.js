@@ -2,10 +2,10 @@ import { connect } from 'react-redux'
 
 import { connectionActions } from '@core/connections'
 
-import AddConnection from './add-connection'
+import ConnectionModal from './connection-modal'
 
 const mapDispatchToProps = {
   addConnection: connectionActions.addConnection
 }
 
-export default connect(null, mapDispatchToProps)(AddConnection)
+export default connect(null, mapDispatchToProps)(ConnectionModal)
