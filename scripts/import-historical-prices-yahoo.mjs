@@ -48,9 +48,11 @@ const run = async ({ symbol, startYear = 1927 }) => {
   const endYear = 2022
   let res
   do {
-    res = await requestData({ symbol, startYear, endYear: startYear + 5 })
+    const current_year = new Date().getFullYear()
+    const endYear = Math.min(current_year, startYear + 5)
+    res = await requestData({ symbol, startYear, endYear })
 
-    if (res) {
+    if (res && endYear !== current_year) {
       startYear += 5
     }
 
