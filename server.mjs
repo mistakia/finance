@@ -4,7 +4,9 @@ import server from '#root/api/index.mjs'
 import config from '#config'
 
 const logger = debug('server')
-debug.enable('server,api,knex*')
+debug.enable(
+  'server,api,knex*,interactive-brokers'
+)
 
 const main = async () => {
   const { port } = config

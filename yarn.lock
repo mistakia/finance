@@ -2077,7 +2077,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stoqey/ib@npm:^1.1.42":
+"@stoqey/ib@npm:^1.2.39":
   version: 1.2.39
   resolution: "@stoqey/ib@npm:1.2.39"
   dependencies:
@@ -2088,22 +2088,6 @@ __metadata:
     function-rate-limit: ^1.1.0
     rxjs: ^7.1.0
   checksum: f92f6bc7ea4111342fd9944f58630999efd52a769be884eda69b82fac436d2e3ab365b4e51db59454dc82c01948358b28fc66d79b8f99186d4839e85a11b4992
-  languageName: node
-  linkType: hard
-
-"@stoqey/ibkr@npm:^1.8.3":
-  version: 1.8.3
-  resolution: "@stoqey/ibkr@npm:1.8.3"
-  dependencies:
-    "@stoqey/ib": ^1.1.42
-    debug: ^4.1.1
-    dotenv: ^8.2.0
-    lodash: ^4.17.20
-    moment: ^2.24.0
-    sleepjs: ^4.0.2
-  peerDependencies:
-    typescript: ">=2.0"
-  checksum: 10af1122aec5dbe9edaecda8e7593f6f854459aa1c914805fb265121a0f3d37a73cd99a60d6f0b03d8a561461763ccf92c70e5f385172c0dd4d828f539557a25
   languageName: node
   linkType: hard
 
@@ -5536,7 +5520,7 @@ __metadata:
     "@mui/icons-material": ^5.5.1
     "@mui/lab": ^5.0.0-alpha.74
     "@mui/material": ^5.5.2
-    "@stoqey/ibkr": ^1.8.3
+    "@stoqey/ib": ^1.2.39
     "@tsmx/secure-config": ^2.0.2
     babel-loader: ^8.2.3
     babel-plugin-module-resolver: ^4.1.0
@@ -7849,13 +7833,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"moment@npm:^2.24.0":
-  version: 2.29.4
-  resolution: "moment@npm:2.29.4"
-  checksum: 0ec3f9c2bcba38dc2451b1daed5daded747f17610b92427bebe1d08d48d8b7bdd8d9197500b072d14e326dd0ccf3e326b9e3d07c5895d3d49e39b6803b76e80e
-  languageName: node
-  linkType: hard
-
 "morgan-debug@npm:^2.0.0":
   version: 2.0.0
   resolution: "morgan-debug@npm:2.0.0"
@@ -9944,13 +9921,6 @@ __metadata:
   version: 3.0.0
   resolution: "slash@npm:3.0.0"
   checksum: 94a93fff615f25a999ad4b83c9d5e257a7280c90a32a7cb8b4a87996e4babf322e469c42b7f649fd5796edd8687652f3fb452a86dc97a816f01113183393f11c
-  languageName: node
-  linkType: hard
-
-"sleepjs@npm:^4.0.2":
-  version: 4.0.3
-  resolution: "sleepjs@npm:4.0.3"
-  checksum: 4042b7d19213a86e9a30a37e2f010bd6c720027240fde5be2a20c009a1439974ba94d286477ed6d6037ab4d92bacb5af6c0b347fc6d9d584a3959b406e96a032
   languageName: node
   linkType: hard
 

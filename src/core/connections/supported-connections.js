@@ -116,7 +116,7 @@ export const CONNECTIONS = [
     name: 'Interactive Brokers',
     url: 'https://www.interactivebrokers.com/',
     jobs: ['interactive_brokers/accounts'],
-    params: ['host', 'port'],
+    params: ['host', 'docker_port', 'ibkr_port'],
     params_id: 'host'
   }
 ]

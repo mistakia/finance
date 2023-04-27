@@ -19,7 +19,7 @@ const import_interactive_brokers_accounts = async ({
   try {
     const account_info = await interactive_brokers.get_account_info(credentials)
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
-    const cash_balance = Number(account_info.accountSummary.AvailableFunds)
+    const cash_balance = Number(account_info.TotalCashValue)
 
     inserts.push({
       link: `/${publicKey}/interactive_brokers/USD`, // TODO - include hash of accountId

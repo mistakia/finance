@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import debug from 'debug'
-import ibkr, { AccountSummary, Portfolios, IBKRConnection } from '@stoqey/ibkr'
+import { IBApiNext } from '@stoqey/ib'
 
 const log = debug('interactive-brokers')
 
@@ -34,6 +34,18 @@ const get_docker_containers = async ({ host, port = 2375 }) => {
   return response.json()
 }
 
+const get_account_summary = (ib) =>
+  new Promise((resolve, reject) => {
+    ib.getAccountSummary('All', 'TotalCashValue').subscribe({
+      next: (accountSummary) => {
+        resolve(accountSummary.all.values().next().value)
+      },
+      error: (err) => {
+        reject(err)
+      }
+    })
+  })
+
 export const get_account_info = async ({
   host,
   docker_port = 2375,
@@ -57,14 +69,17 @@ export const get_account_info = async ({
     log(`docker container started (status: ${res_status})`)
   }
 
-  await ibkr.default({ port: ibkr_port, host })
-  log('ibkr connected')
+  const ib = new IBApiNext({
+    host,
+    port: ibkr_port
+  })
+  ib.connect()
 
-  const { accountSummary } = AccountSummary.Instance
-  const portfolios = Portfolios.Instance
-  const accountPortfolios = await portfolios.getPortfolios()
+  const account_summary = await get_account_summary(ib)
+  const TotalCashValue = account_summary.get('TotalCashValue').get('USD').value
 
-  IBKRConnection.Instance.disconnectIBKR()
+  ib.disconnect()
+
   const res_stop_status = await stop_docker_container({
     host,
     port: docker_port,
@@ -73,8 +88,6 @@ export const get_account_info = async ({
   log(`docker container stopped (status: ${res_stop_status})`)
 
   return {
-    container,
-    accountSummary,
-    accountPortfolios
+    TotalCashValue
   }
 }
