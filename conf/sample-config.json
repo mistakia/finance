@@ -79,7 +79,8 @@
     },
     "interactive_brokers": {
       "host": "",
-      "port": ""
+      "docker_port": "",
+      "ibkr_port": ""
     }
   }
 }

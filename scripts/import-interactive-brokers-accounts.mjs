@@ -1,15 +1,15 @@
 import debug from 'debug'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import ibkr, { AccountSummary } from '@stoqey/ibkr'
 
 import db from '#db'
 import config from '#config'
 import { isMain, addAsset } from '#common'
+import { interactive_brokers } from '#libs-server'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-interactive-brokers-accounts')
-debug.enable('import-interactive-brokers-accounts')
+debug.enable('import-interactive-brokers-accounts,interactive-brokers')
 
 const import_interactive_brokers_accounts = async ({
   credentials,
@@ -17,13 +17,9 @@ const import_interactive_brokers_accounts = async ({
 }) => {
   const inserts = []
   try {
-    const { host, port } = credentials
-    await ibkr.default({ port, host })
-
+    const account_info = await interactive_brokers.get_account_info(credentials)
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
-    const cash_balance = Number(
-      AccountSummary.Instance.accountSummary.AvailableFunds
-    )
+    const cash_balance = Number(account_info.accountSummary.AvailableFunds)
 
     inserts.push({
       link: `/${publicKey}/interactive_brokers/USD`, // TODO - include hash of accountId
@@ -33,16 +29,6 @@ const import_interactive_brokers_accounts = async ({
       symbol: 'USD',
       asset_link: asset.link
     })
-
-    // const portfolios = Portfolios.Instance
-    // const accountPortfolios = await portfolios.getPortfolios()
-    // log(accountPortfolios)
-
-    // // Subscribe to portfolio updates
-    // IbkrEvents.Instance.on(IBKREVENTS.PORTFOLIOS, (porfolios) => {
-    //   // use porfolios  updates here
-    //   log(porfolios)
-    // })
   } catch (err) {
     log(err)
   }
