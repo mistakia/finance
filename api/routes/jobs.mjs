@@ -38,15 +38,18 @@ const run = async ({ id, publicKey, connection, credentials, session }) => {
   for (const job_id of connection.jobs) {
     try {
       const job = jobs[job_id]
+      console.log(job)
       const res = await job({ credentials, session, publicKey })
-      const event = {
-        type: 'SET_CONNECTION_SESSION',
-        payload: {
-          id,
-          session: res
+      if (res) {
+        const event = {
+          type: 'SET_CONNECTION_SESSION',
+          payload: {
+            id,
+            session: res
+          }
         }
+        send({ publicKey, event })
       }
-      send({ publicKey, event })
     } catch (error) {
       errors.push(error)
       console.log(error)
