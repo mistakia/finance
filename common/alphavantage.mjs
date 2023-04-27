@@ -17,6 +17,7 @@ export const getDailyTimeSeries = async ({ symbol }) => {
   return data
 }
 
+// TODO fix this
 export const getExchangeRate = async ({ symbol, base = 'USD' }) => {
   const url = `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=${symbol}&apikey=${config.alphavantage}&to_currency=${base}`
   const res = await fetch(url)

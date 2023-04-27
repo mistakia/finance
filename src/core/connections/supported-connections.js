@@ -110,5 +110,13 @@ export const CONNECTIONS = [
     jobs: ['schwab/accounts'],
     params: ['username', 'password'],
     params_id: 'username'
+  },
+  {
+    id: 'interactive_brokers',
+    name: 'Interactive Brokers',
+    url: 'https://www.interactivebrokers.com/',
+    jobs: ['interactive_brokers/accounts'],
+    params: ['host', 'port'],
+    params_id: 'host'
   }
 ]

@@ -2077,6 +2077,36 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stoqey/ib@npm:^1.1.42":
+  version: 1.2.39
+  resolution: "@stoqey/ib@npm:1.2.39"
+  dependencies:
+    colors: ^1.4.0
+    command-buffer: ^0.1.0
+    dotenv: ^8.2.0
+    eventemitter3: ^4.0.7
+    function-rate-limit: ^1.1.0
+    rxjs: ^7.1.0
+  checksum: f92f6bc7ea4111342fd9944f58630999efd52a769be884eda69b82fac436d2e3ab365b4e51db59454dc82c01948358b28fc66d79b8f99186d4839e85a11b4992
+  languageName: node
+  linkType: hard
+
+"@stoqey/ibkr@npm:^1.8.3":
+  version: 1.8.3
+  resolution: "@stoqey/ibkr@npm:1.8.3"
+  dependencies:
+    "@stoqey/ib": ^1.1.42
+    debug: ^4.1.1
+    dotenv: ^8.2.0
+    lodash: ^4.17.20
+    moment: ^2.24.0
+    sleepjs: ^4.0.2
+  peerDependencies:
+    typescript: ">=2.0"
+  checksum: 10af1122aec5dbe9edaecda8e7593f6f854459aa1c914805fb265121a0f3d37a73cd99a60d6f0b03d8a561461763ccf92c70e5f385172c0dd4d828f539557a25
+  languageName: node
+  linkType: hard
+
 "@tootallnate/once@npm:2":
   version: 2.0.0
   resolution: "@tootallnate/once@npm:2.0.0"
@@ -3836,12 +3866,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"colors@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "colors@npm:1.4.0"
+  checksum: 98aa2c2418ad87dedf25d781be69dc5fc5908e279d9d30c34d8b702e586a0474605b3a189511482b9d5ed0d20c867515d22749537f7bc546256c6014f3ebdcec
+  languageName: node
+  linkType: hard
+
 "combined-stream@npm:^1.0.6, combined-stream@npm:~1.0.6":
   version: 1.0.8
   resolution: "combined-stream@npm:1.0.8"
   dependencies:
     delayed-stream: ~1.0.0
   checksum: 49fa4aeb4916567e33ea81d088f6584749fc90c7abec76fd516bf1c5aa5c79f3584b5ba3de6b86d26ddd64bae5329c4c7479343250cfe71c75bb366eae53bb7c
+  languageName: node
+  linkType: hard
+
+"command-buffer@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "command-buffer@npm:0.1.0"
+  checksum: 567d14a09a6347c8b2bae5b3c2956f2d0ad65348c3a350a845146d3adcc305b0957bd63d6ee1b4777eb7be9db81b7b5d1a4d7ad2ee67b5e220571574b31fa123
   languageName: node
   linkType: hard
 
@@ -4652,6 +4696,13 @@ __metadata:
     no-case: ^3.0.4
     tslib: ^2.0.3
   checksum: a65e3519414856df0228b9f645332f974f2bf5433370f544a681122eab59e66038fc3349b4be1cdc47152779dac71a5864f1ccda2f745e767c46e9c6543b1169
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:^8.2.0":
+  version: 8.6.0
+  resolution: "dotenv@npm:8.6.0"
+  checksum: 38e902c80b0666ab59e9310a3d24ed237029a7ce34d976796349765ac96b8d769f6df19090f1f471b77a25ca391971efde8a1ea63bb83111bd8bec8e5cc9b2cd
   languageName: node
   linkType: hard
 
@@ -5485,6 +5536,7 @@ __metadata:
     "@mui/icons-material": ^5.5.1
     "@mui/lab": ^5.0.0-alpha.74
     "@mui/material": ^5.5.2
+    "@stoqey/ibkr": ^1.8.3
     "@tsmx/secure-config": ^2.0.2
     babel-loader: ^8.2.3
     babel-plugin-module-resolver: ^4.1.0
@@ -5824,6 +5876,13 @@ __metadata:
   version: 1.1.1
   resolution: "function-bind@npm:1.1.1"
   checksum: b32fbaebb3f8ec4969f033073b43f5c8befbb58f1a79e12f1d7490358150359ebd92f49e72ff0144f65f2c48ea2a605bff2d07965f548f6474fd8efd95bf361a
+  languageName: node
+  linkType: hard
+
+"function-rate-limit@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "function-rate-limit@npm:1.1.0"
+  checksum: 814f8c4cdacd2f8d69648d9e666b613b7363bd3c7a718cc3a7921287c04f5e283fcb3228ef93b2c4efdb8194e7e2ebb3dbbbf71d8a6c14506876e58e56916ce6
   languageName: node
   linkType: hard
 
@@ -7790,6 +7849,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"moment@npm:^2.24.0":
+  version: 2.29.4
+  resolution: "moment@npm:2.29.4"
+  checksum: 0ec3f9c2bcba38dc2451b1daed5daded747f17610b92427bebe1d08d48d8b7bdd8d9197500b072d14e326dd0ccf3e326b9e3d07c5895d3d49e39b6803b76e80e
+  languageName: node
+  linkType: hard
+
 "morgan-debug@npm:^2.0.0":
   version: 2.0.0
   resolution: "morgan-debug@npm:2.0.0"
@@ -9534,6 +9600,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"rxjs@npm:^7.1.0":
+  version: 7.8.1
+  resolution: "rxjs@npm:7.8.1"
+  dependencies:
+    tslib: ^2.1.0
+  checksum: de4b53db1063e618ec2eca0f7965d9137cabe98cf6be9272efe6c86b47c17b987383df8574861bcced18ebd590764125a901d5506082be84a8b8e364bf05f119
+  languageName: node
+  linkType: hard
+
 "safe-buffer@npm:5.1.2, safe-buffer@npm:~5.1.0, safe-buffer@npm:~5.1.1":
   version: 5.1.2
   resolution: "safe-buffer@npm:5.1.2"
@@ -9869,6 +9944,13 @@ __metadata:
   version: 3.0.0
   resolution: "slash@npm:3.0.0"
   checksum: 94a93fff615f25a999ad4b83c9d5e257a7280c90a32a7cb8b4a87996e4babf322e469c42b7f649fd5796edd8687652f3fb452a86dc97a816f01113183393f11c
+  languageName: node
+  linkType: hard
+
+"sleepjs@npm:^4.0.2":
+  version: 4.0.3
+  resolution: "sleepjs@npm:4.0.3"
+  checksum: 4042b7d19213a86e9a30a37e2f010bd6c720027240fde5be2a20c009a1439974ba94d286477ed6d6037ab4d92bacb5af6c0b347fc6d9d584a3959b406e96a032
   languageName: node
   linkType: hard
 
@@ -10478,6 +10560,13 @@ __metadata:
   version: 2.3.1
   resolution: "tslib@npm:2.3.1"
   checksum: de17a98d4614481f7fcb5cd53ffc1aaf8654313be0291e1bfaee4b4bb31a20494b7d218ff2e15017883e8ea9626599b3b0e0229c18383ba9dce89da2adf15cb9
+  languageName: node
+  linkType: hard
+
+"tslib@npm:^2.1.0":
+  version: 2.5.0
+  resolution: "tslib@npm:2.5.0"
+  checksum: ae3ed5f9ce29932d049908ebfdf21b3a003a85653a9a140d614da6b767a93ef94f460e52c3d787f0e4f383546981713f165037dc2274df212ea9f8a4541004e1
   languageName: node
   linkType: hard
 

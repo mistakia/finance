@@ -14,6 +14,7 @@ import importGroundfloorAccounts from '#scripts/import-groundfloor-accounts.mjs'
 import importSchwabAccounts from '#scripts/import-schwab-accounts.mjs'
 import importStellarAccounts from '#scripts/import-stellar-accounts.mjs'
 import importLitecoinAccount from '#scripts/import-litecoin-account.mjs'
+import import_interactive_brokers_accounts from '#scripts/import-interactive-brokers-accounts.mjs'
 
 export const jobs = {
   'robinhood/accounts': importRobinhoodAccounts,
@@ -28,7 +29,8 @@ export const jobs = {
   'groundfloor/accounts': importGroundfloorAccounts,
   'schwab/accounts': importSchwabAccounts,
   'stellar/accounts': importStellarAccounts,
-  'litecoin/account': importLitecoinAccount
+  'litecoin/account': importLitecoinAccount,
+  'interactive_brokers/accounts': import_interactive_brokers_accounts
 }
 
 const run = async ({ id, publicKey, connection, credentials, session }) => {

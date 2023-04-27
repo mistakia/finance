@@ -76,6 +76,10 @@
     "schwab": {
       "username": "",
       "password": ""
+    },
+    "interactive_brokers": {
+      "host": "",
+      "port": ""
     }
   }
 }
