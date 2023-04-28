@@ -13,11 +13,16 @@ debug.enable('import-interactive-brokers-accounts,interactive-brokers')
 
 const import_interactive_brokers_accounts = async ({
   credentials,
-  publicKey
+  publicKey,
+  keep_alive = false
 }) => {
   const inserts = []
   try {
-    const account_info = await interactive_brokers.get_account_info(credentials)
+    const account_info = await interactive_brokers.get_account_info({
+      ...credentials,
+      keep_alive
+    })
+    log(account_info)
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
     const cash_balance = Number(account_info.TotalCashValue)
 
@@ -49,7 +54,11 @@ const main = async () => {
     }
 
     const credentials = config.links.interactive_brokers
-    await import_interactive_brokers_accounts({ publicKey, credentials })
+    await import_interactive_brokers_accounts({
+      publicKey,
+      credentials,
+      keep_alive: argv.keep_alive
+    })
   } catch (err) {
     error = err
     console.log(error)
