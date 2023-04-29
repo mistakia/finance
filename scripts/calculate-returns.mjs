@@ -12,7 +12,7 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-returns')
 debug.enable('calculate-returns')
 
-const run = async ({ start, adjusted = true }) => {
+const run = async ({ start, adjusted = true, symbol = 'SPY' }) => {
   log({ start, adjusted })
   const return_years = [1, 3, 5, 10, 20, 30]
   const dca_intervals = [3, 6, 12, 24]
@@ -23,7 +23,9 @@ const run = async ({ start, adjusted = true }) => {
     cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.v
   })
 
-  const query = db('adjusted_daily_prices').orderBy('quote_date', 'asc')
+  const query = db('eod_equity_quotes')
+    .where({ symbol })
+    .orderBy('quote_date', 'asc')
   if (start) {
     query.where('quote_date', '>', start)
   }
@@ -32,7 +34,7 @@ const run = async ({ start, adjusted = true }) => {
   const data_map = {}
   data = data.map(({ quote_date, ...i }) => {
     const date = dayjs(quote_date)
-    data_map[date.format('YYYY-MM-DD')] = i.c
+    data_map[date.format('YYYY-MM-DD')] = i.c_adj
 
     return {
       quote_date: date,
@@ -89,7 +91,7 @@ const run = async ({ start, adjusted = true }) => {
     return_years.forEach((years) => {
       const future_close = future_closes[`return${years}_close`]
       if (!future_close) return
-      const value = (future_close - data[i].c) / data[i].c
+      const value = (future_close - data[i].c_adj) / data[i].c_adj
       if (isNaN(value)) return
       future_returns_lump[`return${years}_lump`] = value
     })
@@ -104,7 +106,7 @@ const run = async ({ start, adjusted = true }) => {
       return_years.forEach((years) => {
         const future_close = future_closes[`return${years}_close`]
         if (!future_close) return
-        const basis = dca_basis[intervals] || data[i].c
+        const basis = dca_basis[intervals] || data[i].c_adj
         const value = (future_close - basis) / basis
         if (isNaN(value)) return
         future_dca_returns[`return${years}_dca_${intervals}`] = value
@@ -113,7 +115,7 @@ const run = async ({ start, adjusted = true }) => {
 
     results.push({
       entry_date: data[i].quote_date.format('YYYY-MM-DD'),
-      entry_price: data[i].c,
+      entry_price: data[i].c_adj,
       ...future_returns_lump,
       ...future_dca_returns
     })
