@@ -2,11 +2,14 @@ import fetch from 'node-fetch'
 import debug from 'debug'
 import yargs from 'yargs'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc.js'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
 import { isMain } from '#common'
+
+dayjs.extend(utc)
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-cpi')
