@@ -11,15 +11,23 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-days')
 debug.enable('calculate-days')
 
-const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
-  log({ rate, start, adjusted })
+const run = async ({
+  rate = 1.0,
+  start = null,
+  inflation_adjusted = false,
+  symbol = 'SPY'
+}) => {
+  log({ rate, start, inflation_adjusted })
   const cpi = await db('cpi')
   const cpi_map = {}
   cpi.forEach((i) => {
     cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.v
   })
 
-  const query = db('adjusted_daily_prices').orderBy('quote_date', 'asc')
+  const query = db('eod_equity_quotes')
+    .where({ symbol })
+    .orderBy('quote_date', 'asc')
+
   if (start) {
     query.where('quote_date', '>', start)
   }
@@ -42,8 +50,8 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
     let price
 
     for (let j = i; j < data.length; j++) {
-      let target_value = data[i].c * rate
-      if (adjusted) {
+      let target_value = data[i].c_adj * rate
+      if (inflation_adjusted) {
         const cpi_value = cpi_map[data[j].cpi_quote_date]
         if (!cpi_value) continue
         const cpi_rate = (cpi_value - entry_cpi) / entry_cpi
@@ -51,14 +59,14 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
       }
 
       // higher than entry and previous period was not
-      if (data[j].c > target_value && !date) {
-        date = data[j].d
+      if (data[j].c_adj > target_value && !date) {
+        date = data[j].quote_date
         days = j - i
         price = target_value
       }
 
       // lower than entry
-      if (data[j].c < target_value) {
+      if (data[j].c_adj < target_value) {
         date = null
         days = Infinity
       }
@@ -70,8 +78,8 @@ const run = async ({ rate = 1.0, start = null, adjusted = true }) => {
 
     results.push({
       days,
-      entry_date: data[i].d.format('YYYY-MM-DD'),
-      entry_price: data[i].c,
+      entry_date: data[i].quote_date.format('YYYY-MM-DD'),
+      entry_price: data[i].c_adj,
       entry_cpi,
       price: price && price.toFixed(2),
       date: date && date.format('YYYY-MM-DD'),
@@ -105,7 +113,12 @@ export default run
 const main = async () => {
   let error
   try {
-    await run({ rate: argv.rate, adjusted: argv.adjusted, start: argv.start })
+    await run({
+      rate: argv.rate,
+      inflation_adjusted: argv.inflation_adjusted,
+      start: argv.start,
+      symbol: argv.symbol
+    })
   } catch (err) {
     error = err
     console.log(error)
