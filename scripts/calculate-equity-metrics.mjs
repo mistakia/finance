@@ -1,0 +1,137 @@
+import debug from 'debug'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+import { RSI, SMA, ATR, WMA } from '@debut/indicators'
+import BigNumber from 'bignumber.js'
+
+import db from '#db'
+// import config from '#config'
+import { isMain } from '#common'
+import { get_future_price_change } from '#libs-server'
+
+const argv = yargs(hideBin(process.argv)).argv
+const log = debug('calculate-equity-metrics')
+debug.enable('calculate-equity-metrics')
+
+const calculate_equity_metrics = async ({ symbol }) => {
+  const rsi_14 = new RSI(14)
+  const sma_125 = new SMA(125)
+  const sma_14 = new SMA(14)
+  const atr_14 = new ATR(14, 'WEMA')
+  const wma_9 = new WMA(9)
+
+  const metrics = {
+    relative_strength_index_14: null,
+    moving_average_14: null,
+    moving_average_125: null,
+    average_true_range_14_normalized: null,
+    weighted_moving_average_9: null,
+    weighted_moving_average_diff_pct: null,
+
+    change_in_1d: null,
+    change_in_7d: null,
+    change_in_14d: null,
+    change_in_30d: null,
+    change_in_40d: null
+  }
+
+  const quotes = await db('eod_equity_quotes')
+    .where({ symbol })
+    .orderBy('quote_unixtime', 'asc')
+
+  const inserts = []
+  let index = 0
+
+  for (const quote of quotes) {
+    metrics.relative_strength_index_14 = rsi_14.nextValue(quote.c)
+    metrics.moving_average_14 = sma_14.nextValue(quote.c)
+    metrics.moving_average_125 = sma_125.nextValue(quote.c)
+    metrics.average_true_range_14_normalized =
+      BigNumber(atr_14.nextValue(quote.h, quote.l, quote.c))
+        .dividedBy(metrics.moving_average_14)
+        .multipliedBy(100)
+        .toNumber() || null
+
+    metrics.weighted_moving_average_9 = wma_9.nextValue(quote.c)
+    metrics.weighted_moving_average_diff_pct = metrics.weighted_moving_average_9
+      ? ((quote.c - metrics.weighted_moving_average_9) /
+          metrics.weighted_moving_average_9) *
+        100
+      : null
+
+    metrics.change_in_1d = get_future_price_change({
+      prices: quotes,
+      price: quote,
+      days: 1,
+      index
+    }).pct
+    metrics.change_in_7d = get_future_price_change({
+      prices: quotes,
+      price: quote,
+      days: 7,
+      index
+    }).pct
+    metrics.change_in_14d = get_future_price_change({
+      prices: quotes,
+      price: quote,
+      days: 14,
+      index
+    }).pct
+    metrics.change_in_30d = get_future_price_change({
+      prices: quotes,
+      price: quote,
+      days: 30,
+      index
+    }).pct
+    metrics.change_in_40d = get_future_price_change({
+      prices: quotes,
+      price: quote,
+      days: 40,
+      index
+    }).pct
+
+    inserts.push({
+      ...quote,
+      ...metrics
+    })
+
+    index += 1
+  }
+
+  if (inserts.length) {
+    await db('eod_equity_quotes')
+      .insert(inserts)
+      .onConflict(['symbol', 'quote_date'])
+      .merge()
+    log(`Inserted ${inserts.length} rows into eod_equity_quotes`)
+  }
+}
+
+const main = async () => {
+  let error
+  try {
+    if (!argv.symbol) {
+      throw new Error('Missing --symbol')
+    }
+
+    await calculate_equity_metrics({ symbol: argv.symbol })
+  } catch (err) {
+    error = err
+    console.log(error)
+  }
+
+  /* await db('jobs').insert({
+   *   type: constants.jobs.EXAMPLE,
+   *   succ: error ? 0 : 1,
+   *   reason: error ? error.message : null,
+   *   timestamp: Math.round(Date.now() / 1000)
+   * })
+   */
+  process.exit()
+}
+
+if (isMain(import.meta.url)) {
+  main()
+}
+
+export default calculate_equity_metrics

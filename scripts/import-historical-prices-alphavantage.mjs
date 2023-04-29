@@ -30,10 +30,10 @@ const runOne = async ({ symbol }) => {
     })
   }
 
-  if (argv.dry) {
-    log(inserts[0])
-    return
-  }
+  // if (argv.dry) {
+  //   log(inserts[0])
+  //   return
+  // }
 
   // TODO missing quote_unixtime and close_adjusted
   // log(`Inserting ${inserts.length} prices into database`)

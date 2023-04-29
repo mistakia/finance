@@ -20,17 +20,22 @@ CREATE TABLE `eod_equity_quotes` (
   `h` decimal(12,2) NOT NULL,
   `l` decimal(12,2) NOT NULL,
   `c` decimal(12,2) NOT NULL,
+  `c_adj` decimal(12,2) NOT NULL,
   `v` bigint unsigned NOT NULL,
-  `quote_unixtime` bigint unsigned DEFAULT NULL,
+  `quote_unixtime` bigint unsigned NOT NULL,
 
+  `change_in_1d` decimal(6,3) DEFAULT NULL,
   `change_in_7d` decimal(6,3) DEFAULT NULL,
   `change_in_14d` decimal(6,3) DEFAULT NULL,
   `change_in_30d` decimal(6,3) DEFAULT NULL,
   `change_in_40d` decimal(6,3) DEFAULT NULL,
 
-  `wma_diff_pct` decimal(6,3) DEFAULT NULL,
-
-  `rsi` tinyint unsigned DEFAULT NULL,
+  `relative_strength_index_14` decimal(4,1) DEFAULT NULL,
+  `moving_average_14` decimal(7,3) DEFAULT NULL,
+  `moving_average_125` decimal(7,3) DEFAULT NULL,
+  `average_true_range_14_normalized` decimal(4,3) DEFAULT NULL,
+  `weighted_moving_average_9` decimal(7,2) DEFAULT NULL,
+  `weighted_moving_average_diff_pct` decimal(6,3) DEFAULT NULL,
 
   UNIQUE KEY `symbol` (`symbol`,`quote_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
