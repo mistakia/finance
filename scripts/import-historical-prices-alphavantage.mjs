@@ -9,6 +9,7 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-historical-prices-alphavantage')
 debug.enable('import-historical-prices-alphavantage')
 
+// TODO add close adjusted
 const getItem = (item) => ({
   o: parseFloat(item['1. open']),
   h: parseFloat(item['2. high']),
@@ -21,6 +22,7 @@ const runOne = async ({ symbol }) => {
   const data = await alphavantage.getDailyTimeSeries({ symbol })
   const inserts = []
   for (const [date, item] of Object.entries(data['Time Series (Daily)'])) {
+    // TODO add quote_unixtime
     inserts.push({
       symbol,
       quote_date: date,
@@ -33,8 +35,9 @@ const runOne = async ({ symbol }) => {
     return
   }
 
-  log(`Inserting ${inserts.length} prices into database`)
-  await db('adjusted_daily_prices').insert(inserts).onConflict().merge()
+  // TODO missing quote_unixtime and close_adjusted
+  // log(`Inserting ${inserts.length} prices into database`)
+  // await db('eod_equity_quotes').insert(inserts).onConflict().merge()
 }
 
 const run = async () => {
