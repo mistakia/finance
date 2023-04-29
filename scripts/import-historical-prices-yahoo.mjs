@@ -17,7 +17,9 @@ const getItem = (item) => ({
   h: parseFloat(item.high),
   l: parseFloat(item.low),
   c: parseFloat(item.close),
-  v: Number(item.volume)
+  c_adj: parseFloat(item.adjClose),
+  v: Number(item.volume),
+  quote_unixtime: dayjs(item.date).unix()
 })
 
 const requestData = async ({ symbol, startYear, endYear }) => {
@@ -39,17 +41,17 @@ const requestData = async ({ symbol, startYear, endYear }) => {
   console.log(inserts[inserts.length - 1])
 
   log(`Inserting ${inserts.length} prices into database`)
-  await db('adjusted_daily_prices').insert(inserts).onConflict().merge()
+  await db('eod_equity_quotes').insert(inserts).onConflict().merge()
 
   return inserts
 }
 
 const run = async ({ symbol, startYear = 1927 }) => {
-  const endYear = 2022
+  let endYear
+  const current_year = new Date().getFullYear()
   let res
   do {
-    const current_year = new Date().getFullYear()
-    const endYear = Math.min(current_year, startYear + 5)
+    endYear = Math.min(current_year, startYear + 5)
     res = await requestData({ symbol, startYear, endYear })
 
     if (res && endYear !== current_year) {
@@ -57,7 +59,7 @@ const run = async ({ symbol, startYear = 1927 }) => {
     }
 
     await wait(10000)
-  } while (res && res.length && startYear < endYear)
+  } while (res && res.length && endYear !== current_year)
 }
 
 export default run
