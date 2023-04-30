@@ -1,8 +1,11 @@
 import debug from 'debug'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
+import path, { dirname } from 'path'
+import { fileURLToPath } from 'url'
+import fs from 'fs-extra'
 
-import db from '#db'
+// import db from '#db'
 // import config from '#config'
 import { isMain } from '#common'
 import { chunk_inserts } from '#libs-server'
@@ -122,12 +125,23 @@ const backtest_options = async ({
   }
 
   if (backtest_inserts.length) {
+    let counter = 0
     await chunk_inserts({
       chunk_size: 200000,
       inserts: backtest_inserts,
       save: async (chunk) => {
-        await db('backtests').insert(chunk).onConflict().merge()
-        log(`inserted ${chunk.length} backtests`)
+        const __dirname = dirname(fileURLToPath(import.meta.url))
+        const data_path = path.join(__dirname, '../data')
+
+        const json_file_path = `${data_path}/backtest_${counter}.json`
+
+        await fs.writeJson(json_file_path, chunk, { spaces: 2 })
+        log(`wrote json to ${json_file_path}`)
+
+        counter += 1
+
+        // await db('backtests').insert(chunk).onConflict().merge()
+        // log(`inserted ${chunk.length} backtests`)
       }
     })
   }
