@@ -37,6 +37,36 @@ CREATE TABLE `eod_equity_quotes` (
   `weighted_moving_average_9` decimal(7,2) DEFAULT NULL,
   `weighted_moving_average_diff_pct` decimal(6,3) DEFAULT NULL,
 
+  `trailing_volatility_2` decimal(6,3) DEFAULT NULL,
+  `trailing_volatility_7` decimal(6,3) DEFAULT NULL,
+  `trailing_volatility_10` decimal(6,3) DEFAULT NULL,
+  `trailing_volatility_14` decimal(6,3) DEFAULT NULL,
+  `trailing_volatility_30` decimal(6,3) DEFAULT NULL,
+
+  `trailing_volatility_2_moving_average_9` decimal(6,3) DEFAULT NULL,
+  `trailing_volatility_2_moving_average_9_change_pct` double(4,1) DEFAULT NULL,
+  `trailing_volatility_2_moving_average_9_diff_pct` decimal(4,1) DEFAULT NULL,
+  `trailing_volatility_10_moving_average_9` decimal(6,3) DEFAULT NULL,
+  `trailing_volatility_10_moving_average_9_change_pct` decimal(4,1) DEFAULT NULL,
+  `trailing_volatility_10_moving_average_9_diff_pct` decimal(4,1) DEFAULT NULL,
+  `trailing_volatility_30_moving_average_9` decimal(6,3) DEFAULT NULL,
+  `trailing_volatility_30_moving_average_9_change_pct` decimal(4,1) DEFAULT NULL,
+  `trailing_volatility_30_moving_average_9_diff_pct` decimal(4,1) DEFAULT NULL,
+
+  `maxdrawdown_10` decimal(6,5) DEFAULT NULL,
+  `maxdrawdown_14` decimal(6,5) DEFAULT NULL,
+  `maxdrawdown_30` decimal(6,5) DEFAULT NULL,
+  `maxdrawdown_60` decimal(6,5) DEFAULT NULL,
+
+  `cumulative_change_1` decimal(6,3) DEFAULT NULL,
+  `cumulative_change_5` decimal(6,3) DEFAULT NULL,
+  `cumulative_change_7` decimal(6,3) DEFAULT NULL,
+  `cumulative_change_10` decimal(6,3) DEFAULT NULL,
+  `cumulative_change_21` decimal(6,3) DEFAULT NULL,
+  `cumulative_change_42` decimal(6,3) DEFAULT NULL,
+  `cumulative_change_60` decimal(6,3) DEFAULT NULL,
+  `cumulative_change_200` decimal(6,3) DEFAULT NULL,
+
   UNIQUE KEY `symbol` (`symbol`,`quote_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
