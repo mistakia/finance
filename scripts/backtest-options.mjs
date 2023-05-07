@@ -18,7 +18,7 @@ import {
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('backtest_options')
-debug.enable('backtest_options,trading_account,backtest,holdings')
+debug.enable('backtest_options,trading_account,backtest')
 
 const backtest_options = async ({
   start_date = '2022-12-01',
@@ -124,7 +124,10 @@ const backtest_options = async ({
     })
   }
 
+  log('backtest complete')
+
   if (backtest_inserts.length) {
+    log(`saving ${backtest_inserts.length} backtest results`)
     let counter = 0
     await chunk_inserts({
       chunk_size: 200000,

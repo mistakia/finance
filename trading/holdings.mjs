@@ -5,7 +5,6 @@ import * as constants from './constants.mjs'
 import { get_option_symbol } from '../libs-server/index.mjs'
 
 const log = debug('holdings')
-debug.enable('holdings')
 
 export default class Holdings {
   constructor({ cash } = {}) {

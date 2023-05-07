@@ -4,7 +4,6 @@ import debug from 'debug'
 import * as constants from './constants.mjs'
 
 const log = debug('backtest')
-debug.enable('backtest')
 
 const batch_size = 500000
 
@@ -57,7 +56,6 @@ export default class Backtest {
   }
 
   async next_quote_data_batch() {
-    log('Loading quote data batch...')
     await this.load_quote_data_batch()
 
     const emit_quote_data = (quote_data) => {
@@ -178,6 +176,7 @@ export default class Backtest {
   }
 
   async load_quote_data_batch() {
+    log('Loading quote data batch...')
     const table_names = Object.keys(this.data_tables)
     const all_columns = await db('information_schema.columns')
       .select('table_name as table_name', 'column_name as column_name')
@@ -251,6 +250,7 @@ export default class Backtest {
   }
 
   on_end_of_day({ next_date }) {
+    log(`on_end_of_day: ${next_date}`)
     for (const account of this.accounts) {
       // update expired option holdings
       for (const holding_id in account.Holdings.holdings) {

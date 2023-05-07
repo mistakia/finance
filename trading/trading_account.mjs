@@ -6,7 +6,6 @@ import * as constants from './constants.mjs'
 import BigNumber from 'bignumber.js'
 
 const log = debug('trading_account')
-debug.enable('trading_account')
 
 class Trading_Account {
   constructor(params) {
