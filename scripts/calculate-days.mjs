@@ -5,7 +5,7 @@ import { hideBin } from 'yargs/helpers'
 import { printTable } from 'console-table-printer'
 
 import db from '#db'
-import { isMain, median } from '#common'
+import { isMain, median } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-days')

@@ -6,7 +6,7 @@ import dayjs from 'dayjs'
 
 import db from '#db'
 // import config from '#config'
-import { isMain } from '#common'
+import { isMain } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-option-metrics')

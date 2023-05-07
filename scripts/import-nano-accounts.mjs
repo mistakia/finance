@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js'
 
 import db from '#db'
 import config from '#config'
-import { isMain, addAsset, nano } from '#common'
+import { isMain, addAsset, nano } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-nano-accounts')

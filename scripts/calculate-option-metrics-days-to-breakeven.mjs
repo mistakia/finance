@@ -6,7 +6,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter.js'
 
 import db from '#db'
 // import config from '#config'
-import { isMain } from '#common'
+import { isMain } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-days-to-breakeven')

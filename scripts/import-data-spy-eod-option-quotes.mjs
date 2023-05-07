@@ -6,7 +6,7 @@ import path from 'path'
 
 import db from '#db'
 // import config from '#config'
-import { isMain } from '#common'
+import { isMain } from '#libs-shared'
 import { read_csv, get_option_symbol } from '#libs-server'
 import { constants } from '#trading'
 

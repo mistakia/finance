@@ -1,4 +1,4 @@
-import { coingecko, morningstar, slugify, alphavantage } from '#common'
+import { coingecko, morningstar, slugify, alphavantage } from '#libs-shared'
 
 export default async function ({ type, symbol }) {
   // TODO - if type missing, get type

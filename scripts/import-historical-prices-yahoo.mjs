@@ -5,7 +5,7 @@ import yahoo_finance from 'yahoo-finance2'
 import dayjs from 'dayjs'
 
 import db from '#db'
-import { isMain, wait } from '#common'
+import { isMain, wait } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-historical-prices-yahoo')

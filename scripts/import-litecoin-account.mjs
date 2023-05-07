@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
-import { isMain, litecoin, addAsset } from '#common'
+import { isMain, litecoin, addAsset } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-litecoin-account')

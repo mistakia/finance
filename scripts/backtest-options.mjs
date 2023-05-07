@@ -7,7 +7,7 @@ import fs from 'fs-extra'
 
 // import db from '#db'
 // import config from '#config'
-import { isMain } from '#common'
+import { isMain } from '#libs-shared'
 import { chunk_inserts } from '#libs-server'
 import {
   Option_Trading_Account,

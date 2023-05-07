@@ -5,7 +5,13 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
-import { isMain, getSession, saveSession, robinhood, addAsset } from '#common'
+import {
+  isMain,
+  getSession,
+  saveSession,
+  robinhood,
+  addAsset
+} from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-robinhood-accounts')

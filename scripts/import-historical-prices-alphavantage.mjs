@@ -3,7 +3,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import { isMain, wait, alphavantage } from '#common'
+import { isMain, wait, alphavantage } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-historical-prices-alphavantage')

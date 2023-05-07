@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
-import { isMain, gemini, addAsset } from '#common'
+import { isMain, gemini, addAsset } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-gemini-accounts')

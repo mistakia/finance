@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
-import { isMain, addAsset } from '#common'
+import { isMain, addAsset } from '#libs-shared'
 import { interactive_brokers } from '#libs-server'
 
 const argv = yargs(hideBin(process.argv)).argv

@@ -6,7 +6,7 @@ import { hideBin } from 'yargs/helpers'
 import { Table } from 'console-table-printer'
 
 import db from '#db'
-import { isMain, average, median } from '#common'
+import { isMain, average, median } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('calculate-returns')

@@ -6,7 +6,7 @@ import BigNumber from 'bignumber.js'
 
 import db from '#db'
 // import config from '#config'
-import { isMain } from '#common'
+import { isMain } from '#libs-shared'
 import {
   get_future_price_change,
   HistoricalVolatility,

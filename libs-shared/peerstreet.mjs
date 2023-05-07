@@ -1,6 +1,6 @@
 import { getPage } from './puppeteer.mjs'
 
-import { wait } from '#common'
+import { wait } from '#libs-shared'
 
 export const getBalances = async ({ publicKey, username, password }) => {
   const { page, browser } = await getPage(

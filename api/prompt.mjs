@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws'
 
-import { wait } from '#common'
+import { wait } from '#libs-shared'
 import wss from '#root/api/websocket.mjs'
 
 const prompt = ({ publicKey, inputs }) =>

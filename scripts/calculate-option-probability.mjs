@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 // import config from '#config'
-import { isMain } from '#common'
+import { isMain } from '#libs-shared'
 import { get_future_price_change } from '#libs-server'
 
 const argv = yargs(hideBin(process.argv)).argv

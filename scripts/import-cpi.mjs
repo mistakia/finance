@@ -7,7 +7,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
-import { isMain } from '#common'
+import { isMain } from '#libs-shared'
 
 dayjs.extend(utc)
 

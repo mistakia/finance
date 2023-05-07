@@ -2,7 +2,7 @@
   "imports": {
     "#root/*": "./*",
     "#scripts/*": "./scripts/*",
-    "#common": "./common/index.mjs",
+    "#libs-shared": "./libs-shared/index.mjs",
     "#config": "./config.mjs",
     "#db": "./db/index.mjs",
     "#trading": "./trading/index.mjs",
