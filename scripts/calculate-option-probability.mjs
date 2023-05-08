@@ -15,9 +15,22 @@ const calculate_option_probability = async ({
   symbol,
   days = 30,
   percent_change = 5,
-  start_year = 1990
+  start_year = 1990,
+  maxdrawdown_60 = Infinity,
+  maxdrawdown_30 = Infinity,
+  maxdrawdown_14 = Infinity,
+  maxdrawdown_10 = Infinity
 } = {}) => {
-  log({ symbol, days, percent_change, start_year })
+  log({
+    symbol,
+    days,
+    percent_change,
+    start_year,
+    maxdrawdown_60,
+    maxdrawdown_30,
+    maxdrawdown_14,
+    maxdrawdown_10
+  })
   let number_of_occurrences = 0
   let total_number_of_days = 0
   const occurences = []
@@ -31,6 +44,22 @@ const calculate_option_probability = async ({
   let index = 0
 
   for (const price of prices) {
+    if (price.maxdrawdown_60 > maxdrawdown_60) {
+      continue
+    }
+
+    if (price.maxdrawdown_30 > maxdrawdown_30) {
+      continue
+    }
+
+    if (price.maxdrawdown_14 > maxdrawdown_14) {
+      continue
+    }
+
+    if (price.maxdrawdown_10 > maxdrawdown_10) {
+      continue
+    }
+
     const on_finish = ({ count_day = false } = {}) => {
       index += 1
 
@@ -73,6 +102,11 @@ const calculate_option_probability = async ({
   log(`Total number of days: ${total_number_of_days}`)
   log(`Probability: ${number_of_occurrences / total_number_of_days}`)
 
+  // const sorted_occurences = occurences.sort((a, b) => {
+  //   return a.future_price_change.pct - b.future_price_change.pct
+  // })
+  // log(sorted_occurences.splice(0, 10))
+
   // TODO get min, max, average rsi value on occurences
 }
 
@@ -88,7 +122,11 @@ const main = async () => {
       symbol,
       start_year: argv.start,
       days: argv.days,
-      percent_change: argv.percent
+      percent_change: argv.percent,
+      maxdrawdown_60: argv.maxdrawdown_60,
+      maxdrawdown_30: argv.maxdrawdown_30,
+      maxdrawdown_14: argv.maxdrawdown_14,
+      maxdrawdown_10: argv.maxdrawdown_10
     })
   } catch (err) {
     error = err
