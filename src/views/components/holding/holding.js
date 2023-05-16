@@ -17,6 +17,9 @@ export default function Holding({ holding, total_balance, asset }) {
     <div className='row' key={holding.link}>
       <div className='cell asset_expand' />
       <div className='cell'>{paths.slice(2).join('/')}</div>
+      <div className='cell asset_quantity metric'>
+        <Balance amount={BigNumber(holding.quantity).toFormat(2)} />
+      </div>
       <div className='cell asset_balance metric'>
         <Balance amount={balance} />
       </div>
