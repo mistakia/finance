@@ -10,8 +10,8 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-invest')
 debug.enable('import-ally-invest')
 
-const formatAsset = ({ item, publicKey }) => ({
-  link: `/${publicKey}/ally-invest/${item.displaydata.symbol}`,
+const formatAsset = ({ item, ally_invest_asset_link }) => ({
+  link: `${ally_invest_asset_link}/${item.displaydata.symbol}`,
   name: item.displaydata.desc,
   cost_basis: parseFloat(item.costbasis),
   quantity: parseInt(item.qty, 10),
@@ -26,9 +26,10 @@ const run = async ({ credentials, publicKey }) => {
     return
   }
 
+  const ally_invest_asset_link = `/${publicKey}/ally-invest`
   const inserts =
     data.response.accounts.accountsummary.accountholdings.holding.map((item) =>
-      formatAsset({ item, publicKey })
+      formatAsset({ item, ally_invest_asset_link })
     )
 
   for (const insert of inserts) {
@@ -42,7 +43,7 @@ const run = async ({ credentials, publicKey }) => {
   )
   const asset = await addAsset({ type: 'currency', symbol: 'USD' })
   inserts.push({
-    link: `/${publicKey}/ally-invest/USD`,
+    link: `${ally_invest_asset_link}/USD`,
     name: 'Cash',
     cost_basis: cash,
     quantity: cash,
@@ -51,8 +52,13 @@ const run = async ({ credentials, publicKey }) => {
   })
 
   if (inserts.length) {
-    log(`saving ${inserts.length} holdings`)
+    const delete_query = await db('holdings')
+      .where('link', 'like', `${ally_invest_asset_link}/%`)
+      .del()
+    log(`deleted ${delete_query} ally invest holdings`)
+
     await db('holdings').insert(inserts).onConflict().merge()
+    log(`inserted ${inserts.length} ally invest holdings`)
   }
 }
 

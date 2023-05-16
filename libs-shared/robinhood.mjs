@@ -25,7 +25,6 @@ const postAuth = async ({ username, password, device_id, challenge_id }) => {
     options
   )
   const data = await response.json()
-
   return data
 }
 
@@ -67,6 +66,10 @@ export const login = async ({
 
   if (response.access_token) {
     return response
+  }
+
+  if (!response.challenge) {
+    throw new Error('Robinhood authentication failed')
   }
 
   const inputs = ['code']

@@ -30,6 +30,7 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
 
   session.device_id = device_id
 
+  const robinhood_asset_link = `/${publicKey}/robinhood`
   const accounts = await robinhood.getAccounts({ token })
   const items = []
 
@@ -54,7 +55,7 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
       })
 
       items.push({
-        link: `/${publicKey}/robinhood/${symbol}`,
+        link: `${robinhood_asset_link}/${symbol}`,
         name: `${instrument_info.simple_name}`,
         cost_basis: quantity * avg_buy,
         quantity,
@@ -65,8 +66,13 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
   }
 
   if (items.length) {
-    log(`Saving ${items.length} holdings`)
+    const delete_query = await db('holdings')
+      .where('link', 'like', `${robinhood_asset_link}/%`)
+      .del()
+    log(`Deleted ${delete_query} robinhood holdings`)
+
     await db('holdings').insert(items).onConflict().merge()
+    log(`Inserted ${items.length} robinhood holdings`)
   }
 
   return session

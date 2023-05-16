@@ -28,6 +28,8 @@ const import_schwab_accounts = async ({
 
   const inserts = []
 
+  const schwab_asset_link = `/${publicKey}/schwab`
+
   const add_cash_position = async (position) => {
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
     const balance = Number(position.Totals.MarketValue)
@@ -47,7 +49,7 @@ const import_schwab_accounts = async ({
     const asset = await addAsset({ symbol })
 
     inserts.push({
-      link: `/${publicKey}/schwab/${symbol}`,
+      link: `${schwab_asset_link}/${symbol}`,
       name: `${position.Description}`,
       cost_basis: position.Cost,
       quantity: position.Quantity,
@@ -77,8 +79,14 @@ const import_schwab_accounts = async ({
   }
 
   if (inserts.length) {
-    log(`Saving ${inserts.length} schwab holdings`)
+    const delete_query = await db('holdings')
+      .where('link', 'like', `${schwab_asset_link}/%`)
+      .del()
+
+    log(`Deleted ${delete_query} schwab holdings`)
+
     await db('holdings').insert(inserts).onConflict().merge()
+    log(`Saved ${inserts.length} schwab holdings`)
   }
 }
 

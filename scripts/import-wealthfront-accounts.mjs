@@ -29,13 +29,14 @@ const import_wealthfront_accounts = async ({
 
   log(accounts)
 
+  const wealthfront_asset_link = `/${publicKey}/wealthfront`
   const inserts = []
 
   const add_cash_account = async (account) => {
     // TODO - save APY
     const asset = await addAsset({ type: 'currency', symbol: 'USD' })
     inserts.push({
-      link: `/${publicKey}/wealthfront/USD/${account.type}/${account.account_id}`,
+      link: `${wealthfront_asset_link}/${account.type}/${account.account_id}/USD`,
       name: 'Cash',
       cost_basis: account.balance,
       quantity: account.balance,
@@ -51,7 +52,7 @@ const import_wealthfront_accounts = async ({
         const asset = await addAsset({ symbol })
 
         inserts.push({
-          link: `/${publicKey}/wealthfront/${symbol}/${account.type}/${account.account_id}`,
+          link: `${wealthfront_asset_link}/${account.type}/${account.account_id}/${symbol}`,
           name: `${position.displayName}`,
           cost_basis: position.costBasis,
           quantity: position.quantity,
@@ -78,8 +79,13 @@ const import_wealthfront_accounts = async ({
   }
 
   if (inserts.length) {
-    log(`saving ${inserts.length} holdings`)
+    const delete_query = await db('holdings')
+      .where('link', 'like', `${wealthfront_asset_link}/%`)
+      .del()
+    log(`deleted ${delete_query} wealthfront holdings`)
+
     await db('holdings').insert(inserts).onConflict().merge()
+    log(`saved ${inserts.length} wealthfront holdings`)
   }
 }
 
