@@ -118,7 +118,7 @@ const getTransactions = async ({
     headers: {
       'x-auth-token': auth_token,
       'x-portfolio-token': portfolio_token,
-      cookie: cookie,
+      cookie,
       'user-agent': user_agent
     }
   }).then((res) => res.json())

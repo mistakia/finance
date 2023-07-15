@@ -37,7 +37,7 @@ const run = async ({ credentials, publicKey }) => {
 
       inserts.push({
         link: `/${publicKey}/ethereum/${symbol}/${credentials.address}`,
-        name: name,
+        name,
         cost_basis: null,
         quantity: balance,
         symbol,
