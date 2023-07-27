@@ -84,7 +84,7 @@ export const get_account_info = async ({
 }) => {
   const containers = await get_docker_containers({ host, port: docker_port })
   const container = containers.find(
-    (container) => container.Image === 'manhinhang/ib-gateway-docker'
+    (container) => container.Image === 'rylorin/ib-gateway-docker'
   )
 
   if (!container) {
