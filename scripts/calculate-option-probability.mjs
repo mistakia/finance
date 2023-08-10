@@ -19,7 +19,9 @@ const calculate_option_probability = async ({
   maxdrawdown_60 = Infinity,
   maxdrawdown_30 = Infinity,
   maxdrawdown_14 = Infinity,
-  maxdrawdown_10 = Infinity
+  maxdrawdown_10 = Infinity,
+  minrsi = 0,
+  maxrsi = 100
 } = {}) => {
   log({
     symbol,
@@ -29,7 +31,9 @@ const calculate_option_probability = async ({
     maxdrawdown_60,
     maxdrawdown_30,
     maxdrawdown_14,
-    maxdrawdown_10
+    maxdrawdown_10,
+    minrsi,
+    maxrsi
   })
   let number_of_occurrences = 0
   let total_number_of_days = 0
@@ -57,6 +61,14 @@ const calculate_option_probability = async ({
     }
 
     if (price.maxdrawdown_10 > maxdrawdown_10) {
+      continue
+    }
+
+    if (price.relative_strength_index_14 < minrsi) {
+      continue
+    }
+
+    if (price.relative_strength_index_14 > maxrsi) {
       continue
     }
 
@@ -126,7 +138,9 @@ const main = async () => {
       maxdrawdown_60: argv.maxdrawdown_60,
       maxdrawdown_30: argv.maxdrawdown_30,
       maxdrawdown_14: argv.maxdrawdown_14,
-      maxdrawdown_10: argv.maxdrawdown_10
+      maxdrawdown_10: argv.maxdrawdown_10,
+      minrsi: argv.minrsi,
+      maxrsi: argv.maxrsi
     })
   } catch (err) {
     error = err
