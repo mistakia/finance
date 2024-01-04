@@ -17,7 +17,7 @@ const import_schwab_accounts = async ({
 }) => {
   let accounts = []
   try {
-    accounts = await schwab.getAccounts({
+    accounts = await schwab.get_accounts({
       publicKey,
       cli,
       ...credentials
