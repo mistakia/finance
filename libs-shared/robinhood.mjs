@@ -11,6 +11,7 @@ const postAuth = async ({ username, password, device_id, challenge_id }) => {
   params.append('score', 'internal')
   params.append('challenge_type', 'sms')
   params.append('client_id', 'c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS')
+  params.append('scope', 'internal')
   params.append('device_token', device_id)
 
   const options = { method: 'POST', body: params }
