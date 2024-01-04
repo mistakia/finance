@@ -6,6 +6,7 @@
     "search_api_key": "",
     "data_api_key": ""
   },
+  "coingecko_api": "",
   "ethplorer_api": "",
   "alphavantage": "",
   "finnhub_api_key": "",
