@@ -103,7 +103,7 @@
     "webpack": "^5.88.1",
     "webpack-dev-server": "^4.15.1",
     "ws": "^8.13.0",
-    "yahoo-finance2": "^2.4.2",
+    "yahoo-finance2": "mistakia/node-yahoo-finance2#proto/expose-get-crumb",
     "yahoo-stock-prices": "^1.1.0",
     "yargs": "^17.7.2"
   },
