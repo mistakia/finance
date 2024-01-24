@@ -202,3 +202,21 @@ CREATE TABLE `backtests` (
 
   UNIQUE KEY `backtest` (`name`,`start_date`,`end_date`, `start_value`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `earnings`;
+
+CREATE TABLE `earnings` (
+ `symbol` varchar(10) NOT NULL,
+ `company_name` varchar(200) NOT NULL,
+ `event_name` varchar(100) DEFAULT NULL,
+ `event_date` datetime NOT NULL,
+ `event_timezone` varchar(100) NOT NULL,
+ `event_gmt_offset_ms` int(11) NOT NULL,
+ `event_date_unix` int(11) NOT NULL,
+ `event_time_type` varchar(100) DEFAULT NULL,
+ `earnings_estimate` decimal(12,2) DEFAULT NULL,
+ `earnings_actual` decimal(12,2) DEFAULT NULL,
+ `earnings_surprise_pct` decimal(6,3) DEFAULT NULL,
+
+ UNIQUE KEY `symbol` (`symbol`,`event_date`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
