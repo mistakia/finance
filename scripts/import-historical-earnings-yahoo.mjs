@@ -33,7 +33,12 @@ const get_earnings_item = (item) => ({
 const request_data = async ({ symbol, offset = 0, limit }) => {
   log(`Requesting earnings for ${symbol}`)
 
-  const crumb = await yahoo_finance._getCrumb(yahoo_finance._opts.cookieJar, yahoo_finance._env.fetch, {}, yahoo_finance._opts.logger)
+  const crumb = await yahoo_finance._getCrumb(
+    yahoo_finance._opts.cookieJar,
+    yahoo_finance._env.fetch,
+    {},
+    yahoo_finance._opts.logger
+  )
 
   const res = await yahoo_finance._fetch(
     /* eslint-disable no-template-curly-in-string */
