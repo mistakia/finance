@@ -21,7 +21,8 @@ const calculate_option_probability = async ({
   maxdrawdown_14 = Infinity,
   maxdrawdown_10 = Infinity,
   minrsi = 0,
-  maxrsi = 100
+  maxrsi = 100,
+  earnings = false
 } = {}) => {
   log({
     symbol,
@@ -33,17 +34,31 @@ const calculate_option_probability = async ({
     maxdrawdown_14,
     maxdrawdown_10,
     minrsi,
-    maxrsi
+    maxrsi,
+    earnings
   })
   let number_of_occurrences = 0
   let total_number_of_days = 0
-  const occurences = []
+  const occurrences = []
   const is_negative = percent_change < 0
+  let earnings_dates = []
 
   const prices = await db('eod_equity_quotes')
     .where({ symbol })
     .andWhere('quote_date', '>=', `${start_year}-01-01`)
     .orderBy('quote_date', 'asc')
+
+  if (earnings) {
+    earnings_dates = await db('earnings')
+      .where({ symbol })
+      .andWhere('event_date', '>=', `${start_year}-01-01`)
+      .orderBy('event_date', 'asc')
+
+    if (!earnings_dates.length) {
+      log(`No earnings dates found for ${symbol}`)
+      return
+    }
+  }
 
   let index = 0
 
@@ -72,6 +87,23 @@ const calculate_option_probability = async ({
       continue
     }
 
+    if (earnings) {
+      const earnings_date = earnings_dates.find((earnings_date) => {
+        const event_date = new Date(earnings_date.event_date)
+        const quote_date = new Date(price.quote_date)
+        const day_before_event = new Date(event_date)
+        day_before_event.setDate(day_before_event.getDate() - 1)
+        return (
+          quote_date.toDateString() === event_date.toDateString() ||
+          quote_date.toDateString() === day_before_event.toDateString()
+        )
+      })
+
+      if (!earnings_date) {
+        continue
+      }
+    }
+
     const on_finish = ({ count_day = false } = {}) => {
       index += 1
 
@@ -82,7 +114,7 @@ const calculate_option_probability = async ({
 
     const on_occurence = (future_price_change) => {
       number_of_occurrences += 1
-      occurences.push({
+      occurrences.push({
         price,
         future_price_change
       })
@@ -109,17 +141,17 @@ const calculate_option_probability = async ({
     on_finish({ count_day: true })
   }
 
-  // log(occurences)
+  // log(occurrences)
   log(`Number of occurrences: ${number_of_occurrences}`)
   log(`Total number of days: ${total_number_of_days}`)
   log(`Probability: ${number_of_occurrences / total_number_of_days}`)
 
-  // const sorted_occurences = occurences.sort((a, b) => {
-  //   return a.future_price_change.pct - b.future_price_change.pct
-  // })
-  // log(sorted_occurences.splice(0, 10))
+  const sorted_occurrences = occurrences.sort((a, b) => {
+    return a.future_price_change.pct - b.future_price_change.pct
+  })
+  log(sorted_occurrences.splice(0, 10))
 
-  // TODO get min, max, average rsi value on occurences
+  // TODO get min, max, average rsi value on occurrences
 }
 
 const main = async () => {
@@ -140,7 +172,8 @@ const main = async () => {
       maxdrawdown_14: argv.maxdrawdown_14,
       maxdrawdown_10: argv.maxdrawdown_10,
       minrsi: argv.minrsi,
-      maxrsi: argv.maxrsi
+      maxrsi: argv.maxrsi,
+      earnings: argv.earnings
     })
   } catch (err) {
     error = err
