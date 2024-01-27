@@ -22,7 +22,8 @@ const calculate_option_probability = async ({
   maxdrawdown_10 = Infinity,
   minrsi = 0,
   maxrsi = 100,
-  earnings = false
+  earnings = false,
+  show_dates = false
 } = {}) => {
   log({
     symbol,
@@ -146,10 +147,12 @@ const calculate_option_probability = async ({
   log(`Total number of days: ${total_number_of_days}`)
   log(`Probability: ${number_of_occurrences / total_number_of_days}`)
 
-  const sorted_occurrences = occurrences.sort((a, b) => {
-    return a.future_price_change.pct - b.future_price_change.pct
-  })
-  log(sorted_occurrences.splice(0, 10))
+  if (show_dates) {
+    const sorted_occurrences = occurrences.sort((a, b) => {
+      return a.future_price_change.pct - b.future_price_change.pct
+    })
+    log(sorted_occurrences.splice(0, 10))
+  }
 
   // TODO get min, max, average rsi value on occurrences
 }
