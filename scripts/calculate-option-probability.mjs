@@ -23,7 +23,23 @@ const calculate_option_probability = async ({
   minrsi = 0,
   maxrsi = 100,
   earnings = false,
-  show_dates = false
+  show_dates = false,
+  min_cumulative_change_1 = -Infinity,
+  max_cumulative_change_1 = Infinity,
+  min_cumulative_change_5 = -Infinity,
+  max_cumulative_change_5 = Infinity,
+  min_cumulative_change_7 = -Infinity,
+  max_cumulative_change_7 = Infinity,
+  min_cumulative_change_10 = -Infinity,
+  max_cumulative_change_10 = Infinity,
+  min_cumulative_change_21 = -Infinity,
+  max_cumulative_change_21 = Infinity,
+  min_cumulative_change_42 = -Infinity,
+  max_cumulative_change_42 = Infinity,
+  min_cumulative_change_60 = -Infinity,
+  max_cumulative_change_60 = Infinity,
+  min_cumulative_change_200 = -Infinity,
+  max_cumulative_change_200 = Infinity
 } = {}) => {
   log({
     symbol,
@@ -36,7 +52,23 @@ const calculate_option_probability = async ({
     maxdrawdown_10,
     minrsi,
     maxrsi,
-    earnings
+    earnings,
+    min_cumulative_change_1,
+    max_cumulative_change_1,
+    min_cumulative_change_5,
+    max_cumulative_change_5,
+    min_cumulative_change_7,
+    max_cumulative_change_7,
+    min_cumulative_change_10,
+    max_cumulative_change_10,
+    min_cumulative_change_21,
+    max_cumulative_change_21,
+    min_cumulative_change_42,
+    max_cumulative_change_42,
+    min_cumulative_change_60,
+    max_cumulative_change_60,
+    min_cumulative_change_200,
+    max_cumulative_change_200
   })
   let number_of_occurrences = 0
   let total_number_of_days = 0
@@ -85,6 +117,63 @@ const calculate_option_probability = async ({
     }
 
     if (price.relative_strength_index_14 > maxrsi) {
+      continue
+    }
+
+    // Check cumulative changes
+    if (
+      price.cumulative_change_1 < min_cumulative_change_1 ||
+      price.cumulative_change_1 > max_cumulative_change_1
+    ) {
+      continue
+    }
+
+    if (
+      price.cumulative_change_5 < min_cumulative_change_5 ||
+      price.cumulative_change_5 > max_cumulative_change_5
+    ) {
+      continue
+    }
+
+    if (
+      price.cumulative_change_7 < min_cumulative_change_7 ||
+      price.cumulative_change_7 > max_cumulative_change_7
+    ) {
+      continue
+    }
+
+    if (
+      price.cumulative_change_10 < min_cumulative_change_10 ||
+      price.cumulative_change_10 > max_cumulative_change_10
+    ) {
+      continue
+    }
+
+    if (
+      price.cumulative_change_21 < min_cumulative_change_21 ||
+      price.cumulative_change_21 > max_cumulative_change_21
+    ) {
+      continue
+    }
+
+    if (
+      price.cumulative_change_42 < min_cumulative_change_42 ||
+      price.cumulative_change_42 > max_cumulative_change_42
+    ) {
+      continue
+    }
+
+    if (
+      price.cumulative_change_60 < min_cumulative_change_60 ||
+      price.cumulative_change_60 > max_cumulative_change_60
+    ) {
+      continue
+    }
+
+    if (
+      price.cumulative_change_200 < min_cumulative_change_200 ||
+      price.cumulative_change_200 > max_cumulative_change_200
+    ) {
       continue
     }
 
@@ -176,7 +265,23 @@ const main = async () => {
       minrsi: argv.minrsi,
       maxrsi: argv.maxrsi,
       earnings: argv.earnings,
-      show_dates: argv.show_dates
+      show_dates: argv.show_dates,
+      min_cumulative_change_1: argv.min_cumulative_change_1,
+      max_cumulative_change_1: argv.max_cumulative_change_1,
+      min_cumulative_change_5: argv.min_cumulative_change_5,
+      max_cumulative_change_5: argv.max_cumulative_change_5,
+      min_cumulative_change_7: argv.min_cumulative_change_7,
+      max_cumulative_change_7: argv.max_cumulative_change_7,
+      min_cumulative_change_10: argv.min_cumulative_change_10,
+      max_cumulative_change_10: argv.max_cumulative_change_10,
+      min_cumulative_change_21: argv.min_cumulative_change_21,
+      max_cumulative_change_21: argv.max_cumulative_change_21,
+      min_cumulative_change_42: argv.min_cumulative_change_42,
+      max_cumulative_change_42: argv.max_cumulative_change_42,
+      min_cumulative_change_60: argv.min_cumulative_change_60,
+      max_cumulative_change_60: argv.max_cumulative_change_60,
+      min_cumulative_change_200: argv.min_cumulative_change_200,
+      max_cumulative_change_200: argv.max_cumulative_change_200
     })
   } catch (err) {
     error = err
