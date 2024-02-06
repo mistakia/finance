@@ -89,18 +89,17 @@ const calculate_option_probability = async ({
     }
 
     if (earnings) {
-      const earnings_date = earnings_dates.find((earnings_date) => {
-        const event_date = new Date(earnings_date.event_date)
-        const quote_date = new Date(price.quote_date)
-        const day_before_event = new Date(event_date)
-        day_before_event.setDate(day_before_event.getDate() - 1)
-        return (
-          quote_date.toDateString() === event_date.toDateString() ||
-          quote_date.toDateString() === day_before_event.toDateString()
-        )
-      })
+      const earnings_date_within_range = earnings_dates.find(
+        (earnings_date) => {
+          const event_date = new Date(earnings_date.event_date)
+          const quote_date = new Date(price.quote_date)
+          const quote_date_plus_days = new Date(quote_date)
+          quote_date_plus_days.setDate(quote_date_plus_days.getDate() + days)
+          return event_date >= quote_date && event_date <= quote_date_plus_days
+        }
+      )
 
-      if (!earnings_date) {
+      if (!earnings_date_within_range) {
         continue
       }
     }
@@ -176,7 +175,8 @@ const main = async () => {
       maxdrawdown_10: argv.maxdrawdown_10,
       minrsi: argv.minrsi,
       maxrsi: argv.maxrsi,
-      earnings: argv.earnings
+      earnings: argv.earnings,
+      show_dates: argv.show_dates
     })
   } catch (err) {
     error = err
