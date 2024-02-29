@@ -49,7 +49,7 @@ const import_wealthfront_accounts = async ({
     for (const asset_class of account.composition.assetClasses) {
       for (const position of asset_class.funds) {
         const symbol = position.symbol
-        const asset = await addAsset({ symbol })
+        const asset = await addAsset({ symbol, update: true })
 
         inserts.push({
           link: `${wealthfront_asset_link}/${account.type}/${account.account_id}/${symbol}`,

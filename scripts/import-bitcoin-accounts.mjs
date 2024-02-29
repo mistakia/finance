@@ -14,7 +14,11 @@ const run = async ({ credentials, publicKey }) => {
   const balance_sats = await bitcoin.getBalance({ ...credentials })
   if (balance_sats) {
     const balance = bitcoin.convertSatsToBtc(balance_sats)
-    const asset = await addAsset({ type: 'crypto', symbol: 'BTC' })
+    const asset = await addAsset({
+      type: 'crypto',
+      symbol: 'BTC',
+      update: true
+    })
 
     const insert = {
       link: `/${publicKey}/bitcoin/BTC/${credentials.address}`,

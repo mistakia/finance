@@ -20,7 +20,11 @@ const run = async ({ credentials, publicKey }) => {
 
   const inserts = []
   if (balance) {
-    const asset = await addAsset({ type: 'crypto', symbol: 'XNO' })
+    const asset = await addAsset({
+      type: 'crypto',
+      symbol: 'XNO',
+      update: true
+    })
 
     inserts.push({
       link: `/${publicKey}/nano/XNO/${credentials.address}`,

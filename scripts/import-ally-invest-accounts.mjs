@@ -33,7 +33,7 @@ const run = async ({ credentials, publicKey }) => {
     )
 
   for (const insert of inserts) {
-    const asset = await addAsset({ symbol: insert.symbol })
+    const asset = await addAsset({ symbol: insert.symbol, update: true })
     insert.asset_link = asset.link
   }
 

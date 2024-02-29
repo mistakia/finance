@@ -20,7 +20,7 @@ const import_stellar_accounts = async ({ credentials, publicKey }) => {
     const name = is_native ? 'Stellar' : `Stellar Token ${symbol}`
 
     // TODO support stellar tokens
-    const asset = await addAsset({ type: 'crypto', symbol })
+    const asset = await addAsset({ type: 'crypto', symbol, update: true })
 
     inserts.push({
       link: `/${publicKey}/stellar/${symbol}/${credentials.address}`,

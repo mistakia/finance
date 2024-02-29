@@ -2,7 +2,7 @@ import db from '#db'
 import getAssetInfo from './get-asset-info.mjs'
 import getType from './get-type.mjs'
 
-export default async function ({ type, symbol }) {
+export default async function ({ type, symbol, update = false }) {
   if (!type) {
     type = await getType({ symbol })
   }
@@ -16,7 +16,7 @@ export default async function ({ type, symbol }) {
     symbol
   })
 
-  if (exists.length) {
+  if (exists.length && !update) {
     return exists[0]
   }
 

@@ -20,7 +20,8 @@ const run = async ({ credentials, publicKey }) => {
   for (const balance of balances) {
     const asset = await addAsset({
       type: 'loan-crypto',
-      symbol: balance.currency
+      symbol: balance.currency,
+      update: true
     })
 
     inserts.push({

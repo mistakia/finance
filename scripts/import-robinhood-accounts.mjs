@@ -51,7 +51,8 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
         type: `${instrument_info.country.toLowerCase()}-${
           instrument_info.type
         }`,
-        symbol
+        symbol,
+        update: true
       })
 
       items.push({

@@ -46,7 +46,7 @@ const import_schwab_accounts = async ({
 
   const add_instrument_position = async (position) => {
     const symbol = position.QuoteSymbol
-    const asset = await addAsset({ symbol })
+    const asset = await addAsset({ symbol, update: true })
 
     inserts.push({
       link: `${schwab_asset_link}/${symbol}`,

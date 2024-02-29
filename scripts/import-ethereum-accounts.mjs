@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import config from '#config'
-import { isMain, addAsset, ethereum } from '#libs-shared'
+import { isMain, addAsset, ethereum, wait } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ethereum-accounts')
@@ -15,7 +15,11 @@ const run = async ({ credentials, publicKey }) => {
 
   const inserts = []
   if (data.ETH.balance) {
-    const asset = await addAsset({ type: 'crypto', symbol: 'ETH' })
+    const asset = await addAsset({
+      type: 'crypto',
+      symbol: 'ETH',
+      update: true
+    })
 
     inserts.push({
       link: `/${publicKey}/ethereum/ETH/${credentials.address}`,
@@ -33,7 +37,7 @@ const run = async ({ credentials, publicKey }) => {
       const balance = ethereum.convert(token.balance, decimals)
       const { symbol, name } = token.tokenInfo
 
-      const asset = await addAsset({ type: 'crypto', symbol })
+      const asset = await addAsset({ type: 'crypto', symbol, update: true })
 
       inserts.push({
         link: `/${publicKey}/ethereum/${symbol}/${credentials.address}`,
@@ -43,6 +47,8 @@ const run = async ({ credentials, publicKey }) => {
         symbol,
         asset_link: asset.link
       })
+
+      await wait(5000)
     }
   }
 
