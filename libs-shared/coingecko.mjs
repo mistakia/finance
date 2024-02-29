@@ -1,8 +1,14 @@
 import fetch from 'node-fetch'
 
+import { wait } from '#libs-shared'
+
 let coins_cache = null
 
 export const getCoins = async () => {
+  if (coins_cache) {
+    return coins_cache
+  }
+
   const url = 'https://api.coingecko.com/api/v3/coins/list'
   const res = await fetch(url)
   const data = await res.json()
@@ -21,6 +27,8 @@ export const getCoin = async ({ symbol }) => {
   if (!coin) {
     return null
   }
+
+  await wait(4000)
 
   const url = `https://api.coingecko.com/api/v3/coins/${coin.id}`
   const res = await fetch(url)
