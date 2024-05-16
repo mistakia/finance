@@ -18,7 +18,9 @@ import {
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('backtest_options')
-debug.enable('backtest_options,trading_account,backtest')
+debug.enable(
+  'backtest_options,option_trading_account,buy_and_hold_trading_account,backtest'
+)
 
 const backtest_options = async ({
   start_date = '2022-12-01',

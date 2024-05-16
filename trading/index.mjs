@@ -1,7 +1,6 @@
 export { default as Backtest } from './backtest.mjs'
 export { default as Holdings } from './holdings.mjs'
-export {
-  Option_Trading_Account,
-  Buy_And_Hold_Trading_Account
-} from './trading_account.mjs'
 export * as constants from './constants.mjs'
+export { default as Option_Trading_Account } from './strategies/option_trading_account.mjs'
+export { default as Buy_And_Hold_Trading_Account } from './strategies/buy_and_hold_trading_account.mjs'
+export { default as Trashman_Core_V2_Trading_Account } from './strategies/trashman_core_v2_trading_account.mjs'

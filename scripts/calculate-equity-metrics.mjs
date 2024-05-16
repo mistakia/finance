@@ -134,7 +134,7 @@ const calculate_equity_metrics = async ({ symbol }) => {
       index
     }).pct
 
-    metrics.relative_strength_index_14 = rsi_14.nextValue(quote.c)
+    metrics.relative_strength_index_14 = rsi_14.nextValue(quote.c) || null
     metrics.moving_average_14 = sma_14.nextValue(quote.c)
     metrics.moving_average_125 = sma_125.nextValue(quote.c)
     metrics.average_true_range_14_normalized =
