@@ -26,7 +26,7 @@ const symbols = [
   { symbol: 'IWM', start_year: 2000 },
   { symbol: 'IYW', start_year: 2000 },
   { symbol: 'KO', start_year: 1985 },
-  { symbol: 'LRND', start_year: 2021 },
+  { symbol: 'LRND', start_year: 2022 },
   { symbol: 'MSFT', start_year: 1986 },
   { symbol: 'NET', start_year: 2019 },
   { symbol: 'NVDA', start_year: 1999 },

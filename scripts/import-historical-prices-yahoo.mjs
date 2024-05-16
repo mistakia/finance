@@ -3,6 +3,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import yahoo_finance from 'yahoo-finance2'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc.js'
 
 import db from '#db'
 import { isMain, wait } from '#libs-shared'
@@ -11,19 +12,23 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-historical-prices-yahoo')
 debug.enable('import-historical-prices-yahoo')
 
+dayjs.extend(utc)
+
 const getItem = (item) => ({
-  quote_date: dayjs(item.date).format('YYYY-MM-DD'),
+  quote_date: dayjs.utc(item.date).format('YYYY-MM-DD'),
   o: parseFloat(item.open),
   h: parseFloat(item.high),
   l: parseFloat(item.low),
   c: parseFloat(item.close),
   c_adj: parseFloat(item.adjClose),
   v: Number(item.volume),
-  quote_unixtime: dayjs(item.date).unix()
+  quote_unixtime: dayjs.utc(item.date).unix()
 })
 
 const requestData = async ({ symbol, startYear, endYear }) => {
-  log({ startYear, endYear })
+  log(
+    `Requesting historical prices for ${symbol} from ${startYear} to ${endYear}`
+  )
   const startMonth = 1
   const startDay = 1
   const endMonth = 12
@@ -38,15 +43,13 @@ const requestData = async ({ symbol, startYear, endYear }) => {
     ...getItem(i)
   }))
 
-  console.log(inserts[inserts.length - 1])
-
   log(`Inserting ${inserts.length} prices into database`)
   await db('eod_equity_quotes').insert(inserts).onConflict().merge()
 
   return inserts
 }
 
-const run = async ({ symbol, startYear = 1927 }) => {
+const import_historical_prices_yahoo = async ({ symbol, startYear = 1927 }) => {
   let endYear
   const current_year = new Date().getFullYear()
   let res
@@ -62,7 +65,7 @@ const run = async ({ symbol, startYear = 1927 }) => {
   } while (res && res.length && endYear !== current_year)
 }
 
-export default run
+export default import_historical_prices_yahoo
 
 const main = async () => {
   let error
@@ -71,7 +74,10 @@ const main = async () => {
       console.log('missing --symbol path')
       process.exit()
     }
-    await run({ symbol: argv.symbol, startYear: argv.start })
+    await import_historical_prices_yahoo({
+      symbol: argv.symbol,
+      startYear: argv.start
+    })
   } catch (err) {
     error = err
     console.log(error)
