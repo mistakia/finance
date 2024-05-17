@@ -89,7 +89,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
       log(
         `Importing historical prices for ${symbol} starting from ${start_year}`
       )
-      await import_historical_prices_yahoo({ symbol, start_year })
+      await import_historical_prices_yahoo({ symbol, startYear: start_year })
     }
   }
 
@@ -194,8 +194,6 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
 
   async calculate_allocations() {
     log('Rebalancing portfolio')
-    let target_assets = []
-
     const {
       tqqq_rsi_10,
       tqqq_cum_return_6,
@@ -224,110 +222,134 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
       qqq_current_price
     })
 
-    // Log market description
-
     if (tqqq_rsi_10 > this.tqqq_rsi_overbought_threshold) {
-      log(
-        `Overbought Market: TQQQ RSI > ${this.tqqq_rsi_overbought_threshold}, investing in UVXY.`
-      )
-      log(
-        'Intent: UVXY is a leveraged ETF that benefits from market volatility, suitable when the market is overbought and likely to correct.'
-      )
-      target_assets = ['UVXY']
+      return this.calculate_overbought_market_allocations()
     } else if (tqqq_cum_return_6 < -12) {
-      log('Volatile Market: TQQQ cumulative return over 6 days < -12%.')
-      if (tqqq_cum_return_1 > 5.5) {
-        log('TQQQ 1-day return > 5.5%, investing in UVXY.')
-        log('Intent: UVXY can capitalize on short-term spikes in volatility.')
-        target_assets = ['UVXY']
-      } else if (tqqq_rsi_10 < this.tqqq_rsi_oversold_threshold) {
-        log(
-          `Oversold Market (TQQQ RSI < ${this.tqqq_rsi_oversold_threshold}), checking further conditions.`
-        )
-        if (tmf_max_drawdown_10 < 0.07) {
-          log('TMF max drawdown over 10 days < 7%, investing in SOXL.')
-          log(
-            'Intent: A lower drawdown in TMF suggests stability, making it safer to invest in a high-risk, high-reward asset like SOXL.'
-          )
-          target_assets = ['SOXL']
-        } else if (
-          (await this.get_current_price('IEF')) >
-          (await this.get_current_price('TLT'))
-        ) {
-          log('IEF current price > TLT current price, investing in BIL.')
-          log(
-            'Intent: BIL is a safe, short-term treasury ETF, chosen when long-term bonds (TLT) outperform intermediate-term bonds (IEF), indicating a preference for safety.'
-          )
-          target_assets = ['BIL']
-        } else {
-          log('Default condition met, investing in SOXL.')
-          log('Intent: Default to SOXL when other conditions are not met.')
-          target_assets = ['SOXL']
-        }
-      }
+      return this.calculate_volatile_market_allocations()
     } else {
-      const tqqq_rsi_distance = this.tqqq_rsi_overbought_threshold - tqqq_rsi_10
-      const tqqq_rsi_percentage =
-        (tqqq_rsi_distance / this.tqqq_rsi_overbought_threshold) * 100
+      return this.calculate_normal_market_allocations(qqq_current_price)
+    }
+  }
+
+  async calculate_overbought_market_allocations() {
+    log(
+      `Overbought Market: TQQQ RSI > ${this.tqqq_rsi_overbought_threshold}, investing in UVXY.`
+    )
+    log(
+      'Intent: UVXY is a leveraged ETF that benefits from market volatility, suitable when the market is overbought and likely to correct.'
+    )
+    return ['UVXY']
+  }
+
+  async calculate_volatile_market_allocations() {
+    const { tqqq_cum_return_1, tqqq_rsi_10, tmf_max_drawdown_10 } =
+      this.indicator_values
+
+    log('Volatile Market: TQQQ cumulative return over 6 days < -12%.')
+    if (tqqq_cum_return_1 > 5.5) {
+      log('TQQQ 1-day return > 5.5%, investing in UVXY.')
+      log('Intent: UVXY can capitalize on short-term spikes in volatility.')
+      return ['UVXY']
+    } else if (tqqq_rsi_10 < this.tqqq_rsi_oversold_threshold) {
       log(
-        `TQQQ RSI is ${tqqq_rsi_10}, which is ${tqqq_rsi_distance} points and ${tqqq_rsi_percentage.toFixed(
-          2
-        )}% away from the threshold of ${this.tqqq_rsi_overbought_threshold}.`
+        `Oversold Market. TQQQ RSI: ${tqqq_rsi_10} below oversold threshold of ${this.tqqq_rsi_oversold_threshold}.`
       )
-      log('Normal Market: TQQQ cumulative return over 6 days >= -12%.')
-      if (qqq_max_drawdown_10 > 0.06) {
-        log('QQQ max drawdown over 10 days > 6%, investing in BIL.')
+      log(
+        'Intent: SOXL is a leveraged ETF that benefits from market corrections, suitable when the market is oversold and likely to rebound.'
+      )
+      return ['SOXL']
+    } else if (tmf_max_drawdown_10 < 0.07) {
+      log('TMF max drawdown over 10 days < 7%, investing in SOXL.')
+      log(
+        'Intent: A lower drawdown in TMF suggests stability, making it safer to invest in a high-risk, high-reward asset like SOXL.'
+      )
+      return ['SOXL']
+    } else if (
+      (await this.get_current_price('IEF')) >
+      (await this.get_current_price('TLT'))
+    ) {
+      log('IEF current price > TLT current price, investing in BIL.')
+      log(
+        'Intent: BIL is a safe, short-term treasury ETF, chosen when long-term bonds (TLT) outperform intermediate-term bonds (IEF), indicating a preference for safety.'
+      )
+      return ['BIL']
+    } else {
+      log('Default condition met, investing in SOXL.')
+      log('Intent: Default to SOXL when other conditions are not met.')
+      return ['SOXL']
+    }
+  }
+
+  async calculate_normal_market_allocations(qqq_current_price) {
+    const {
+      tqqq_rsi_10,
+      qqq_max_drawdown_10,
+      tmf_max_drawdown_10,
+      qqq_moving_avg_25,
+      spy_rsi_60,
+      bnd_rsi_45,
+      ief_rsi_200,
+      tlt_rsi_200
+    } = this.indicator_values
+
+    const tqqq_rsi_distance = this.tqqq_rsi_overbought_threshold - tqqq_rsi_10
+    const tqqq_rsi_percentage =
+      (tqqq_rsi_distance / this.tqqq_rsi_overbought_threshold) * 100
+    log(
+      `TQQQ RSI is ${tqqq_rsi_10}, which is ${tqqq_rsi_distance} points and ${tqqq_rsi_percentage.toFixed(
+        2
+      )}% away from the threshold of ${this.tqqq_rsi_overbought_threshold}.`
+    )
+    log('Normal Market: TQQQ cumulative return over 6 days >= -12%.')
+    if (qqq_max_drawdown_10 > 0.06) {
+      log('QQQ max drawdown over 10 days > 6%, investing in BIL.')
+      log(
+        'Intent: A higher drawdown in QQQ suggests increased risk, so it opts for the safety of BIL.'
+      )
+      return ['BIL']
+    } else if (tmf_max_drawdown_10 > 0.07) {
+      log('TMF max drawdown over 10 days > 7%, investing in BIL.')
+      log(
+        'Intent: Similar to QQQ, a higher drawdown in TMF indicates risk, favoring BIL.'
+      )
+      return ['BIL']
+    } else if (qqq_current_price > qqq_moving_avg_25) {
+      log('QQQ current price > 25-day moving average, investing in TQQQ.')
+      log(
+        'Intent: A higher current price suggests an upward trend, making TQQQ a good choice for growth.'
+      )
+      return ['TQQQ']
+    } else if (spy_rsi_60 > 50) {
+      log('SPY RSI over 60 days > 50, checking further conditions.')
+      if (bnd_rsi_45 > spy_rsi_60) {
+        log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
         log(
-          'Intent: A higher drawdown in QQQ suggests increased risk, so it opts for the safety of BIL.'
+          'Intent: If bonds (BND) are stronger than stocks (SPY), it indicates a cautious market, favoring TQQQ for growth.'
         )
-        target_assets = ['BIL']
-      } else if (tmf_max_drawdown_10 > 0.07) {
-        log('TMF max drawdown over 10 days > 7%, investing in BIL.')
-        log(
-          'Intent: Similar to QQQ, a higher drawdown in TMF indicates risk, favoring BIL.'
-        )
-        target_assets = ['BIL']
-      } else if (qqq_current_price > qqq_moving_avg_25) {
-        log('QQQ current price > 25-day moving average, investing in TQQQ.')
-        log(
-          'Intent: A higher current price suggests an upward trend, making TQQQ a good choice for growth.'
-        )
-        target_assets = ['TQQQ']
-      } else if (spy_rsi_60 > 50) {
-        log('SPY RSI over 60 days > 50, checking further conditions.')
-        if (bnd_rsi_45 > spy_rsi_60) {
-          log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
-          log(
-            'Intent: If bonds (BND) are stronger than stocks (SPY), it indicates a cautious market, favoring TQQQ for growth.'
-          )
-          target_assets = ['TQQQ']
-        } else {
-          log('Default condition met, investing in BIL.')
-          log('Intent: Default to BIL when other conditions are not met.')
-          target_assets = ['BIL']
-        }
-      } else if (ief_rsi_200 < tlt_rsi_200) {
-        log('IEF RSI over 200 days < TLT RSI, checking further conditions.')
-        if (bnd_rsi_45 > spy_rsi_60) {
-          log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
-          log(
-            'Intent: If bonds (BND) are stronger than stocks (SPY), it indicates a cautious market, favoring TQQQ for growth.'
-          )
-          target_assets = ['TQQQ']
-        } else {
-          log('Default condition met, investing in BIL.')
-          log('Intent: Default to BIL when other conditions are not met.')
-          target_assets = ['BIL']
-        }
+        return ['TQQQ']
       } else {
         log('Default condition met, investing in BIL.')
         log('Intent: Default to BIL when other conditions are not met.')
-        target_assets = ['BIL']
+        return ['BIL']
       }
+    } else if (ief_rsi_200 < tlt_rsi_200) {
+      log('IEF RSI over 200 days < TLT RSI, checking further conditions.')
+      if (bnd_rsi_45 > spy_rsi_60) {
+        log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
+        log(
+          'Intent: If bonds (BND) are stronger than stocks (SPY), it indicates a cautious market, favoring TQQQ for growth.'
+        )
+        return ['TQQQ']
+      } else {
+        log('Default condition met, investing in BIL.')
+        log('Intent: Default to BIL when other conditions are not met.')
+        return ['BIL']
+      }
+    } else {
+      log('Default condition met, investing in BIL.')
+      log('Intent: Default to BIL when other conditions are not met.')
+      return ['BIL']
     }
-
-    log('Target assets for allocation:', target_assets)
-    return target_assets
   }
 
   async get_current_price(symbol) {
