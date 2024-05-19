@@ -32,10 +32,25 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     this.tqqq_rsi_overbought_threshold = 76
     this.tqqq_rsi_oversold_threshold = 32
 
-    this.register_quote_query({
-      type: constants.HOLDING_TYPE.EQUITY,
-      resolution: constants.RESOLUTION.DAY,
-      query_params: { symbols: this.holding_symbols }
+    this.latest_quotes = {
+      TQQQ: null,
+      UVXY: null,
+      SOXL: null,
+      TMF: null,
+      TLT: null,
+      IEF: null,
+      BIL: null,
+      SPY: null,
+      BND: null,
+      QQQ: null
+    }
+
+    this.indicator_symbols.concat(this.holding_symbols).forEach((symbol) => {
+      this.register_quote_query({
+        type: constants.HOLDING_TYPE.EQUITY,
+        resolution: constants.RESOLUTION.DAY,
+        query_params: { symbol }
+      })
     })
 
     this.holding_symbols.forEach((symbol) => {
@@ -44,9 +59,11 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     })
   }
 
-  async init() {
-    log('Initializing historical quotes and indicators')
-    await this.load_historical_quotes()
+  async init(start_date = dayjs().format('YYYY-MM-DD')) {
+    log(
+      `Initializing historical quotes and indicators starting from ${start_date}`
+    )
+    await this.load_historical_quotes(start_date)
     this.init_indicators()
   }
 
@@ -93,7 +110,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     }
   }
 
-  async load_historical_quotes() {
+  async load_historical_quotes(start_date = dayjs().format('YYYY-MM-DD')) {
     log('Loading historical quotes from the database')
 
     const indicator_windows = {
@@ -112,6 +129,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
       const max_window = indicator_windows[symbol]
       const result = await db('eod_equity_quotes')
         .where('symbol', symbol)
+        .andWhere('quote_date', '<=', start_date)
         .orderBy('quote_unixtime', 'desc')
         .limit(max_window)
 
@@ -169,7 +187,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
   }
 
   on_quote_data(quote_data) {
-    log('Received new quote data:', quote_data)
+    // log('Received new quote data:', quote_data)
     // Update indicators with new quote data
     const { symbol, c: close_price } = quote_data
     const indicator_suffixes = [
@@ -190,42 +208,56 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
           this.indicators[indicator_key].nextValue(close_price)
       }
     })
+
+    if (typeof this.latest_quotes[symbol] !== 'undefined') {
+      this.latest_quotes[symbol] = close_price
+    }
   }
 
-  async calculate_allocations() {
-    log('Rebalancing portfolio')
+  async on_end_of_day({ current_date: current_date_unix }) {
+    const assets = await this.calculate_allocations({
+      quote_date_unix: current_date_unix
+    })
+    await this.allocate_assets({ assets, current_date_unix })
+  }
+
+  async calculate_allocations({ quote_date_unix }) {
+    // log('Rebalancing portfolio')
     const {
       tqqq_rsi_10,
-      tqqq_cum_return_6,
-      tqqq_cum_return_1,
-      tmf_max_drawdown_10,
-      qqq_max_drawdown_10,
-      qqq_moving_avg_25,
-      spy_rsi_60,
-      bnd_rsi_45,
-      ief_rsi_200,
-      tlt_rsi_200
+      tqqq_cum_return_6
+      // tqqq_cum_return_1,
+      // tmf_max_drawdown_10,
+      // qqq_max_drawdown_10,
+      // qqq_moving_avg_25,
+      // spy_rsi_60,
+      // bnd_rsi_45,
+      // ief_rsi_200,
+      // tlt_rsi_200
     } = this.indicator_values
-    const qqq_current_price = await this.get_current_price('QQQ')
-
-    log('Indicator values:', {
-      tqqq_rsi_10,
-      tqqq_cum_return_6,
-      tqqq_cum_return_1,
-      tmf_max_drawdown_10,
-      qqq_max_drawdown_10,
-      qqq_moving_avg_25,
-      spy_rsi_60,
-      bnd_rsi_45,
-      ief_rsi_200,
-      tlt_rsi_200,
-      qqq_current_price
+    const qqq_current_price = await this.get_current_price({
+      symbol: 'QQQ',
+      quote_date_unix
     })
+
+    // log('Indicator values:', {
+    //   tqqq_rsi_10,
+    //   tqqq_cum_return_6,
+    //   tqqq_cum_return_1,
+    //   tmf_max_drawdown_10,
+    //   qqq_max_drawdown_10,
+    //   qqq_moving_avg_25,
+    //   spy_rsi_60,
+    //   bnd_rsi_45,
+    //   ief_rsi_200,
+    //   tlt_rsi_200,
+    //   qqq_current_price
+    // })
 
     if (tqqq_rsi_10 > this.tqqq_rsi_overbought_threshold) {
       return this.calculate_overbought_market_allocations()
     } else if (tqqq_cum_return_6 < -12) {
-      return this.calculate_volatile_market_allocations()
+      return this.calculate_volatile_market_allocations({ quote_date_unix })
     } else {
       return this.calculate_normal_market_allocations(qqq_current_price)
     }
@@ -241,7 +273,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     return ['UVXY']
   }
 
-  async calculate_volatile_market_allocations() {
+  async calculate_volatile_market_allocations({ quote_date_unix }) {
     const { tqqq_cum_return_1, tqqq_rsi_10, tmf_max_drawdown_10 } =
       this.indicator_values
 
@@ -265,8 +297,14 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
       )
       return ['SOXL']
     } else if (
-      (await this.get_current_price('IEF')) >
-      (await this.get_current_price('TLT'))
+      (await this.get_current_price({
+        symbol: 'IEF',
+        quote_date_unix
+      })) >
+      (await this.get_current_price({
+        symbol: 'TLT',
+        quote_date_unix
+      }))
     ) {
       log('IEF current price > TLT current price, investing in BIL.')
       log(
@@ -352,8 +390,15 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     }
   }
 
-  async get_current_price(symbol) {
-    log('Fetching current price for symbol:', symbol)
+  async get_current_price({ symbol, quote_date_unix = dayjs().unix() }) {
+    // log('Fetching current price for symbol:', symbol)
+
+    // Check if the latest quote is available in the latest_quotes variable
+    if (this.latest_quotes[symbol]) {
+      return this.latest_quotes[symbol]
+    }
+
+    // Check if the latest quote is available in the Holdings object
     const holding_id = `${constants.HOLDING_TYPE.EQUITY}_${symbol}`
     const holding = this.Holdings.holdings[holding_id]
     if (holding.latest_quote) {
@@ -368,19 +413,79 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
 
     // TODO get live current price
 
+    // get latest quote from the database
     const latest_quote = await db('eod_equity_quotes')
       .where('symbol', symbol)
+      .andWhere('quote_unixtime', '<=', quote_date_unix)
       .orderBy('quote_unixtime', 'desc')
       .first()
 
     return latest_quote.c
   }
 
-  allocate_assets(assets) {
+  async allocate_assets({ assets, current_date_unix }) {
     log('Allocating assets:', assets)
-    // const total_cash = this.Holdings.cash
-    // const allocation = total_cash / assets.length
+    const total_value = this.Holdings.total_value
+    const allocation = total_value / assets.length
 
-    // TODO
+    // Sell holdings not included in the new allocations
+    for (const holding_id in this.Holdings.holdings) {
+      const holding = this.Holdings.holdings[holding_id]
+      const symbol = holding_id.split('_')[1]
+      if (!assets.includes(symbol) && holding.quantity) {
+        log(
+          `Selling all holdings of ${symbol} as it is not in the new allocations`
+        )
+        await this.Holdings.sell_equity({
+          symbol,
+          quantity: holding.quantity,
+          price: await this.get_current_price({
+            symbol,
+            quote_date_unix: current_date_unix
+          }),
+          date: dayjs().format('YYYY-MM-DD'),
+          quote_type: `${constants.HOLDING_TYPE.EQUITY}_${constants.RESOLUTION.DAY}`
+        })
+      }
+    }
+
+    // Adjust holdings based on new allocations
+    for (const asset of assets) {
+      const current_price = await this.get_current_price({
+        symbol: asset,
+        quote_date_unix: current_date_unix
+      })
+      const holding_id = `${constants.HOLDING_TYPE.EQUITY}_${asset}`
+      const current_holding = this.Holdings.holdings[holding_id] || {
+        quantity: 0
+      }
+
+      const target_quantity = Math.floor(allocation / current_price)
+      const quantity_difference = target_quantity - current_holding.quantity
+
+      // log(`Target quantity: ${target_quantity}`)
+      // log(`Current quantity: ${current_holding.quantity}`)
+      // log(`Quantity difference: ${quantity_difference}`)
+
+      if (quantity_difference > 0) {
+        log(`Buying ${quantity_difference} of ${asset}`)
+        this.Holdings.buy_equity({
+          symbol: asset,
+          quantity: quantity_difference,
+          price: current_price,
+          date: dayjs().format('YYYY-MM-DD'),
+          quote_type: `${constants.HOLDING_TYPE.EQUITY}_${constants.RESOLUTION.DAY}`
+        })
+      } else if (quantity_difference < 0) {
+        log(`Selling ${Math.abs(quantity_difference)} of ${asset}`)
+        this.Holdings.sell_equity({
+          symbol: asset,
+          quantity: Math.abs(quantity_difference),
+          price: current_price,
+          date: dayjs().format('YYYY-MM-DD'),
+          quote_type: `${constants.HOLDING_TYPE.EQUITY}_${constants.RESOLUTION.DAY}`
+        })
+      }
+    }
   }
 }

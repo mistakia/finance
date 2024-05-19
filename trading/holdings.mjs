@@ -268,11 +268,15 @@ export default class Holdings {
       )
     }
 
-    this.cash += BigNumber(quantity).multipliedBy(price).toNumber()
-    holding.cost_basis -= BigNumber(holding.cost_basis)
+    const sale_proceeds = BigNumber(quantity).multipliedBy(price).toNumber()
+    const cost_basis_per_share = BigNumber(holding.cost_basis)
       .dividedBy(holding.quantity)
-      .multipliedBy(quantity)
       .toNumber()
+    const total_cost_basis = cost_basis_per_share * quantity
+    const gain_or_loss = sale_proceeds - total_cost_basis
+
+    this.cash += sale_proceeds
+    holding.cost_basis -= total_cost_basis
     holding.quantity -= quantity
 
     this.transactions.push({
@@ -283,7 +287,11 @@ export default class Holdings {
       transaction_type: constants.TRANSACTION_TYPE.SELL_EQUITY
     })
 
-    log(`Sold ${quantity} shares of ${symbol} at ${price} on ${date}`)
+    log(
+      `Sold ${quantity} shares of ${symbol} at ${price} on ${date} with a ${
+        gain_or_loss >= 0 ? 'gain' : 'loss'
+      } of ${gain_or_loss}`
+    )
   }
 
   open_option({ quote_data, quantity, option_type, option_open_type }) {

@@ -1,6 +1,7 @@
-import db from '#db'
 import debug from 'debug'
+import dayjs from 'dayjs'
 
+import db from '#db'
 import * as constants from './constants.mjs'
 
 const log = debug('backtest')
@@ -64,6 +65,14 @@ export default class Backtest {
       }
     }
 
+    const emit_on_end_of_day = async ({ current_date, next_date }) => {
+      for (const account of this.accounts) {
+        if (account.on_end_of_day) {
+          await account.on_end_of_day({ current_date, next_date })
+        }
+      }
+    }
+
     for (const quote_data of this.quote_data) {
       const { underlying_symbol, quote_type, quote_unixtime, quote_date } =
         quote_data
@@ -73,6 +82,10 @@ export default class Backtest {
         this.last_quote_unixtime &&
         this.last_quote_unixtime !== quote_unixtime
       ) {
+        await emit_on_end_of_day({
+          current_date: this.last_quote_unixtime,
+          next_date: quote_unixtime
+        })
         this.on_end_of_day({
           current_date: this.last_quote_unixtime,
           next_date: quote_unixtime
@@ -212,6 +225,8 @@ export default class Backtest {
             this.orWhere(query)
           }
         })
+        .orderBy('quote_date', 'asc')
+        .orderBy('symbol', 'asc')
 
       table_queries.push(table_query)
     }
@@ -250,7 +265,7 @@ export default class Backtest {
   }
 
   on_end_of_day({ next_date }) {
-    log(`on_end_of_day: ${next_date}`)
+    log(`on_end_of_day: ${dayjs.unix(next_date).format('YYYY-MM-DD')}`)
     for (const account of this.accounts) {
       // update expired option holdings
       for (const holding_id in account.Holdings.holdings) {
