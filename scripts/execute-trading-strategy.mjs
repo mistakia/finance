@@ -1,4 +1,5 @@
 import debug from 'debug'
+import dayjs from 'dayjs'
 // import yargs from 'yargs'
 // import { hideBin } from 'yargs/helpers'
 
@@ -16,11 +17,22 @@ const execute_trading_strategy = async () => {
     holdings: new Holdings({ cash: 10000 })
   })
 
+  const last_trading_day =
+    dayjs()
+      .startOf('day')
+      .subtract(dayjs().day() === 0 ? 2 : 1, 'day')
+      .day() === 6
+      ? dayjs().startOf('day').subtract(1, 'day')
+      : dayjs()
+          .startOf('day')
+          .subtract(dayjs().day() === 0 ? 2 : 1, 'day')
   await trading_account.import_historical_quotes()
 
   await trading_account.init()
 
-  await trading_account.calculate_allocations()
+  await trading_account.calculate_allocations({
+    quote_date_unix: last_trading_day.unix()
+  })
 }
 
 const main = async () => {

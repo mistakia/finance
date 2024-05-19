@@ -82,13 +82,17 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
         const current_date = dayjs()
         const market_close_time = current_date.hour(16).minute(0).second(0)
 
+        const last_market_day =
+          current_date.day() === 0
+            ? current_date.subtract(2, 'day').format('YYYY-MM-DD')
+            : current_date.day() === 6
+            ? current_date.subtract(1, 'day').format('YYYY-MM-DD')
+            : current_date.isAfter(market_close_time)
+            ? current_date.subtract(1, 'day').format('YYYY-MM-DD')
+            : current_date.format('YYYY-MM-DD')
+
         const is_up_to_date =
-          (current_date.isAfter(market_close_time) &&
-            last_entry_date.format('YYYY-MM-DD') ===
-              current_date.format('YYYY-MM-DD')) ||
-          (current_date.isBefore(market_close_time) &&
-            last_entry_date.format('YYYY-MM-DD') ===
-              current_date.subtract(1, 'day').format('YYYY-MM-DD'))
+          last_entry_date.format('YYYY-MM-DD') === last_market_day
 
         if (is_up_to_date) {
           log(`Latest quote for ${symbol} is up to date. Skipping import.`)
