@@ -191,9 +191,6 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
         indicator_suffixes.forEach((indicator_suffix) => {
           const indicator_key = `${symbol.toLowerCase()}${indicator_suffix}`
           if (this.indicators[indicator_key]) {
-            if (indicator_key === 'tqqq_rsi_10') {
-              log(close_price)
-            }
             this.indicator_values[indicator_key] =
               this.indicators[indicator_key].nextValue(close_price)
           }
