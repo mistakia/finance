@@ -9,6 +9,7 @@ import * as constants from '../constants.mjs'
 import import_historical_prices_yahoo from '#scripts/import-historical-prices-yahoo.mjs'
 
 const log = debug('trashman_core_v2_trading_account')
+const trade_info_log = debug('trashman_core_v2_trading_account:trade_info')
 
 export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
   constructor(params) {
@@ -88,8 +89,10 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
             : current_date.day() === 6
             ? current_date.subtract(1, 'day').format('YYYY-MM-DD')
             : current_date.isAfter(market_close_time)
-            ? current_date.subtract(1, 'day').format('YYYY-MM-DD')
-            : current_date.format('YYYY-MM-DD')
+            ? current_date.format('YYYY-MM-DD')
+            : current_date.day() === 1
+            ? current_date.subtract(3, 'day').format('YYYY-MM-DD')
+            : current_date.subtract(1, 'day').format('YYYY-MM-DD')
 
         const is_up_to_date =
           last_entry_date.format('YYYY-MM-DD') === last_market_day
@@ -98,6 +101,13 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
           log(`Latest quote for ${symbol} is up to date. Skipping import.`)
           continue
         }
+
+        log(
+          `Last entry ${last_entry_date.format(
+            'YYYY-MM-DD'
+          )} does not match last market day ${last_market_day}`
+        )
+
         start_year = last_entry_date.year()
         log(`Last entry for ${symbol} found, starting from year: ${start_year}`)
       } else {
@@ -181,6 +191,9 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
         indicator_suffixes.forEach((indicator_suffix) => {
           const indicator_key = `${symbol.toLowerCase()}${indicator_suffix}`
           if (this.indicators[indicator_key]) {
+            if (indicator_key === 'tqqq_rsi_10') {
+              log(close_price)
+            }
             this.indicator_values[indicator_key] =
               this.indicators[indicator_key].nextValue(close_price)
           }
@@ -229,34 +242,34 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     // log('Rebalancing portfolio')
     const {
       tqqq_rsi_10,
-      tqqq_cum_return_6
-      // tqqq_cum_return_1,
-      // tmf_max_drawdown_10,
-      // qqq_max_drawdown_10,
-      // qqq_moving_avg_25,
-      // spy_rsi_60,
-      // bnd_rsi_45,
-      // ief_rsi_200,
-      // tlt_rsi_200
+      tqqq_cum_return_6,
+      tqqq_cum_return_1,
+      tmf_max_drawdown_10,
+      qqq_max_drawdown_10,
+      qqq_moving_avg_25,
+      spy_rsi_60,
+      bnd_rsi_45,
+      ief_rsi_200,
+      tlt_rsi_200
     } = this.indicator_values
     const qqq_current_price = await this.get_current_price({
       symbol: 'QQQ',
       quote_date_unix
     })
 
-    // log('Indicator values:', {
-    //   tqqq_rsi_10,
-    //   tqqq_cum_return_6,
-    //   tqqq_cum_return_1,
-    //   tmf_max_drawdown_10,
-    //   qqq_max_drawdown_10,
-    //   qqq_moving_avg_25,
-    //   spy_rsi_60,
-    //   bnd_rsi_45,
-    //   ief_rsi_200,
-    //   tlt_rsi_200,
-    //   qqq_current_price
-    // })
+    trade_info_log('Indicator values:', {
+      tqqq_rsi_10,
+      tqqq_cum_return_6,
+      tqqq_cum_return_1,
+      tmf_max_drawdown_10,
+      qqq_max_drawdown_10,
+      qqq_moving_avg_25,
+      spy_rsi_60,
+      bnd_rsi_45,
+      ief_rsi_200,
+      tlt_rsi_200,
+      qqq_current_price
+    })
 
     if (tqqq_rsi_10 > this.tqqq_rsi_overbought_threshold) {
       return this.calculate_overbought_market_allocations()
@@ -268,10 +281,10 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
   }
 
   async calculate_overbought_market_allocations() {
-    log(
+    trade_info_log(
       `Overbought Market: TQQQ RSI > ${this.tqqq_rsi_overbought_threshold}, investing in UVXY.`
     )
-    log(
+    trade_info_log(
       'Intent: UVXY is a leveraged ETF that benefits from market volatility, suitable when the market is overbought and likely to correct.'
     )
     return ['UVXY']
@@ -281,22 +294,26 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     const { tqqq_cum_return_1, tqqq_rsi_10, tmf_max_drawdown_10 } =
       this.indicator_values
 
-    log('Volatile Market: TQQQ cumulative return over 6 days < -12%.')
+    trade_info_log(
+      'Volatile Market: TQQQ cumulative return over 6 days < -12%.'
+    )
     if (tqqq_cum_return_1 > 5.5) {
-      log('TQQQ 1-day return > 5.5%, investing in UVXY.')
-      log('Intent: UVXY can capitalize on short-term spikes in volatility.')
+      trade_info_log('TQQQ 1-day return > 5.5%, investing in UVXY.')
+      trade_info_log(
+        'Intent: UVXY can capitalize on short-term spikes in volatility.'
+      )
       return ['UVXY']
     } else if (tqqq_rsi_10 < this.tqqq_rsi_oversold_threshold) {
-      log(
+      trade_info_log(
         `Oversold Market. TQQQ RSI: ${tqqq_rsi_10} below oversold threshold of ${this.tqqq_rsi_oversold_threshold}.`
       )
-      log(
+      trade_info_log(
         'Intent: SOXL is a leveraged ETF that benefits from market corrections, suitable when the market is oversold and likely to rebound.'
       )
       return ['SOXL']
     } else if (tmf_max_drawdown_10 < 0.07) {
-      log('TMF max drawdown over 10 days < 7%, investing in SOXL.')
-      log(
+      trade_info_log('TMF max drawdown over 10 days < 7%, investing in SOXL.')
+      trade_info_log(
         'Intent: A lower drawdown in TMF suggests stability, making it safer to invest in a high-risk, high-reward asset like SOXL.'
       )
       return ['SOXL']
@@ -310,14 +327,16 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
         quote_date_unix
       }))
     ) {
-      log('IEF current price > TLT current price, investing in BIL.')
-      log(
+      trade_info_log('IEF current price > TLT current price, investing in BIL.')
+      trade_info_log(
         'Intent: BIL is a safe, short-term treasury ETF, chosen when long-term bonds (TLT) outperform intermediate-term bonds (IEF), indicating a preference for safety.'
       )
       return ['BIL']
     } else {
-      log('Default condition met, investing in SOXL.')
-      log('Intent: Default to SOXL when other conditions are not met.')
+      trade_info_log('Default condition met, investing in SOXL.')
+      trade_info_log(
+        'Intent: Default to SOXL when other conditions are not met.'
+      )
       return ['SOXL']
     }
   }
@@ -337,59 +356,69 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     const tqqq_rsi_distance = this.tqqq_rsi_overbought_threshold - tqqq_rsi_10
     const tqqq_rsi_percentage =
       (tqqq_rsi_distance / this.tqqq_rsi_overbought_threshold) * 100
-    log(
+    trade_info_log(
       `TQQQ RSI is ${tqqq_rsi_10}, which is ${tqqq_rsi_distance} points and ${tqqq_rsi_percentage.toFixed(
         2
       )}% away from the threshold of ${this.tqqq_rsi_overbought_threshold}.`
     )
-    log('Normal Market: TQQQ cumulative return over 6 days >= -12%.')
+    trade_info_log('Normal Market: TQQQ cumulative return over 6 days >= -12%.')
     if (qqq_max_drawdown_10 > 0.06) {
-      log('QQQ max drawdown over 10 days > 6%, investing in BIL.')
-      log(
+      trade_info_log('QQQ max drawdown over 10 days > 6%, investing in BIL.')
+      trade_info_log(
         'Intent: A higher drawdown in QQQ suggests increased risk, so it opts for the safety of BIL.'
       )
       return ['BIL']
     } else if (tmf_max_drawdown_10 > 0.07) {
-      log('TMF max drawdown over 10 days > 7%, investing in BIL.')
-      log(
+      trade_info_log('TMF max drawdown over 10 days > 7%, investing in BIL.')
+      trade_info_log(
         'Intent: Similar to QQQ, a higher drawdown in TMF indicates risk, favoring BIL.'
       )
       return ['BIL']
     } else if (qqq_current_price > qqq_moving_avg_25) {
-      log('QQQ current price > 25-day moving average, investing in TQQQ.')
-      log(
+      trade_info_log(
+        'QQQ current price > 25-day moving average, investing in TQQQ.'
+      )
+      trade_info_log(
         'Intent: A higher current price suggests an upward trend, making TQQQ a good choice for growth.'
       )
       return ['TQQQ']
     } else if (spy_rsi_60 > 50) {
-      log('SPY RSI over 60 days > 50, checking further conditions.')
+      trade_info_log('SPY RSI over 60 days > 50, checking further conditions.')
       if (bnd_rsi_45 > spy_rsi_60) {
-        log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
-        log(
+        trade_info_log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
+        trade_info_log(
           'Intent: If bonds (BND) are stronger than stocks (SPY), it indicates a cautious market, favoring TQQQ for growth.'
         )
         return ['TQQQ']
       } else {
-        log('Default condition met, investing in BIL.')
-        log('Intent: Default to BIL when other conditions are not met.')
+        trade_info_log('Default condition met, investing in BIL.')
+        trade_info_log(
+          'Intent: Default to BIL when other conditions are not met.'
+        )
         return ['BIL']
       }
     } else if (ief_rsi_200 < tlt_rsi_200) {
-      log('IEF RSI over 200 days < TLT RSI, checking further conditions.')
+      trade_info_log(
+        'IEF RSI over 200 days < TLT RSI, checking further conditions.'
+      )
       if (bnd_rsi_45 > spy_rsi_60) {
-        log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
-        log(
+        trade_info_log('BND RSI over 45 days > SPY RSI, investing in TQQQ.')
+        trade_info_log(
           'Intent: If bonds (BND) are stronger than stocks (SPY), it indicates a cautious market, favoring TQQQ for growth.'
         )
         return ['TQQQ']
       } else {
-        log('Default condition met, investing in BIL.')
-        log('Intent: Default to BIL when other conditions are not met.')
+        trade_info_log('Default condition met, investing in BIL.')
+        trade_info_log(
+          'Intent: Default to BIL when other conditions are not met.'
+        )
         return ['BIL']
       }
     } else {
-      log('Default condition met, investing in BIL.')
-      log('Intent: Default to BIL when other conditions are not met.')
+      trade_info_log('Default condition met, investing in BIL.')
+      trade_info_log(
+        'Intent: Default to BIL when other conditions are not met.'
+      )
       return ['BIL']
     }
   }
@@ -437,9 +466,9 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
       const holding = this.Holdings.holdings[holding_id]
       const symbol = holding_id.split('_')[1]
       if (!assets.includes(symbol) && holding.quantity) {
-        log(
-          `Selling all holdings of ${symbol} as it is not in the new allocations`
-        )
+        // log(
+        //   `Selling all holdings of ${symbol} as it is not in the new allocations`
+        // )
         await this.Holdings.sell_equity({
           symbol,
           quantity: holding.quantity,
@@ -447,7 +476,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
             symbol,
             quote_date_unix: current_date_unix
           }),
-          date: dayjs().format('YYYY-MM-DD'),
+          date: current_date_unix,
           quote_type: `${constants.HOLDING_TYPE.EQUITY}_${constants.RESOLUTION.DAY}`
         })
       }
@@ -477,7 +506,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
           symbol: asset,
           quantity: quantity_difference,
           price: current_price,
-          date: dayjs().format('YYYY-MM-DD'),
+          date: current_date_unix,
           quote_type: `${constants.HOLDING_TYPE.EQUITY}_${constants.RESOLUTION.DAY}`
         })
       } else if (quantity_difference < 0) {
@@ -486,7 +515,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
           symbol: asset,
           quantity: Math.abs(quantity_difference),
           price: current_price,
-          date: dayjs().format('YYYY-MM-DD'),
+          date: current_date_unix,
           quote_type: `${constants.HOLDING_TYPE.EQUITY}_${constants.RESOLUTION.DAY}`
         })
       }

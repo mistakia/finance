@@ -11,8 +11,7 @@ import { Trashman_Core_V2_Trading_Account, Backtest, Holdings } from '#trading'
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('backtest-core-strategies')
 debug.enable(
-  // 'backtest-core-strategies,trashman_core_v2_trading_account,backtest,holdings'
-  'backtest-core-strategies'
+  'backtest-core-strategies,trashman_core_v2_trading_account,backtest,holdings'
 )
 
 const backtest_core_strategies = async ({

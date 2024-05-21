@@ -10,7 +10,7 @@ import { Holdings, Trashman_Core_V2_Trading_Account } from '#trading'
 
 // const argv = yargs(hideBin(process.argv)).argv
 // const log = debug('execute-trading-strategy')
-debug.enable('trashman_core_v2_trading_account,import-historical-prices-yahoo')
+debug.enable('trashman_core_v2_trading_account*,import-historical-prices-yahoo')
 
 const execute_trading_strategy = async () => {
   const trading_account = new Trashman_Core_V2_Trading_Account({

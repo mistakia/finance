@@ -1,4 +1,5 @@
 import debug from 'debug'
+import dayjs from 'dayjs'
 import BigNumber from 'bignumber.js'
 
 import * as constants from './constants.mjs'
@@ -235,7 +236,11 @@ export default class Holdings {
       transaction_type: constants.TRANSACTION_TYPE.BUY_EQUITY
     })
 
-    log(`Bought ${quantity} shares of ${symbol} at ${price} on ${date}`)
+    log(
+      `Bought ${quantity} shares of ${symbol} at ${price} on ${dayjs
+        .unix(date)
+        .format('YYYY-MM-DD')}`
+    )
   }
 
   sell_equity({ symbol, quantity, price, date }) {
@@ -288,7 +293,9 @@ export default class Holdings {
     })
 
     log(
-      `Sold ${quantity} shares of ${symbol} at ${price} on ${date} with a ${
+      `Sold ${quantity} shares of ${symbol} at ${price} on ${dayjs
+        .unix(date)
+        .format('YYYY-MM-DD')} with a ${
         gain_or_loss >= 0 ? 'gain' : 'loss'
       } of ${gain_or_loss}`
     )
