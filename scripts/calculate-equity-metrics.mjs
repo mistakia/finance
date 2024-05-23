@@ -19,6 +19,7 @@ debug.enable('calculate-equity-metrics')
 
 const calculate_equity_metrics = async ({ symbol }) => {
   const rsi_14 = new RSI(14)
+  const rsi_10 = new RSI(10)
   const sma_125 = new SMA(125)
   const sma_14 = new SMA(14)
   const atr_14 = new ATR(14, 'WEMA')
@@ -56,6 +57,7 @@ const calculate_equity_metrics = async ({ symbol }) => {
     change_in_40d: null,
 
     relative_strength_index_14: null,
+    relative_strength_index_10: null,
     moving_average_14: null,
     moving_average_125: null,
     average_true_range_14_normalized: null,
@@ -135,6 +137,7 @@ const calculate_equity_metrics = async ({ symbol }) => {
     }).pct
 
     metrics.relative_strength_index_14 = rsi_14.nextValue(quote.c) || null
+    metrics.relative_strength_index_10 = rsi_10.nextValue(quote.c) || null
     metrics.moving_average_14 = sma_14.nextValue(quote.c)
     metrics.moving_average_125 = sma_125.nextValue(quote.c)
     metrics.average_true_range_14_normalized =

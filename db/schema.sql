@@ -31,6 +31,7 @@ CREATE TABLE `eod_equity_quotes` (
   `change_in_40d` decimal(6,3) DEFAULT NULL,
 
   `relative_strength_index_14` decimal(4,1) DEFAULT NULL,
+  `relative_strength_index_10` decimal(4,1) DEFAULT NULL,
   `moving_average_14` decimal(7,3) DEFAULT NULL,
   `moving_average_125` decimal(7,3) DEFAULT NULL,
   `average_true_range_14_normalized` decimal(4,3) DEFAULT NULL,
