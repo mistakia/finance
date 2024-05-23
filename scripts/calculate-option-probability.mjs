@@ -20,8 +20,12 @@ const calculate_option_probability = async ({
   maxdrawdown_30 = Infinity,
   maxdrawdown_14 = Infinity,
   maxdrawdown_10 = Infinity,
-  minrsi = 0,
-  maxrsi = 100,
+  minrsi_14 = 0,
+  maxrsi_14 = 100,
+  minrsi_10 = 0,
+  maxrsi_10 = 100,
+  minrsi = minrsi_14,
+  maxrsi = maxrsi_14,
   earnings = false,
   show_dates = false,
   min_cumulative_change_1 = -Infinity,
@@ -50,6 +54,10 @@ const calculate_option_probability = async ({
     maxdrawdown_30,
     maxdrawdown_14,
     maxdrawdown_10,
+    minrsi_14,
+    maxrsi_14,
+    minrsi_10,
+    maxrsi_10,
     minrsi,
     maxrsi,
     earnings,
@@ -117,6 +125,22 @@ const calculate_option_probability = async ({
     }
 
     if (price.relative_strength_index_14 > maxrsi) {
+      continue
+    }
+
+    if (price.relative_strength_index_10 < minrsi_10) {
+      continue
+    }
+
+    if (price.relative_strength_index_10 > maxrsi_10) {
+      continue
+    }
+
+    if (price.relative_strength_index_14 < minrsi_14) {
+      continue
+    }
+
+    if (price.relative_strength_index_14 > maxrsi_14) {
       continue
     }
 
@@ -262,6 +286,10 @@ const main = async () => {
       maxdrawdown_30: argv.maxdrawdown_30,
       maxdrawdown_14: argv.maxdrawdown_14,
       maxdrawdown_10: argv.maxdrawdown_10,
+      minrsi_14: argv.minrsi_14,
+      maxrsi_14: argv.maxrsi_14,
+      minrsi_10: argv.minrsi_10,
+      maxrsi_10: argv.maxrsi_10,
       minrsi: argv.minrsi,
       maxrsi: argv.maxrsi,
       earnings: argv.earnings,
