@@ -94,18 +94,18 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
             ? current_date.subtract(3, 'day').format('YYYY-MM-DD')
             : current_date.subtract(1, 'day').format('YYYY-MM-DD')
 
-        const is_up_to_date =
-          last_entry_date.format('YYYY-MM-DD') === last_market_day
+        const is_up_to_date_or_newer =
+          last_entry_date.isSameOrAfter(dayjs(last_market_day), 'day')
 
-        if (is_up_to_date) {
-          log(`Latest quote for ${symbol} is up to date. Skipping import.`)
+        if (is_up_to_date_or_newer) {
+          log(`Latest quote for ${symbol} is up to date or newer. Skipping import.`)
           continue
         }
 
         log(
           `Last entry ${last_entry_date.format(
             'YYYY-MM-DD'
-          )} does not match last market day ${last_market_day}`
+          )} does not match or is before last market day ${last_market_day}`
         )
 
         start_year = last_entry_date.year()
