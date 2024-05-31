@@ -131,13 +131,20 @@ export const get_account_info = async ({
   )
 
   result.liabilities = account_positions
-    .filter((position) => position.contract.secType === 'OPT' && position.pos < 0)
+    .filter(
+      (position) => position.contract.secType === 'OPT' && position.pos < 0
+    )
     .map((position) => {
-      const expiration_date = dayjs(position.contract.lastTradeDateOrContractMonth, 'YYYYMMDD')
+      const expiration_date = dayjs(
+        position.contract.lastTradeDateOrContractMonth,
+        'YYYYMMDD'
+      )
       const days_remaining = expiration_date.diff(dayjs(), 'day')
       return {
         name: `${position.contract.symbol} ${position.contract.right} ${position.contract.strike} ${position.contract.lastTradeDateOrContractMonth}`,
-        amount: Math.abs(position.contract.strike * position.pos * position.contract.multiplier),
+        amount: Math.abs(
+          position.contract.strike * position.pos * position.contract.multiplier
+        ),
         days: days_remaining
       }
     })

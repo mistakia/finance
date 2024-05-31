@@ -68,7 +68,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     this.init_indicators()
   }
 
-  async import_historical_quotes() {
+  async import_historical_quotes({ force_import = false } = {}) {
     log('Importing historical quotes')
 
     for (const symbol of this.indicator_symbols) {
@@ -94,20 +94,27 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
             ? current_date.subtract(3, 'day').format('YYYY-MM-DD')
             : current_date.subtract(1, 'day').format('YYYY-MM-DD')
 
-        const is_up_to_date_or_newer =
-          last_entry_date.isSameOrAfter(dayjs(last_market_day), 'day')
+        const is_up_to_date_or_newer = last_entry_date.isSameOrAfter(
+          dayjs(last_market_day),
+          'day'
+        )
 
-        if (is_up_to_date_or_newer) {
-          log(`Latest quote for ${symbol} is up to date or newer. Skipping import.`)
+        if (is_up_to_date_or_newer && !force_import) {
+          log(
+            `Latest quote for ${symbol} is up to date or newer. Skipping import.`
+          )
           continue
         }
 
-        log(
-          `Last entry ${last_entry_date.format(
-            'YYYY-MM-DD'
-          )} does not match or is before last market day ${last_market_day}`
-        )
-
+        if (force_import) {
+          log(`Forcing import for ${symbol}`)
+        } else {
+          log(
+            `Last entry ${last_entry_date.format(
+              'YYYY-MM-DD'
+            )} does not match or is before last market day ${last_market_day}`
+          )
+        }
         start_year = last_entry_date.year()
         log(`Last entry for ${symbol} found, starting from year: ${start_year}`)
       } else {
@@ -366,7 +373,11 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
       )
       return ['BIL']
     } else if (tmf_max_drawdown_10 > 0.07) {
-      trade_info_log('TMF max drawdown over 10 days > 7%, investing in BIL.')
+      trade_info_log(
+        `TMF max drawdown over 10 days > 7% (${(
+          tmf_max_drawdown_10 * 100
+        ).toFixed(2)}%), investing in BIL.`
+      )
       trade_info_log(
         'Intent: Similar to QQQ, a higher drawdown in TMF indicates risk, favoring BIL.'
       )
