@@ -23,7 +23,10 @@ export const getCoins = async () => {
 export const getCoin = async ({ symbol }) => {
   const s = symbol.toLowerCase()
   const coins = await getCoins()
-  const coin = coins.find((c) => c.symbol === s)
+  const coin =
+    s === 'btc'
+      ? coins.find((c) => c.symbol === s && c.id === 'bitcoin')
+      : coins.find((c) => c.symbol === s)
   if (!coin) {
     return null
   }
