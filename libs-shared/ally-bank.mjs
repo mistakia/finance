@@ -116,7 +116,7 @@ export const getBalances = async ({
     log('Waited for main element')
   }
 
-  while (page.url() !== 'https://secure.ally.com/dashboard') {
+  while (!page.url().includes('https://secure.ally.com/dashboard')) {
     await page.waitForTimeout(3500)
   }
 
