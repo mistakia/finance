@@ -20,7 +20,7 @@ import { send, websocketActions } from '@core/websocket'
 export function* save() {
   const state = yield select(getConnections)
   const value = JSON.stringify(state.toJS())
-  localStorageAdapter.setItem('connections', value)
+  localStorageAdapter.setItem('finance_connections', value)
 
   // encrypt connections
   // backup to tint.finance server
@@ -43,7 +43,7 @@ export function* add({ payload }) {
 }
 
 async function loadConnections() {
-  const connections = await localStorageAdapter.getItem('connections')
+  const connections = await localStorageAdapter.getItem('finance_connections')
   if (connections) {
     return JSON.parse(connections)
   }

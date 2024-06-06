@@ -27,8 +27,8 @@ async function pageView() {
 }
 
 async function loadKeys() {
-  const privateKey = await localStorageAdapter.getItem('privateKey')
-  const publicKey = await localStorageAdapter.getItem('publicKey')
+  const privateKey = await localStorageAdapter.getItem('finance_private_key')
+  const publicKey = await localStorageAdapter.getItem('finance_public_key')
   return {
     privateKey,
     publicKey
@@ -55,15 +55,15 @@ export function* init_load() {
 export function* load_from_private({ payload }) {
   const { privateKey, publicKey } = payload
   yield put(appActions.loadKey({ privateKey, publicKey }))
-  localStorageAdapter.setItem('privateKey', privateKey)
-  localStorageAdapter.setItem('publicKey', publicKey)
+  localStorageAdapter.setItem('finance_private_key', privateKey)
+  localStorageAdapter.setItem('finance_public_key', publicKey)
   yield put(push('/'))
 }
 
 export function* save({ payload }) {
   const { privateKey, publicKey } = payload
-  localStorageAdapter.setItem('privateKey', privateKey)
-  localStorageAdapter.setItem('publicKey', publicKey)
+  localStorageAdapter.setItem('finance_private_key', privateKey)
+  localStorageAdapter.setItem('finance_public_key', publicKey)
 
   yield put(push('/seed'))
 }
