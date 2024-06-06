@@ -46,6 +46,20 @@ const import_wealthfront_accounts = async ({
   }
 
   const add_investment_account = async (account) => {
+    if (account.state === 'CLOSING' || account.state === 'CLOSED') {
+      const delete_query = await db('holdings')
+        .where(
+          'link',
+          'like',
+          `${wealthfront_asset_link}/${account.type}/${account.account_id}%`
+        )
+        .del()
+      log(
+        `deleted holdings for closed account: ${account.account_id}, deleted rows: ${delete_query}`
+      )
+      return
+    }
+
     for (const asset_class of account.composition.assetClasses) {
       for (const position of asset_class.funds) {
         const symbol = position.symbol

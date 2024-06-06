@@ -89,6 +89,18 @@ export const getBalances = async ({
   for (const account of i_accounts) {
     const account_id = account.accountId
     const externalized_id = account.externalizedAccountId
+    if (account.state === 'CLOSING' || account.state === 'CLOSED') {
+      investment_accounts.push({
+        name: account.accountDisplayName,
+        account_id,
+        externalized_id,
+        type: 'investment',
+        balance: Number(account.accountValueSummary.totalValue),
+        state: account.state
+      })
+      continue
+    }
+
     const account_composition = await get_account_composition({
       account_id,
       externalized_id
@@ -99,7 +111,8 @@ export const getBalances = async ({
       externalized_id,
       type: 'investment',
       balance: Number(account.accountValueSummary.totalValue),
-      composition: account_composition
+      composition: account_composition,
+      state: account.state
     })
   }
 
@@ -110,7 +123,8 @@ export const getBalances = async ({
       account_id: d.accountId,
       type: 'cash',
       balance: Number(d.accountValueSummary.totalValue),
-      apy: d.currentRate
+      apy: d.currentRate,
+      state: d.state
     }))
 
   await browser.close()
