@@ -275,6 +275,36 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
       qqq_current_price
     })
 
+    trade_info_log('Bull market checks:', {
+      qqq_moving_avg_25: {
+        condition: qqq_current_price > qqq_moving_avg_25,
+        difference: `$${(qqq_current_price - qqq_moving_avg_25).toFixed(2)} (${(
+          ((qqq_current_price - qqq_moving_avg_25) / qqq_current_price) *
+          100
+        ).toFixed(2)}%)`
+      },
+      tmf_max_drawdown_10: {
+        condition: tmf_max_drawdown_10 < 0.07,
+        difference: `${((0.07 - tmf_max_drawdown_10) * 100).toFixed(2)}%`
+      },
+      qqq_max_drawdown_10: {
+        condition: qqq_max_drawdown_10 < 0.06,
+        difference: `${((0.06 - qqq_max_drawdown_10) * 100).toFixed(2)}%`
+      },
+      spy_rsi_60: {
+        condition: spy_rsi_60 > 50,
+        difference: (spy_rsi_60 - 50).toFixed(2)
+      },
+      bnd_rsi_45: {
+        condition: bnd_rsi_45 > spy_rsi_60,
+        difference: (bnd_rsi_45 - spy_rsi_60).toFixed(2)
+      },
+      ief_rsi_200: {
+        condition: ief_rsi_200 < tlt_rsi_200,
+        difference: (tlt_rsi_200 - ief_rsi_200).toFixed(2)
+      }
+    })
+
     if (tqqq_rsi_10 > this.tqqq_rsi_overbought_threshold) {
       return this.calculate_overbought_market_allocations()
     } else if (tqqq_cum_return_6 < -12) {
