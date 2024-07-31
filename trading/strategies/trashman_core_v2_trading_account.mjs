@@ -363,7 +363,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     ) {
       trade_info_log('IEF current price > TLT current price, investing in BIL.')
       trade_info_log(
-        'Intent: BIL is a safe, short-term treasury ETF, chosen when long-term bonds (TLT) outperform intermediate-term bonds (IEF), indicating a preference for safety.'
+        'Intent: BIL is a safe, short-term treasury ETF, chosen when intermediate-term bonds (IEF) outperform long-term bonds (TLT), indicating a flattening or inverted yield curve and preference for shorter duration.'
       )
       return ['BIL']
     } else {
