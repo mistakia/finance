@@ -32,6 +32,7 @@
     "@mui/material": "^5.14.0",
     "@stoqey/ib": "^1.2.43",
     "@tsmx/secure-config": "^2.0.2",
+    "@yahoo-finance2": "mistakia/node-yahoo-finance2#proto/expose-get-crumb",
     "babel-loader": "^8.3.0",
     "babel-plugin-module-resolver": "^5.0.0",
     "bignumber.js": "^9.1.1",
@@ -103,7 +104,7 @@
     "webpack": "^5.88.1",
     "webpack-dev-server": "^4.15.1",
     "ws": "^8.13.0",
-    "yahoo-finance2": "mistakia/node-yahoo-finance2#proto/expose-get-crumb",
+    "yahoo-finance2": "^2.13.2",
     "yahoo-stock-prices": "^1.1.0",
     "yargs": "^17.7.2"
   },
@@ -128,5 +129,8 @@
   "repository": "git@github.com:mistakia/finance.git",
   "author": "mistakia <1823355+mistakia@users.noreply.github.com>",
   "license": "MIT",
-  "packageManager": "yarn@3.2.0"
+  "packageManager": "yarn@3.2.0",
+  "engines": {
+    "node": "22.11.0"
+  }
 }
