@@ -90,7 +90,9 @@ export const getPage = async (
     headless: false,
     args,
     timeout,
-    ignoreDefaultArgs: ['--enable-automation']
+    ignoreDefaultArgs: ['--enable-automation'],
+    executablePath:
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
   })
 
   const page = await browser.newPage()
