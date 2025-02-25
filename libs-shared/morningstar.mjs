@@ -1,6 +1,7 @@
 import fetch from 'node-fetch'
 
 import config from '#root/config.mjs'
+import { getPage } from './puppeteer.mjs'
 
 const data_headers = {
   'user-agent':
@@ -9,31 +10,39 @@ const data_headers = {
   apiKey: config.morningstar.data_api_key
 }
 
-const search_headers = {
-  'user-agent':
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36',
-  referer: 'https://www.morningstar.com/',
-  'x-api-key': config.morningstar.search_api_key
-}
+export async function search({ symbol }) {
+  try {
+    // Launch browser and navigate to Morningstar homepage
+    const { page, browser } = await getPage('https://www.morningstar.com/')
 
-export async function searchEntity({ symbol }) {
-  const url = `https://www.morningstar.com/api/v1/search/entities?q=${symbol}&limit=1&autocomplete=false`
-  const options = { headers: search_headers }
-  const data = await fetch(url, options).then((res) => res.json())
-  if (data && data.results && data.results.length) {
-    return data.results[0]
-  }
-  return null
-}
+    // Wait a few seconds to establish cookies and pass verification
+    await page.waitForTimeout(30000)
 
-export async function searchSecurity({ symbol }) {
-  const url = `https://www.morningstar.com/api/v1/search/securities?q=${symbol}`
-  const options = { headers: search_headers }
-  const data = await fetch(url, options).then((res) => res.json())
-  if (data && data.results && data.results.length) {
-    return data.results[0]
+    // Make the request using the page's fetch API to leverage browser cookies
+    const url = `https://www.morningstar.com/api/v2/search?query=${symbol}`
+    const result = await page.evaluate(async (requestUrl) => {
+      const response = await fetch(requestUrl)
+      return await response.json()
+    }, url)
+
+    // Close the browser
+    await browser.close()
+
+    // Check for US securities first
+    if (result?.components?.usSecurities?.payload?.results?.length) {
+      return result.components.usSecurities.payload.results[0]
+    }
+
+    // If no US securities, check foreign securities
+    if (result?.components?.foreignSecurities?.payload?.results?.length) {
+      return result.components.foreignSecurities.payload.results[0]
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error in search:', error)
+    return null
   }
-  return null
 }
 
 export async function getSecurityQuote({ secId }) {

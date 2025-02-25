@@ -16,13 +16,13 @@ export default async function ({ type, symbol }) {
     case 'us-reit':
     case 'cn-adr':
     case 'us-stock': {
-      const security = await morningstar.searchSecurity({ symbol })
+      const security = await morningstar.search({ symbol })
       if (!security) {
         throw new Error(`unsupported us security: ${symbol}`)
       }
 
       const morningstar_quote = await morningstar.getSecurityQuote({
-        secId: security.secId
+        secId: security.securityID
       })
       const alphavantage_quote = await alphavantage.getQuote({ symbol })
       const category = morningstar_quote.categoryName
@@ -102,7 +102,7 @@ export default async function ({ type, symbol }) {
     }
 
     default: {
-      throw new Error('unknown asset type')
+      throw new Error(`unknown asset type: ${type}`)
     }
   }
 }

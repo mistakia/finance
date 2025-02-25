@@ -11,11 +11,12 @@ const log = debug('get-asset-info')
 debug.enable('get-asset-info')
 
 const run = async ({ symbol }) => {
-  const entity = await morningstar.searchEntity({ symbol })
-  const security = await morningstar.searchSecurity({ symbol })
-  const quote = await morningstar.getSecurityQuote({ secId: security.secId })
-  log(entity)
+  log(`Searching for ${symbol}`)
+  const security = await morningstar.search({ symbol })
   log(security)
+  const quote = await morningstar.getSecurityQuote({
+    secId: security.securityID
+  })
   log(quote)
   const robinhood_quote = await robinhood.getQuote({ symbol })
   log(robinhood_quote)
