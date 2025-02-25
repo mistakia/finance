@@ -30,11 +30,9 @@ const postAuth = async ({ username, password, device_id, challenge_id }) => {
 }
 
 const getBearerToken = async () => {
-  const response = await fetch('https://robinhood.com/stocks/VTI')
-  const html = await response.text()
-  const re = /{"access_token":"(?<token>[^"]*)",/g
-  const match = re.exec(html)
-  return match.groups.token
+  const response = await fetch('https://robinhood.com/api/public/get_token/')
+  const data = await response.json()
+  return data.accessToken
 }
 
 const postChallenge = async ({ code, challenge_id }) => {
