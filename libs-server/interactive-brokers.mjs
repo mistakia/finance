@@ -1,7 +1,12 @@
 import fetch from 'node-fetch'
 import dayjs from 'dayjs'
 import debug from 'debug'
-import { IBApiNext, EventName } from '@stoqey/ib'
+import {
+  IBApiNext,
+  EventName,
+  IBApiNextTickType,
+  IBApiTickType
+} from '@stoqey/ib'
 
 const log = debug('interactive-brokers')
 
@@ -77,6 +82,69 @@ const get_account_positions = (ib) =>
     })
   })
 
+const get_market_data = (ib, contract) =>
+  new Promise((resolve, reject) => {
+    let marketData = {
+      price: null,
+      impliedVol: null,
+      delta: null,
+      undPrice: null
+    }
+    let hasReceivedData = false
+
+    const contractWithExchange = {
+      ...contract,
+      exchange: contract.exchange || 'SMART'
+    }
+
+    const subscription = ib
+      .getMarketData(contractWithExchange, null, false, false)
+      .subscribe({
+        next: (update) => {
+          const update_data = new Map()
+          // Handle regular market data updates
+          update.all.forEach((tick, type) => {
+            if (type > IBApiNextTickType.API_NEXT_FIRST_TICK_ID) {
+              update_data.set(IBApiNextTickType[type], tick.value)
+            } else {
+              update_data.set(IBApiTickType[type], tick.value)
+            }
+
+            // Extract relevant data from the ticks
+            const modelDelta = update_data.get('MODEL_OPTION_DELTA')
+            const modelIV = update_data.get('MODEL_OPTION_IV')
+            const underlyingPrice = update_data.get('OPTION_UNDERLYING')
+
+            if (modelDelta || modelIV || underlyingPrice) {
+              marketData = {
+                ...marketData,
+                delta: modelDelta ? Math.abs(modelDelta) : marketData.delta,
+                impliedVol: modelIV || marketData.impliedVol,
+                undPrice: underlyingPrice || marketData.undPrice
+              }
+              hasReceivedData = true
+            }
+          })
+        },
+        error: (err) => {
+          reject(err)
+        }
+      })
+
+    // Cleanup subscription and resolve after receiving data or timeout
+    setTimeout(() => {
+      subscription.unsubscribe()
+      if (!hasReceivedData) {
+        console.warn(
+          `No market data received for contract: ${JSON.stringify(
+            contractWithExchange
+          )}`
+        )
+      }
+      resolve(marketData)
+    }, 5000)
+  })
+
 export const get_account_info = async ({
   host,
   docker_port = 2375,
@@ -108,7 +176,31 @@ export const get_account_info = async ({
   ib.connect()
 
   const account_positions = await get_account_positions(ib)
+
   const account_summary = await get_account_summary(ib)
+
+  // Fetch market data for all short options positions
+  const short_options = account_positions.filter(
+    (position) => position.contract.secType === 'OPT' && position.pos < 0
+  )
+
+  const positions_with_market_data = await Promise.all(
+    short_options.map(async (position) => {
+      const market_data = await get_market_data(ib, position.contract)
+      return { ...position, market_data }
+    })
+  )
+
+  // Calculate liabilities at different probability thresholds
+  const probability_thresholds = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9]
+  const liability_by_probability = {}
+
+  // Create a map of stock positions by symbol
+  const stock_positions = new Map(
+    account_positions
+      .filter((position) => position.contract.secType === 'STK')
+      .map((position) => [position.contract.symbol, position])
+  )
 
   const result = {}
   for (const tag of account_summary_tags) {
@@ -118,15 +210,38 @@ export const get_account_info = async ({
     }
   }
 
+  // Calculate option liabilities considering covered positions
   result.option_cash_liability = Math.abs(
     account_positions
       .filter(
         (position) => position.contract.secType === 'OPT' && position.pos < 0
       )
       .reduce((acc, position) => {
-        const cost =
-          position.contract.strike * position.pos * position.contract.multiplier
-        return acc + cost
+        const stock_position = stock_positions.get(position.contract.symbol)
+        const shares_held = stock_position ? stock_position.pos : 0
+        const contracts = Math.abs(position.pos)
+        const shares_needed = contracts * position.contract.multiplier
+
+        if (position.contract.right === 'C' && shares_held >= shares_needed) {
+          // Call is fully covered by shares, no liability
+          return acc
+        } else if (position.contract.right === 'C' && shares_held > 0) {
+          // Call is partially covered, calculate remaining liability
+          const uncovered_contracts =
+            (shares_needed - shares_held) / position.contract.multiplier
+          return (
+            acc +
+            position.contract.strike *
+              uncovered_contracts *
+              position.contract.multiplier
+          )
+        } else {
+          // Put or uncovered call
+          return (
+            acc +
+            position.contract.strike * contracts * position.contract.multiplier
+          )
+        }
       }, 0)
   )
 
@@ -148,6 +263,50 @@ export const get_account_info = async ({
         days: days_remaining
       }
     })
+
+  // Update probability-based liabilities calculation
+  for (const threshold of probability_thresholds) {
+    liability_by_probability[
+      `total_liability_greater_than_${threshold * 100}pct_prob`
+    ] = positions_with_market_data
+      .filter((position) => {
+        const delta = position.market_data.delta
+        if (!delta) return false
+        return position.contract.right === 'P'
+          ? 1 - Math.abs(delta) >= threshold // Put option
+          : Math.abs(delta) >= threshold // Call option
+      })
+      .reduce((acc, position) => {
+        const stock_position = stock_positions.get(position.contract.symbol)
+        const shares_held = stock_position ? stock_position.pos : 0
+        const contracts = Math.abs(position.pos)
+        const shares_needed = contracts * position.contract.multiplier
+
+        if (position.contract.right === 'C' && shares_held >= shares_needed) {
+          // Call is fully covered by shares, no liability
+          return acc
+        } else if (position.contract.right === 'C' && shares_held > 0) {
+          // Call is partially covered, calculate remaining liability
+          const uncovered_contracts =
+            (shares_needed - shares_held) / position.contract.multiplier
+          return (
+            acc +
+            position.contract.strike *
+              uncovered_contracts *
+              position.contract.multiplier
+          )
+        } else {
+          // Put or uncovered call
+          return (
+            acc +
+            position.contract.strike * contracts * position.contract.multiplier
+          )
+        }
+      }, 0)
+  }
+
+  result.liability_by_probability = liability_by_probability
+
   ib.disconnect()
 
   if (!keep_alive) {
