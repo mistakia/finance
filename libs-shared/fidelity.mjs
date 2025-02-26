@@ -673,7 +673,7 @@ export const get_accounts = async ({ username, password }) => {
 
     // Calculate liabilities at different probability thresholds
     const probability_thresholds = [
-      0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9
+      0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9
     ]
     const liability_by_probability = {}
 

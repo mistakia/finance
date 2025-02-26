@@ -192,7 +192,7 @@ export const get_account_info = async ({
   )
 
   // Calculate liabilities at different probability thresholds
-  const probability_thresholds = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9]
+  const probability_thresholds = [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9]
   const liability_by_probability = {}
 
   // Create a map of stock positions by symbol
