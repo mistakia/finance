@@ -2,11 +2,10 @@ import dayjs from 'dayjs'
 import { RSI, SMA, ROC } from '@debut/indicators'
 import debug from 'debug'
 
-import { MaxDrawdown } from '#libs-server'
+import { MaxDrawdown, refresh_historical_quotes } from '#libs-server'
 import db from '#db'
 import { Trading_Account } from '../trading_account.mjs'
 import * as constants from '../constants.mjs'
-import import_historical_prices_yahoo from '#scripts/import-historical-prices-yahoo.mjs'
 
 const log = debug('trashman_core_v2_trading_account')
 const trade_info_log = debug('trashman_core_v2_trading_account:trade_info')
@@ -72,62 +71,10 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     log('Importing historical quotes')
 
     for (const symbol of this.indicator_symbols) {
-      const last_entry = await db('eod_equity_quotes')
-        .where('symbol', symbol)
-        .orderBy('quote_date', 'desc')
-        .first()
-
-      let start_year
-      if (last_entry) {
-        const last_entry_date = dayjs(last_entry.quote_date)
-        const current_date = dayjs()
-        const market_close_time = current_date.hour(16).minute(0).second(0)
-
-        const last_market_day =
-          current_date.day() === 0
-            ? current_date.subtract(2, 'day').format('YYYY-MM-DD')
-            : current_date.day() === 6
-            ? current_date.subtract(1, 'day').format('YYYY-MM-DD')
-            : current_date.isAfter(market_close_time)
-            ? current_date.format('YYYY-MM-DD')
-            : current_date.day() === 1
-            ? current_date.subtract(3, 'day').format('YYYY-MM-DD')
-            : current_date.subtract(1, 'day').format('YYYY-MM-DD')
-
-        const is_up_to_date_or_newer = last_entry_date.isSameOrAfter(
-          dayjs(last_market_day),
-          'day'
-        )
-
-        if (is_up_to_date_or_newer && !force_import) {
-          log(
-            `Latest quote for ${symbol} is up to date or newer. Skipping import.`
-          )
-          continue
-        }
-
-        if (force_import) {
-          log(`Forcing import for ${symbol}`)
-        } else {
-          log(
-            `Last entry ${last_entry_date.format(
-              'YYYY-MM-DD'
-            )} does not match or is before last market day ${last_market_day}`
-          )
-        }
-        start_year = last_entry_date.year()
-        log(`Last entry for ${symbol} found, starting from year: ${start_year}`)
-      } else {
-        start_year = dayjs().subtract(1, 'year').startOf('year').year()
-        log(
-          `No last entry for ${symbol} found, starting from year: ${start_year}`
-        )
-      }
-
-      log(
-        `Importing historical prices for ${symbol} starting from ${start_year}`
-      )
-      await import_historical_prices_yahoo({ symbol, startYear: start_year })
+      await refresh_historical_quotes({
+        symbol,
+        force_import
+      })
     }
   }
 

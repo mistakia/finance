@@ -1,6 +1,6 @@
 import debug from 'debug'
 import { isMain, wait } from '#libs-shared'
-import import_historical_prices_yahoo from './import-historical-prices-yahoo.mjs'
+import { import_historical_prices_yahoo } from '#libs-server'
 import calculate_equity_metrics from './calculate-equity-metrics.mjs'
 
 debug.enable('import-historical-prices')
@@ -53,7 +53,7 @@ const import_historical_prices = async () => {
   for (const { symbol, start_year } of symbols) {
     try {
       log(`Processing ${symbol} starting from ${start_year}`)
-      await import_historical_prices_yahoo({ symbol, startYear: start_year })
+      await import_historical_prices_yahoo({ symbol, start_year })
       await calculate_equity_metrics({ symbol })
       await wait(10000) // Wait 10 seconds between each symbol to avoid rate limits
     } catch (err) {

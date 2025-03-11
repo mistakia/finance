@@ -5,3 +5,5 @@ export { default as get_future_price_change } from './get-future-price-change.mj
 export { default as HistoricalVolatility } from './historical-volatility.mjs'
 export { default as MaxDrawdown } from './max-drawdown.mjs'
 export * as interactive_brokers from './interactive-brokers.mjs'
+export { default as refresh_historical_quotes } from './refresh-historical-quotes.mjs'
+export { default as import_historical_prices_yahoo } from './import-historical-prices-yahoo.mjs'
