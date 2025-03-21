@@ -46,7 +46,67 @@ const import_interactive_brokers_accounts = async ({
   }
 }
 
+const cleanup_containers = async () => {
+  try {
+    const { host, docker_port = 2375 } = config.links.interactive_brokers
+    const containers = await interactive_brokers.get_docker_containers({
+      host,
+      port: docker_port
+    })
+
+    const ib_containers = containers.filter(
+      (container) =>
+        container.Image === 'rylorin/ib-gateway-docker' &&
+        container.State === 'running'
+    )
+
+    for (const container of ib_containers) {
+      await interactive_brokers.stop_docker_container({
+        host,
+        port: docker_port,
+        id: container.Id
+      })
+      log(`docker container ${container.Id} stopped during cleanup`)
+    }
+  } catch (err) {
+    log('Error during container cleanup:', err)
+  }
+}
+
+// Setup cleanup handlers
+const setup_cleanup_handlers = () => {
+  // Handle normal exit
+  process.on('exit', () => {
+    log('Process exit detected, cleaning up...')
+    // Need to use sync operations in 'exit' handler
+    // cleanup_containers is async so we can't use it here
+  })
+
+  // Handle SIGTERM
+  process.on('SIGTERM', async () => {
+    log('SIGTERM received, cleaning up...')
+    await cleanup_containers()
+    process.exit(0)
+  })
+
+  // Handle SIGINT (Ctrl+C)
+  process.on('SIGINT', async () => {
+    log('SIGINT received, cleaning up...')
+    await cleanup_containers()
+    process.exit(0)
+  })
+
+  // Handle uncaught exceptions
+  process.on('uncaughtException', async (err) => {
+    log('Uncaught exception:', err)
+    await cleanup_containers()
+    process.exit(1)
+  })
+}
+
 const main = async () => {
+  setup_cleanup_handlers()
+
   let error
   try {
     const publicKey = argv.publicKey
@@ -73,6 +133,12 @@ const main = async () => {
    *   timestamp: Math.round(Date.now() / 1000)
    * })
    */
+
+  // If keep_alive is not set, clean up containers before exit
+  if (!argv.keep_alive) {
+    await cleanup_containers()
+  }
+
   process.exit()
 }
 
