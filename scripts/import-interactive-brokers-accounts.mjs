@@ -56,7 +56,7 @@ const cleanup_containers = async () => {
 
     const ib_containers = containers.filter(
       (container) =>
-        container.Image === 'rylorin/ib-gateway-docker' &&
+        container.Image === config.ib_gateway_docker_image &&
         container.State === 'running'
     )
 
@@ -75,13 +75,6 @@ const cleanup_containers = async () => {
 
 // Setup cleanup handlers
 const setup_cleanup_handlers = () => {
-  // Handle normal exit
-  process.on('exit', () => {
-    log('Process exit detected, cleaning up...')
-    // Need to use sync operations in 'exit' handler
-    // cleanup_containers is async so we can't use it here
-  })
-
   // Handle SIGTERM
   process.on('SIGTERM', async () => {
     log('SIGTERM received, cleaning up...')
@@ -94,13 +87,6 @@ const setup_cleanup_handlers = () => {
     log('SIGINT received, cleaning up...')
     await cleanup_containers()
     process.exit(0)
-  })
-
-  // Handle uncaught exceptions
-  process.on('uncaughtException', async (err) => {
-    log('Uncaught exception:', err)
-    await cleanup_containers()
-    process.exit(1)
   })
 }
 

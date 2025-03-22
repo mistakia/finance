@@ -12,6 +12,8 @@ import {
 import db from '#db'
 import refresh_historical_quotes from './refresh-historical-quotes.mjs'
 
+import config from '#config'
+
 const log = debug('interactive-brokers')
 
 export const start_docker_container = async ({ host, port = 2375, id }) => {
@@ -250,7 +252,7 @@ export const get_account_info = async ({
 }) => {
   const containers = await get_docker_containers({ host, port: docker_port })
   const container = containers.find(
-    (container) => container.Image === 'rylorin/ib-gateway-docker'
+    (container) => container.Image === config.ib_gateway_docker_image
   )
 
   if (!container) {
@@ -307,10 +309,25 @@ export const get_account_info = async ({
   // Fetch market data for all short options positions
   const positions_with_market_data = await Promise.all(
     short_options.map(async (position) => {
-      const market_data = await get_market_data({
-        ib,
-        contract: position.contract
-      })
+      let market_data = {
+        price: null,
+        impliedVol: null,
+        delta: null,
+        underlying_price: null
+      }
+
+      try {
+        market_data = await get_market_data({
+          ib,
+          contract: position.contract
+        })
+      } catch (error) {
+        log(
+          `Error fetching market data for ${position.contract.symbol} option:`,
+          error.error ? error.error.toString() : error.toString()
+        )
+      }
+
       // If option market data doesn't have underlying price, use the stock market data
       const stock_data = stock_market_data.get(position.contract.symbol)
       if (stock_data && stock_data.price) {
@@ -471,12 +488,26 @@ export const get_account_info = async ({
         'YYYYMMDD'
       )
       const days_remaining = expiration_date.diff(dayjs(), 'day')
+
+      // Find matching market data for this position
+      const position_with_market_data = positions_with_market_data.find(
+        (p) => p.contract.conId === position.contract.conId
+      )
+
+      // Get the stock price from stock_market_data Map
+      const stock_data = stock_market_data.get(position.contract.symbol)
+      const underlying_price = stock_data?.price || null
+      const current_delta =
+        position_with_market_data?.market_data?.delta || null
+
       return {
         name: `${position.contract.symbol} ${position.contract.right} ${position.contract.strike} ${position.contract.lastTradeDateOrContractMonth}`,
         amount: Math.abs(
           position.contract.strike * position.pos * position.contract.multiplier
         ),
-        days: days_remaining
+        days: days_remaining,
+        underlying_price,
+        delta: current_delta
       }
     })
 
