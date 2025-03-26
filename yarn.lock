@@ -2600,17 +2600,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stoqey/ib@npm:^1.2.43":
-  version: 1.2.43
-  resolution: "@stoqey/ib@npm:1.2.43"
+"@stoqey/ib@npm:^1.5.1":
+  version: 1.5.1
+  resolution: "@stoqey/ib@npm:1.5.1"
   dependencies:
     colors: ^1.4.0
     command-buffer: ^0.1.0
-    dotenv: ^8.2.0
-    eventemitter3: ^4.0.7
+    dotenv: ^16.4.7
+    eventemitter3: ^5.0.1
     function-rate-limit: ^1.1.0
     rxjs: ^7.8.1
-  checksum: cd740f7e964c83042af63f3486f0a45ad6ea5700dc9a2355dbbc54a3165c0c512af13d4f8cddd89f639819f9787060436512e1b387f9ce014620408fc70ca695
+  checksum: 635c3bc5c31f739ce97a50a37c0443e8d9475d25949d76a33908fe95391442a6fc8fd7e21a42ce7fdde90732f5759b12bb0f05ff231fd9a2dc5acfb6d1c2be9b
   languageName: node
   linkType: hard
 
@@ -5342,10 +5342,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^8.2.0":
-  version: 8.6.0
-  resolution: "dotenv@npm:8.6.0"
-  checksum: 38e902c80b0666ab59e9310a3d24ed237029a7ce34d976796349765ac96b8d769f6df19090f1f471b77a25ca391971efde8a1ea63bb83111bd8bec8e5cc9b2cd
+"dotenv@npm:^16.4.7":
+  version: 16.4.7
+  resolution: "dotenv@npm:16.4.7"
+  checksum: c27419b5875a44addcc56cc69b7dc5b0e6587826ca85d5b355da9303c6fc317fc9989f1f18366a16378c9fdd9532d14117a1abe6029cc719cdbbef6eaef2cea4
   languageName: node
   linkType: hard
 
@@ -5999,6 +5999,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eventemitter3@npm:^5.0.1":
+  version: 5.0.1
+  resolution: "eventemitter3@npm:5.0.1"
+  checksum: 543d6c858ab699303c3c32e0f0f47fc64d360bf73c3daf0ac0b5079710e340d6fe9f15487f94e66c629f5f82cd1a8678d692f3dbb6f6fcd1190e1b97fcad36f8
+  languageName: node
+  linkType: hard
+
 "events@npm:^3.2.0":
   version: 3.3.0
   resolution: "events@npm:3.3.0"
@@ -6330,7 +6337,7 @@ __metadata:
     "@mui/icons-material": ^5.14.0
     "@mui/lab": ^5.0.0-alpha.136
     "@mui/material": ^5.14.0
-    "@stoqey/ib": ^1.2.43
+    "@stoqey/ib": ^1.5.1
     "@tsmx/secure-config": ^2.0.2
     "@yahoo-finance2": "mistakia/node-yahoo-finance2#proto/expose-get-crumb"
     babel-loader: ^8.3.0

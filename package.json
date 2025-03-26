@@ -30,7 +30,7 @@
     "@mui/icons-material": "^5.14.0",
     "@mui/lab": "^5.0.0-alpha.136",
     "@mui/material": "^5.14.0",
-    "@stoqey/ib": "^1.2.43",
+    "@stoqey/ib": "^1.5.1",
     "@tsmx/secure-config": "^2.0.2",
     "@yahoo-finance2": "mistakia/node-yahoo-finance2#proto/expose-get-crumb",
     "babel-loader": "^8.3.0",
