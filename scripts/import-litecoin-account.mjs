@@ -15,7 +15,7 @@ const import_litecoin_account = async ({ credentials, publicKey }) => {
   if (account) {
     const balance = litecoin.convertLitoshiToLTC(account.data.balance)
     const asset = await addAsset({
-      type: 'crypto',
+      asset_type: 'crypto',
       symbol: 'LTC',
       update: true
     })

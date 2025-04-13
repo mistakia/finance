@@ -25,7 +25,7 @@ const import_interactive_brokers_accounts = async ({
       keep_alive
     })
     log(account_info)
-    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
     const cash_balance = Number(account_info.TotalCashValue)
 
     inserts.push({

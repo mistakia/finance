@@ -16,19 +16,37 @@ debug.enable('import-historical-earnings-yahoo')
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-const get_earnings_item = (item) => ({
-  symbol: item[0],
-  company_name: item[1],
-  event_name: item[2],
-  event_date: item[3],
-  event_timezone: item[8],
-  event_gmt_offset_ms: item[9],
-  event_date_unix: dayjs(item[3]).subtract(item[9], 'ms').unix(),
-  event_time_type: item[4],
-  earnings_estimate: item[5],
-  earnings_actual: item[6],
-  earnings_surprise_pct: item[7]
-})
+// Map abbreviated time types to enum values
+const map_time_type = (abbreviated_time_type) => {
+  switch (abbreviated_time_type) {
+    case 'TAS':
+      return 'time_after_session'
+    case 'AMC':
+      return 'after_market_close'
+    case 'BMO':
+      return 'before_market_open'
+    case 'DMH':
+      return 'during_market_hours'
+    default:
+      return 'unspecified'
+  }
+}
+
+const get_earnings_item = (item) => {
+  return {
+    symbol: item[0],
+    company_name: item[1],
+    event_name: item[2],
+    event_date: item[3],
+    event_timezone: item[8],
+    event_gmt_offset_ms: item[9],
+    event_date_unix: dayjs(item[3]).subtract(item[9], 'ms').unix(),
+    event_time_type: map_time_type(item[4]),
+    earnings_estimate: item[5],
+    earnings_actual: item[6],
+    earnings_surprise_pct: item[7]
+  }
+}
 
 const request_data = async ({ symbol, offset = 0, limit }) => {
   log(`Requesting earnings for ${symbol}`)

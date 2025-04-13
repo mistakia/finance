@@ -28,7 +28,7 @@ const run = async ({ credentials, publicKey }) => {
   }
 
   if (account.cashBalance) {
-    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
 
     inserts.push({
       link: `/${publicKey}/peerstreet/USD`,
@@ -41,7 +41,10 @@ const run = async ({ credentials, publicKey }) => {
   }
 
   if (account.loanBalance) {
-    const asset = await addAsset({ type: 'loan-mortgage', symbol: 'LOAN' })
+    const asset = await addAsset({
+      asset_type: 'loan_mortgage',
+      symbol: 'LOAN'
+    })
 
     inserts.push({
       link: `/${publicKey}/peerstreet/LOAN`,
@@ -54,7 +57,7 @@ const run = async ({ credentials, publicKey }) => {
   }
 
   if (account.pocketBalance) {
-    const asset = await addAsset({ type: 'note', symbol: 'NOTE' })
+    const asset = await addAsset({ asset_type: 'note', symbol: 'NOTE' })
 
     inserts.push({
       link: `/${publicKey}/peerstreet/NOTE`,

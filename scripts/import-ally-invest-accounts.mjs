@@ -41,7 +41,7 @@ const run = async ({ credentials, publicKey }) => {
   const cash = parseFloat(
     data.response.accounts.accountsummary.accountbalance.money.total
   )
-  const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+  const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
   inserts.push({
     link: `${ally_invest_asset_link}/USD`,
     name: 'Cash',

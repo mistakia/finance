@@ -34,7 +34,7 @@ const import_wealthfront_accounts = async ({
 
   const add_cash_account = async (account) => {
     // TODO - save APY
-    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
     inserts.push({
       link: `${wealthfront_asset_link}/${account.type}/${account.account_id}/USD`,
       name: 'Cash',

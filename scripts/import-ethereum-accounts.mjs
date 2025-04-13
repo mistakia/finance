@@ -16,7 +16,7 @@ const run = async ({ credentials, publicKey }) => {
   const inserts = []
   if (data.ETH.balance) {
     const asset = await addAsset({
-      type: 'crypto',
+      asset_type: 'crypto',
       symbol: 'ETH',
       update: true
     })
@@ -37,7 +37,11 @@ const run = async ({ credentials, publicKey }) => {
       const balance = ethereum.convert(token.balance, decimals)
       const { symbol, name } = token.tokenInfo
 
-      const asset = await addAsset({ type: 'crypto', symbol, update: true })
+      const asset = await addAsset({
+        asset_type: 'crypto',
+        symbol,
+        update: true
+      })
 
       inserts.push({
         link: `/${publicKey}/ethereum/${symbol}/${credentials.address}`,

@@ -15,7 +15,7 @@ const run = async ({ credentials, publicKey }) => {
   if (balance_sats) {
     const balance = bitcoin.convertSatsToBtc(balance_sats)
     const asset = await addAsset({
-      type: 'crypto',
+      asset_type: 'crypto',
       symbol: 'BTC',
       update: true
     })

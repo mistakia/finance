@@ -48,7 +48,7 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
       const symbol = instrument_info.symbol
 
       const asset = await addAsset({
-        type: `${instrument_info.country.toLowerCase()}-${
+        asset_type: `${instrument_info.country.toLowerCase()}_${
           instrument_info.type
         }`,
         symbol,

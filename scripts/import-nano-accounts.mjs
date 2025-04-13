@@ -21,7 +21,7 @@ const run = async ({ credentials, publicKey }) => {
   const inserts = []
   if (balance) {
     const asset = await addAsset({
-      type: 'crypto',
+      asset_type: 'crypto',
       symbol: 'XNO',
       update: true
     })

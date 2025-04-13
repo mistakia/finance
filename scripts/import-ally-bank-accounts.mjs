@@ -28,7 +28,7 @@ const run = async ({ credentials, publicKey, cli = false }) => {
   const inserts = []
   for (const account of accounts) {
     // TODO - save APY
-    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
     inserts.push({
       link: `/${publicKey}/ally-bank/USD/${account.type}/${account.last_four}`,
       name: 'Cash',

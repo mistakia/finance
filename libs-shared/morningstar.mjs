@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 
-import config from '#root/config.mjs'
+import config from '#config'
 import { getPage } from './puppeteer.mjs'
 
 const data_headers = {

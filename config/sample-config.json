@@ -10,12 +10,12 @@
   "ethplorer_api": "",
   "alphavantage": "",
   "finnhub_api_key": "",
-  "mysql": {
-    "client": "mysql2",
+  "postgres": {
+    "client": "pg",
     "connection": {
       "host": "localhost",
-      "user": "root",
-      "database": "finance_development",
+      "user": "postgres",
+      "database": "finance_production",
       "decimalNumbers": true
     },
     "pool": {

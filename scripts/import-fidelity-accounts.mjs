@@ -28,7 +28,7 @@ const import_fidelity_accounts = async ({ credentials, publicKey }) => {
     // Process accounts - add cash balances
     for (const account of accountData.accounts) {
       if (account.cash_balance > 0) {
-        const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+        const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
 
         inserts.push({
           link: `${fidelity_asset_link}/${account.account_number}/USD`,

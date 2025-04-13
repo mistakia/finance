@@ -1,6 +1,7 @@
 import Knex from 'knex'
-import config from '../config.mjs'
 
-const mysql = Knex(config.mysql)
+import config from '#config'
 
-export default mysql
+const postgres = Knex(config.postgres)
+
+export default postgres

@@ -31,7 +31,7 @@ const import_schwab_accounts = async ({
   const schwab_asset_link = `/${publicKey}/schwab`
 
   const add_cash_position = async (position) => {
-    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
     const balance = Number(position.Totals.MarketValue)
 
     inserts.push({

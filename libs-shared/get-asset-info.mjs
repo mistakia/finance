@@ -1,21 +1,21 @@
 import { coingecko, morningstar, slugify, alphavantage } from '#libs-shared'
 
-export default async function ({ type, symbol }) {
+export default async function ({ asset_type, symbol }) {
   // TODO - if type missing, get type
 
   const info = {
-    type,
+    asset_type,
     symbol,
-    link: `/${type}/${symbol}`
+    link: `/${asset_type}/${symbol}`
   }
 
-  switch (type) {
-    // case 'us-etf': all ETFs are ETPs
-    case 'us-fund':
-    case 'us-etp':
-    case 'us-reit':
-    case 'cn-adr':
-    case 'us-stock': {
+  switch (asset_type) {
+    // case 'us_etf': all ETFs are ETPs
+    case 'us_fund':
+    case 'us_etp':
+    case 'us_reit':
+    case 'cn_adr':
+    case 'us_stock': {
       const security = await morningstar.search({ symbol })
       if (!security) {
         throw new Error(`unsupported us security: ${symbol}`)
@@ -32,7 +32,7 @@ export default async function ({ type, symbol }) {
       return {
         ...info,
         market_value_usd: alphavantage_quote['Global Quote']['05. price'],
-        asset_class: `/public-equity/${category}`
+        asset_class: `/public_equity/${category}`
       }
     }
 
@@ -44,8 +44,8 @@ export default async function ({ type, symbol }) {
 
       const isToken = Boolean(coin.asset_platform_id)
       const asset_class = isToken
-        ? '/crypto-currency/token'
-        : '/crypto-currency/native'
+        ? '/crypto_currency/token'
+        : '/crypto_currency/native'
 
       return {
         ...info,
@@ -64,7 +64,7 @@ export default async function ({ type, symbol }) {
       }
     }
 
-    case 'us-property': {
+    case 'us_property': {
       // TODO
       return {
         ...info,
@@ -72,7 +72,7 @@ export default async function ({ type, symbol }) {
       }
     }
 
-    case 'loan-crypto': {
+    case 'loan_crypto': {
       const coin = await coingecko.getCoin({ symbol })
       if (!coin) {
         throw new Error(`unsupported crypto currency: ${symbol}`)
@@ -85,7 +85,7 @@ export default async function ({ type, symbol }) {
       }
     }
 
-    case 'loan-mortgage': {
+    case 'loan_mortgage': {
       return {
         ...info,
         market_value_usd: 1,
@@ -93,7 +93,7 @@ export default async function ({ type, symbol }) {
       }
     }
 
-    case 'loan-note': {
+    case 'loan_note': {
       return {
         ...info,
         market_value_usd: 1,
@@ -102,7 +102,7 @@ export default async function ({ type, symbol }) {
     }
 
     default: {
-      throw new Error(`unknown asset type: ${type}`)
+      throw new Error(`unknown asset type: ${asset_type}`)
     }
   }
 }

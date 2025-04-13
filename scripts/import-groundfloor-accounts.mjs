@@ -16,7 +16,7 @@ const import_groundfloor_accounts = async ({ credentials, publicKey }) => {
   const inserts = []
 
   if (stairs_data) {
-    const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+    const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
     const balance = Number(stairs_data.currentBalanceCents / 100)
     inserts.push({
       link: `/${publicKey}/groundfloor/USD/stairs`,
@@ -34,7 +34,10 @@ const import_groundfloor_accounts = async ({ credentials, publicKey }) => {
 
   if (groundfloor_data) {
     if (groundfloor_data.moneyAtWorkAmountCents) {
-      const asset = await addAsset({ type: 'loan-mortgage', symbol: 'LOAN' })
+      const asset = await addAsset({
+        asset_type: 'loan_mortgage',
+        symbol: 'LOAN'
+      })
       const balance = Number(groundfloor_data.moneyAtWorkAmountCents / 100)
       inserts.push({
         link: `/${publicKey}/groundfloor/LOAN`,
@@ -47,7 +50,7 @@ const import_groundfloor_accounts = async ({ credentials, publicKey }) => {
     }
 
     if (groundfloor_data.investableFundsAmountCents) {
-      const asset = await addAsset({ type: 'currency', symbol: 'USD' })
+      const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
       const balance = Number(groundfloor_data.investableFundsAmountCents / 100)
 
       inserts.push({
