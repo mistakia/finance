@@ -42,7 +42,7 @@ const import_interactive_brokers_accounts = async ({
 
   if (inserts.length) {
     log(`Inserting ${inserts.length} interactive brokers accounts`)
-    await db('holdings').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict('link').merge()
   }
 }
 

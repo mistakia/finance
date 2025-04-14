@@ -85,7 +85,7 @@ const import_schwab_accounts = async ({
 
     log(`Deleted ${delete_query} schwab holdings`)
 
-    await db('holdings').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict('link').merge()
     log(`Saved ${inserts.length} schwab holdings`)
   }
 }

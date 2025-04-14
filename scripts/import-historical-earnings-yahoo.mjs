@@ -166,7 +166,10 @@ const run = async (symbol) => {
 
   if (earning_inserts.length) {
     log(`Inserting ${earning_inserts.length} earnings records into database`)
-    await db('earnings').insert(earning_inserts).onConflict().merge()
+    await db('earnings')
+      .insert(earning_inserts)
+      .onConflict(['symbol', 'event_date'])
+      .merge()
   }
 
   return res

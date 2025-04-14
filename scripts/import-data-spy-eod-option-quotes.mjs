@@ -133,7 +133,10 @@ const import_spy_eod_option_quotes = async () => {
   for (const file of files) {
     const data = await read_csv(file)
     const inserts = data.map((line) => format_line(line))
-    await db('eod_option_quotes').insert(inserts).onConflict().merge()
+    await db('eod_option_quotes')
+      .insert(inserts)
+      .onConflict(['underlying_symbol', 'quote_date', 'expire_date', 'strike'])
+      .merge()
     log(`Imported ${inserts.length} rows from ${file}`)
   }
 }

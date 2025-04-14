@@ -57,7 +57,7 @@ const run = async ({ credentials, publicKey }) => {
       .del()
     log(`deleted ${delete_query} ally invest holdings`)
 
-    await db('holdings').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict('link').merge()
     log(`inserted ${inserts.length} ally invest holdings`)
   }
 }

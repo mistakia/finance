@@ -30,7 +30,7 @@ const run = async ({ credentials, publicKey }) => {
     }
 
     log('saving btc holding')
-    await db('holdings').insert(insert).onConflict().merge()
+    await db('holdings').insert(insert).onConflict('link').merge()
   }
 }
 

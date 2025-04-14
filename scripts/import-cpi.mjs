@@ -32,7 +32,7 @@ const run = async (symbol) => {
   }
 
   log(`Inserting ${inserts.length} prices into database`)
-  await db('cpi').insert(inserts).onConflict().merge()
+  await db('cpi').insert(inserts).onConflict('quote_date').merge()
 }
 
 export default run

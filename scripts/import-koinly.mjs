@@ -130,7 +130,7 @@ const getTransactions = async ({
   )
   if (inserts.length) {
     log(`Inserting ${inserts.length} transactions into database`)
-    await db('transactions').insert(inserts).onConflict().merge()
+    await db('transactions').insert(inserts).onConflict('link').merge()
   }
 
   return data

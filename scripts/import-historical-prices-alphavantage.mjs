@@ -37,7 +37,7 @@ const runOne = async ({ symbol }) => {
 
   // TODO missing quote_unixtime and close_adjusted
   // log(`Inserting ${inserts.length} prices into database`)
-  // await db('eod_equity_quotes').insert(inserts).onConflict().merge()
+  // await db('eod_equity_quotes').insert(inserts).onConflict(['symbol', 'quote_date']).merge()
 }
 
 const run = async () => {

@@ -145,7 +145,7 @@ const backtest_options = async ({
 
         counter += 1
 
-        // await db('backtests').insert(chunk).onConflict().merge()
+        // await db('backtests').insert(chunk).onConflict(['name', 'start_date', 'end_date', 'start_value']).merge()
         // log(`inserted ${chunk.length} backtests`)
       }
     })

@@ -98,7 +98,7 @@ const import_wealthfront_accounts = async ({
       .del()
     log(`deleted ${delete_query} wealthfront holdings`)
 
-    await db('holdings').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict('link').merge()
     log(`saved ${inserts.length} wealthfront holdings`)
   }
 }

@@ -34,7 +34,7 @@ const import_stellar_accounts = async ({ credentials, publicKey }) => {
 
   if (inserts.length) {
     log(`saving ${inserts.length} stellar holdings`)
-    await db('holdings').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict('link').merge()
   }
 }
 

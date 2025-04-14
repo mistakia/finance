@@ -30,7 +30,7 @@ const import_litecoin_account = async ({ credentials, publicKey }) => {
     }
 
     log('saving ltc holding')
-    await db('holdings').insert(insert).onConflict().merge()
+    await db('holdings').insert(insert).onConflict('link').merge()
   }
 }
 

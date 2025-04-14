@@ -41,7 +41,7 @@ const run = async ({ credentials, publicKey, cli = false }) => {
 
   if (inserts.length) {
     log(`saving ${inserts.length} holdings`)
-    await db('holdings').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict('link').merge()
   }
 }
 

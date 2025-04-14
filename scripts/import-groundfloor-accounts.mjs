@@ -66,7 +66,7 @@ const import_groundfloor_accounts = async ({ credentials, publicKey }) => {
 
   if (inserts.length) {
     log(`saving ${inserts.length} groundfloor holdings`)
-    await db('holdings').insert(inserts).onConflict().merge()
+    await db('holdings').insert(inserts).onConflict('link').merge()
   }
 }
 

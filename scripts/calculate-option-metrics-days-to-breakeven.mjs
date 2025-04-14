@@ -119,7 +119,15 @@ const calculate_days_to_breakeven = async ({ symbol }) => {
     }
 
     if (inserts.length > 0) {
-      await db('eod_option_quotes').insert(inserts).onConflict().merge()
+      await db('eod_option_quotes')
+        .insert(inserts)
+        .onConflict([
+          'underlying_symbol',
+          'quote_date',
+          'expire_date',
+          'strike'
+        ])
+        .merge()
       log(`Updated ${inserts.length} rows for ${symbol}...`)
     }
   }

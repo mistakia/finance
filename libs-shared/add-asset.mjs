@@ -21,7 +21,7 @@ export default async function ({ asset_type, symbol, update = false }) {
   }
 
   const asset = await getAssetInfo({ asset_type, symbol })
-  await db('assets').insert(asset).onConflict().merge()
+  await db('assets').insert(asset).onConflict('link').merge()
 
   return asset
 }
