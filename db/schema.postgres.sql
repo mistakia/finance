@@ -16,9 +16,16 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+DROP INDEX IF EXISTS public.idx_transactions_tx_src;
+DROP INDEX IF EXISTS public.idx_transactions_tx_dest;
+DROP INDEX IF EXISTS public.idx_transactions_transaction_info;
+DROP INDEX IF EXISTS public.idx_transactions_original_data;
+DROP INDEX IF EXISTS public.idx_transactions_date;
+DROP INDEX IF EXISTS public.idx_transactions_categories;
 ALTER TABLE IF EXISTS ONLY public.transactions DROP CONSTRAINT IF EXISTS transactions_pkey;
 ALTER TABLE IF EXISTS ONLY public.holdings DROP CONSTRAINT IF EXISTS holdings_pkey;
 ALTER TABLE IF EXISTS ONLY public.eod_option_quotes DROP CONSTRAINT IF EXISTS eod_option_quotes_pkey;
+ALTER TABLE IF EXISTS ONLY public.eod_equity_quotes DROP CONSTRAINT IF EXISTS eod_equity_quotes_pkey;
 ALTER TABLE IF EXISTS ONLY public.earnings DROP CONSTRAINT IF EXISTS earnings_pkey;
 ALTER TABLE IF EXISTS ONLY public.cpi DROP CONSTRAINT IF EXISTS cpi_pkey;
 ALTER TABLE IF EXISTS ONLY public.config DROP CONSTRAINT IF EXISTS config_pkey;
@@ -76,7 +83,9 @@ CREATE TYPE public.transaction_type_enum AS ENUM (
     'exchange',
     'transfer',
     'purchase',
-    'income'
+    'income',
+    'return',
+    'fee'
 );
 
 
@@ -308,12 +317,17 @@ CREATE TABLE public.transactions (
     fee_amount numeric(65,30) DEFAULT NULL::numeric,
     fee_symbol character varying(20) DEFAULT NULL::character varying,
     fee_link character varying(1000) DEFAULT NULL::character varying,
-    date integer,
+    transaction_unix integer,
     tx_id character varying(200) DEFAULT NULL::character varying,
     tx_src character varying(200) DEFAULT NULL::character varying,
     tx_dest character varying(200) DEFAULT NULL::character varying,
     tx_label character varying(100) DEFAULT NULL::character varying,
-    description character varying(200) DEFAULT NULL::character varying
+    description character varying(200) DEFAULT NULL::character varying,
+    transaction_time time without time zone,
+    categories text[],
+    original_data jsonb,
+    transaction_info jsonb,
+    transaction_date date
 );
 
 
@@ -373,6 +387,14 @@ ALTER TABLE ONLY public.earnings
 
 
 --
+-- Name: eod_equity_quotes eod_equity_quotes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eod_equity_quotes
+    ADD CONSTRAINT eod_equity_quotes_pkey UNIQUE (symbol, quote_date);
+
+
+--
 -- Name: eod_option_quotes eod_option_quotes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -394,6 +416,48 @@ ALTER TABLE ONLY public.holdings
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_pkey UNIQUE (link);
+
+
+--
+-- Name: idx_transactions_categories; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_categories ON public.transactions USING gin (categories);
+
+
+--
+-- Name: idx_transactions_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_date ON public.transactions USING btree (transaction_unix);
+
+
+--
+-- Name: idx_transactions_original_data; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_original_data ON public.transactions USING gin (original_data);
+
+
+--
+-- Name: idx_transactions_transaction_info; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_transaction_info ON public.transactions USING gin (transaction_info);
+
+
+--
+-- Name: idx_transactions_tx_dest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_tx_dest ON public.transactions USING btree (tx_dest);
+
+
+--
+-- Name: idx_transactions_tx_src; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_tx_src ON public.transactions USING btree (tx_src);
 
 
 --

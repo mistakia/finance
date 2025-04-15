@@ -1,12 +1,15 @@
 import debug from 'debug'
 
+import db from '#db'
+
 const log = debug('tradingview')
 
 const get_config = async () => {
-  const config_row = await db('config').where({ key: 'tradingview_config' }).first()
+  const config_row = await db('config')
+    .where({ key: 'tradingview_config' })
+    .first()
   return config_row.value
 }
-
 
 /**
  * Fetches option data from TradingView API

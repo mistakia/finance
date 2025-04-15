@@ -23,3 +23,5 @@ yarn-error.log
 build/*
 config/config*
 session.json
+config/user/*
+import-data/*
