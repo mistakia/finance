@@ -10,7 +10,7 @@ import { interactive_brokers } from '#libs-server'
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-interactive-brokers-accounts')
 debug.enable(
-  'import-interactive-brokers-accounts,interactive-brokers,refresh-historical-quotes'
+  'import-interactive-brokers-accounts,interactive-brokers,refresh-historical-quotes,tradingview'
 )
 
 const import_interactive_brokers_accounts = async ({

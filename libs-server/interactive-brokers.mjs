@@ -11,6 +11,7 @@ import {
 
 import db from '#db'
 import refresh_historical_quotes from './refresh-historical-quotes.mjs'
+import { get_option_delta } from './tradingview.mjs'
 
 import config from '#config'
 
@@ -135,8 +136,8 @@ const get_account_positions = (ib) =>
     })
   })
 
-const get_market_data = ({ ib, contract, delayed = false }) =>
-  new Promise((resolve, reject) => {
+const get_market_data = async ({ ib, contract, delayed = false }) => {
+  return new Promise((resolve, reject) => {
     let market_data = {
       price: null,
       impliedVol: null,
@@ -156,13 +157,46 @@ const get_market_data = ({ ib, contract, delayed = false }) =>
       delayed ? MarketDataType.DELAYED : MarketDataType.REAL_TIME
     )
 
-    const cleanup_and_resolve = () => {
+    const cleanup_and_resolve = async () => {
       if (subscription) {
         subscription.unsubscribe()
       }
       if (timeout_id) {
         clearTimeout(timeout_id)
       }
+
+      // If no delta value was received, try to get it from TradingView
+      if (market_data.delta === null && contract.secType === 'OPT') {
+        try {
+          // Extract data from contract for TradingView API
+          const symbol = contract.symbol
+          const expiration_date = parseInt(
+            contract.lastTradeDateOrContractMonth
+          )
+
+          // Convert 'C'/'P' to 'call'/'put' as expected by TradingView API
+          const option_type = contract.right === 'C' ? 'call' : 'put'
+          const strike = parseFloat(contract.strike)
+
+          // Get delta from TradingView
+          const delta = await get_option_delta({
+            symbol,
+            expiration_date,
+            option_type,
+            strike
+          })
+
+          if (delta !== null) {
+            market_data.delta = Math.abs(delta) // Ensure positive delta value
+            log(
+              `Retrieved delta for ${symbol} ${expiration_date} ${option_type} ${strike} from TradingView: ${delta}`
+            )
+          }
+        } catch (error) {
+          log(`Failed to get delta from TradingView: ${error.message}`)
+        }
+      }
+
       if (!has_received_data) {
         log(
           `No market data received for contract: ${JSON.stringify(
@@ -241,6 +275,7 @@ const get_market_data = ({ ib, contract, delayed = false }) =>
     // Set a timeout to resolve after a maximum wait time
     timeout_id = setTimeout(cleanup_and_resolve, 30000)
   })
+}
 
 const get_stock_market_data = async ({ ib, symbol }) => {
   const contract = {

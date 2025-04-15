@@ -21,6 +21,7 @@ ALTER TABLE IF EXISTS ONLY public.holdings DROP CONSTRAINT IF EXISTS holdings_pk
 ALTER TABLE IF EXISTS ONLY public.eod_option_quotes DROP CONSTRAINT IF EXISTS eod_option_quotes_pkey;
 ALTER TABLE IF EXISTS ONLY public.earnings DROP CONSTRAINT IF EXISTS earnings_pkey;
 ALTER TABLE IF EXISTS ONLY public.cpi DROP CONSTRAINT IF EXISTS cpi_pkey;
+ALTER TABLE IF EXISTS ONLY public.config DROP CONSTRAINT IF EXISTS config_pkey;
 ALTER TABLE IF EXISTS ONLY public.backtests DROP CONSTRAINT IF EXISTS backtests_pkey;
 ALTER TABLE IF EXISTS ONLY public.assets DROP CONSTRAINT IF EXISTS assets_pkey;
 ALTER TABLE IF EXISTS ONLY public.adjusted_daily_prices DROP CONSTRAINT IF EXISTS adjusted_daily_prices_pkey;
@@ -30,6 +31,7 @@ DROP TABLE IF EXISTS public.eod_option_quotes;
 DROP TABLE IF EXISTS public.eod_equity_quotes;
 DROP TABLE IF EXISTS public.earnings;
 DROP TABLE IF EXISTS public.cpi;
+DROP TABLE IF EXISTS public.config;
 DROP TABLE IF EXISTS public.backtests;
 DROP TABLE IF EXISTS public.assets;
 DROP TABLE IF EXISTS public.adjusted_daily_prices;
@@ -123,6 +125,17 @@ CREATE TABLE public.backtests (
     options_sold integer NOT NULL,
     options_closed integer NOT NULL,
     options_exercised integer NOT NULL
+);
+
+
+--
+-- Name: config; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.config (
+    key character varying(255) NOT NULL,
+    value jsonb,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -333,6 +346,14 @@ ALTER TABLE ONLY public.assets
 
 ALTER TABLE ONLY public.backtests
     ADD CONSTRAINT backtests_pkey UNIQUE (name, start_date, end_date, start_value);
+
+
+--
+-- Name: config config_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.config
+    ADD CONSTRAINT config_pkey PRIMARY KEY (key);
 
 
 --
