@@ -1,6 +1,11 @@
 import debug from 'debug'
 
 import db from '#db'
+import {
+  get_primary_exchange,
+  get_symbol_info,
+  save_symbols
+} from './symbols/index.mjs'
 
 const log = debug('tradingview')
 
@@ -9,6 +14,95 @@ const get_config = async () => {
     .where({ key: 'tradingview_config' })
     .first()
   return config_row.value
+}
+
+/**
+ * Searches for symbols on TradingView
+ * @param {Object} params - Parameters for the search
+ * @param {string} params.text - The text to search for
+ * @param {string} [params.lang="en"] - Language
+ * @param {string} [params.country="US"] - Country to prioritize in results
+ * @returns {Promise<Array>} - Array of symbol information objects
+ */
+export const search_symbol = async ({ text, lang = 'en', country = 'US' }) => {
+  try {
+    log({ text, lang, country })
+    const config = await get_config()
+
+    // Check if we have the symbol in database
+    const existing_symbols = await get_symbol_info({ symbol: text })
+    if (existing_symbols && existing_symbols.length > 0) {
+      log('Using existing symbol data')
+      return existing_symbols
+    }
+
+    // Construct search URL
+    const search_url = `${config.symbol_search_url}/?text=${encodeURIComponent(
+      text
+    )}&hl=1&exchange=&lang=${lang}&search_type=undefined&domain=production&sort_by_country=${country}&promo=true`
+
+    log(`Searching for ${text} on ${search_url}`)
+
+    const response = await fetch(search_url, {
+      headers: {
+        accept: '*/*',
+        'accept-language': 'en-US,en;q=0.9',
+        origin: 'https://www.tradingview.com',
+        priority: 'u=1, i',
+        referer: 'https://www.tradingview.com/',
+        'sec-ch-ua':
+          '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+      },
+      method: 'GET'
+    })
+
+    if (!response.ok) {
+      throw new Error(
+        `TradingView API error: ${response.status} ${response.statusText}`
+      )
+    }
+
+    const data = await response.json()
+
+    if (data && data.symbols && Array.isArray(data.symbols)) {
+      // Save the symbols in our database
+      await save_symbols(data.symbols)
+      return data
+    }
+
+    return []
+  } catch (error) {
+    console.error('Error searching symbols on TradingView:', error)
+    throw error
+  }
+}
+
+/**
+ * Format exchange name to the format expected by TradingView options API
+ * @param {string} exchange - Exchange name from symbol search
+ * @returns {string} - Formatted exchange name
+ */
+const format_exchange_for_options = (exchange) => {
+  const exchange_map = {
+    NYSE: 'NYSE',
+    NASDAQ: 'NASDAQ',
+    'NYSE Arca': 'AMEX',
+    AMEX: 'AMEX',
+    'NYSE American': 'AMEX',
+    MIL: 'MIL',
+    LSE: 'LSE',
+    BMV: 'BMV',
+    BIVA: 'BIVA'
+  }
+
+  return exchange_map[exchange] || exchange
 }
 
 /**
@@ -27,6 +121,10 @@ export const get_option_data = async ({
   log({ symbol, expiration_date, exchange })
   try {
     const config = await get_config()
+
+    // Format the exchange name correctly
+    const formatted_exchange = format_exchange_for_options(exchange)
+
     const response = await fetch(
       `${config.options_url}?label-product=options-overlay`,
       {
@@ -73,7 +171,10 @@ export const get_option_data = async ({
           ],
           ignore_unknown_fields: false,
           index_filters: [
-            { name: 'underlying_symbol', values: [`${exchange}:${symbol}`] }
+            {
+              name: 'underlying_symbol',
+              values: [`${formatted_exchange}:${symbol}`]
+            }
           ]
         }),
         method: 'POST'
@@ -210,7 +311,7 @@ export const get_specific_option_data = async ({
  * @param {string|number} params.expiration_date - Option expiration date in YYYYMMDD format
  * @param {string} params.option_type - Option type ("call" or "put")
  * @param {number} params.strike - Strike price
- * @param {string} [params.exchange="NASDAQ"] - Exchange for the symbol
+ * @param {string} [params.exchange] - Exchange for the symbol (if null, will be looked up)
  * @returns {Promise<number|null>} - Delta value or null if unavailable
  */
 export const get_option_delta = async ({
@@ -218,10 +319,16 @@ export const get_option_delta = async ({
   expiration_date,
   option_type,
   strike,
-  exchange = 'NASDAQ'
+  exchange = null
 }) => {
   try {
     log({ symbol, expiration_date, option_type, strike, exchange })
+
+    // If exchange not provided, look it up
+    if (!exchange) {
+      exchange = await get_primary_exchange(symbol)
+    }
+
     const option_data = await get_specific_option_data({
       symbol,
       expiration_date,
@@ -236,12 +343,3 @@ export const get_option_delta = async ({
     return null
   }
 }
-
-/**
- * Example usage:
- *
- * const options_data = await get_option_data({
- *   symbol: "CEG",
- *   expiration_date: 20250516
- * })
- */

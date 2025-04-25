@@ -24,6 +24,7 @@ DROP INDEX IF EXISTS public.idx_transactions_date;
 DROP INDEX IF EXISTS public.idx_transactions_categories;
 ALTER TABLE IF EXISTS ONLY public.transactions DROP CONSTRAINT IF EXISTS transactions_pkey;
 ALTER TABLE IF EXISTS ONLY public.holdings DROP CONSTRAINT IF EXISTS holdings_pkey;
+ALTER TABLE IF EXISTS ONLY public.exchange_symbols DROP CONSTRAINT IF EXISTS exchange_symbols_pkey;
 ALTER TABLE IF EXISTS ONLY public.eod_option_quotes DROP CONSTRAINT IF EXISTS eod_option_quotes_pkey;
 ALTER TABLE IF EXISTS ONLY public.eod_equity_quotes DROP CONSTRAINT IF EXISTS eod_equity_quotes_pkey;
 ALTER TABLE IF EXISTS ONLY public.earnings DROP CONSTRAINT IF EXISTS earnings_pkey;
@@ -34,6 +35,7 @@ ALTER TABLE IF EXISTS ONLY public.assets DROP CONSTRAINT IF EXISTS assets_pkey;
 ALTER TABLE IF EXISTS ONLY public.adjusted_daily_prices DROP CONSTRAINT IF EXISTS adjusted_daily_prices_pkey;
 DROP TABLE IF EXISTS public.transactions;
 DROP TABLE IF EXISTS public.holdings;
+DROP TABLE IF EXISTS public.exchange_symbols;
 DROP TABLE IF EXISTS public.eod_option_quotes;
 DROP TABLE IF EXISTS public.eod_equity_quotes;
 DROP TABLE IF EXISTS public.earnings;
@@ -281,6 +283,20 @@ CREATE TABLE public.eod_option_quotes (
 
 
 --
+-- Name: exchange_symbols; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.exchange_symbols (
+    symbol character varying(20) NOT NULL,
+    exchange character varying(20) NOT NULL,
+    full_name character varying(200),
+    description character varying(500),
+    type character varying(50),
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
 -- Name: holdings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -400,6 +416,14 @@ ALTER TABLE ONLY public.eod_equity_quotes
 
 ALTER TABLE ONLY public.eod_option_quotes
     ADD CONSTRAINT eod_option_quotes_pkey PRIMARY KEY (underlying_symbol, quote_date, expire_date, strike);
+
+
+--
+-- Name: exchange_symbols exchange_symbols_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.exchange_symbols
+    ADD CONSTRAINT exchange_symbols_pkey PRIMARY KEY (symbol, exchange);
 
 
 --
