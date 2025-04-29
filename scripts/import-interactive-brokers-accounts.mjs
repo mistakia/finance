@@ -27,21 +27,23 @@ const import_interactive_brokers_accounts = async ({
     })
 
     // Create tables for different sections
+    // Summary table
     const cash_table = new Table({
       head: ['Metric', 'Value'],
       style: { head: ['cyan'] }
     })
-    cash_table.push(
-      ['Net Liquidation', account_info.NetLiquidation],
-      ['Total Cash', account_info.TotalCashValue],
-      ['Gross Position', account_info.GrossPositionValue]
-    )
 
+    Object.entries(account_info.summary).forEach(([key, value]) => {
+      cash_table.push([key, value])
+    })
+
+    // Risk tables
     const unlimited_risk_table = new Table({
       head: ['Symbol', 'Strike', 'Expiration', 'Contracts', 'Shares Needed'],
       style: { head: ['cyan'] }
     })
-    account_info.unlimited_risk_positions.forEach((pos) => {
+
+    account_info.analysis.risk.unlimited_risk_positions.forEach((pos) => {
       unlimited_risk_table.push([
         pos.symbol,
         pos.strike,
@@ -64,7 +66,8 @@ const import_interactive_brokers_accounts = async ({
       ],
       style: { head: ['cyan'] }
     })
-    account_info.limited_risk_positions.forEach((pos) => {
+
+    account_info.analysis.risk.limited_risk_positions.forEach((pos) => {
       limited_risk_table.push([
         pos.symbol,
         pos.strike,
@@ -81,17 +84,26 @@ const import_interactive_brokers_accounts = async ({
       head: ['Liability Type', 'Amount'],
       style: { head: ['cyan'] }
     })
+
     liability_table.push(
-      ['Option Cash', account_info.option_cash_liability],
-      ['Uncovered Puts', account_info.total_uncovered_put_liability],
-      ['Total Strategy Risk', account_info.total_strategy_risk]
+      ['Option Cash', account_info.analysis.risk.option_cash_liability],
+      [
+        'Uncovered Puts',
+        account_info.analysis.risk.total_uncovered_put_liability
+      ],
+      ['Total Risk', account_info.analysis.risk.total.limited_risk_total],
+      [
+        'Delta Exposure ($)',
+        account_info.analysis.risk.delta_exposure.delta_dollars
+      ]
     )
 
     const probability_table = new Table({
       head: ['Probability Threshold', 'Liability'],
       style: { head: ['cyan'] }
     })
-    Object.entries(account_info.liability_by_probability).forEach(
+
+    Object.entries(account_info.analysis.probability.by_threshold).forEach(
       ([threshold, liability]) => {
         probability_table.push([threshold, liability])
       }
@@ -108,7 +120,8 @@ const import_interactive_brokers_accounts = async ({
       ],
       style: { head: ['cyan'] }
     })
-    account_info.strategy_liabilities.forEach((strat) => {
+
+    account_info.analysis.strategies.forEach((strat) => {
       const positions = strat.positions
         .map((pos) => {
           const quantity = pos.quantity > 0 ? `+${pos.quantity}` : pos.quantity
@@ -120,7 +133,7 @@ const import_interactive_brokers_accounts = async ({
       strategy_table.push([
         strat.underlying,
         strat.expiration,
-        strat.strategy_type,
+        strat.strategy_type + (strat.variation ? ` (${strat.variation})` : ''),
         strat.max_risk,
         strat.max_profit,
         positions
@@ -154,133 +167,52 @@ const import_interactive_brokers_accounts = async ({
       ])
     })
 
-    // Create a new table for symbol-specific risk analysis
+    // Symbol risk table
     const symbol_risk_table = new Table({
       head: [
         'Symbol',
-        'Uncovered Calls',
-        'Uncovered Puts',
-        'Holdings',
-        'Total Risk'
+        'Shares',
+        'Short Calls',
+        'Short Puts',
+        'Delta Exposure',
+        'Market Price'
       ],
       style: { head: ['cyan'] }
     })
 
-    // Group positions by symbol
-    const symbols = new Map()
-
-    // First collect all stock positions
-    account_info.positions.forEach((position) => {
-      if (position.contract.secType === 'STK') {
-        const symbol = position.contract.symbol
-        if (!symbols.has(symbol)) {
-          symbols.set(symbol, {
-            symbol,
-            stock_position: {
-              quantity: position.pos,
-              cost_basis: position.avgCost
-            },
-            uncovered_calls: [],
-            uncovered_puts: [],
-            covered_calls: []
-          })
-        } else {
-          symbols.get(symbol).stock_position = {
-            quantity: position.pos,
-            cost_basis: position.avgCost
-          }
-        }
-      }
-    })
-
-    // Add option positions to the appropriate categories
-    account_info.unlimited_risk_positions.forEach((pos) => {
-      if (!symbols.has(pos.symbol)) {
-        symbols.set(pos.symbol, {
-          symbol: pos.symbol,
-          stock_position: null,
-          uncovered_calls: [],
-          uncovered_puts: [],
-          covered_calls: []
-        })
-      }
-
-      symbols.get(pos.symbol).uncovered_calls.push({
-        strike: pos.strike,
-        expiration: pos.expiration,
-        contracts: pos.contracts
-      })
-    })
-
-    account_info.limited_risk_positions.forEach((pos) => {
-      if (!symbols.has(pos.symbol)) {
-        symbols.set(pos.symbol, {
-          symbol: pos.symbol,
-          stock_position: null,
-          uncovered_calls: [],
-          uncovered_puts: [],
-          covered_calls: []
-        })
-      }
-
-      const symbol_data = symbols.get(pos.symbol)
-
-      if (pos.risk_type === 'COVERED') {
-        symbol_data.covered_calls.push({
-          strike: pos.strike,
-          expiration: pos.expiration,
-          contracts: pos.contracts
-        })
-      } else if (pos.risk_type === 'UNCOVERED_PUT') {
-        symbol_data.uncovered_puts.push({
-          strike: pos.strike,
-          expiration: pos.expiration,
-          contracts: pos.contracts,
-          liability: pos.liability
-        })
-      }
-    })
-
-    // Calculate total risk and populate the symbol risk table
-    symbols.forEach((symbol_data) => {
-      const holdings_value = symbol_data.stock_position
-        ? symbol_data.stock_position.quantity *
-          symbol_data.stock_position.cost_basis
-        : 0
-
-      const uncovered_calls_formatted = symbol_data.uncovered_calls
-        .map((call) => `${call.strike} ${call.expiration} (${call.contracts})`)
-        .join('\n')
-
-      const uncovered_puts_formatted = symbol_data.uncovered_puts
-        .map((put) => `${put.strike} ${put.expiration} (${put.contracts})`)
-        .join('\n')
-
-      const holdings_formatted = symbol_data.stock_position
-        ? `${symbol_data.stock_position.quantity} shares @ ${symbol_data.stock_position.cost_basis}`
-        : 'None'
-
-      const covered_calls_formatted = symbol_data.covered_calls.length
-        ? `\nCovered Calls:\n${symbol_data.covered_calls
-            .map(
-              (call) => `${call.strike} ${call.expiration} (${call.contracts})`
-            )
-            .join('\n')}`
-        : ''
-
-      const total_put_liability = symbol_data.uncovered_puts.reduce(
-        (sum, put) => sum + (put.liability || 0),
-        0
-      )
-
-      const total_risk = holdings_value + total_put_liability
-
+    account_info.analysis.symbols.forEach((symbol) => {
       symbol_risk_table.push([
-        symbol_data.symbol,
-        uncovered_calls_formatted || 'None',
-        uncovered_puts_formatted || 'None',
-        holdings_formatted + covered_calls_formatted,
-        total_risk.toFixed(2)
+        symbol.symbol,
+        symbol.total_shares,
+        symbol.short_calls,
+        symbol.short_puts,
+        symbol.delta_exposure.toFixed(2),
+        symbol.market_price || 'N/A'
+      ])
+    })
+
+    // Expected value table
+    const expected_value_table = new Table({
+      head: ['Symbol', 'Expected Value', 'Position Details'],
+      style: { head: ['cyan'] }
+    })
+
+    account_info.analysis.expected_value.by_symbol.forEach((symbol) => {
+      if (symbol.positions.length === 0) return
+
+      const positions_detail = symbol.positions
+        .map(
+          (p) =>
+            `${p.symbol} ${p.right} ${
+              p.strike
+            } (EV: $${p.expected_value.toFixed(2)})`
+        )
+        .join('\n')
+
+      expected_value_table.push([
+        symbol.symbol,
+        `$${symbol.expected_value.toFixed(2)}`,
+        positions_detail
       ])
     })
 
@@ -300,9 +232,11 @@ const import_interactive_brokers_accounts = async ({
     console.log(strategy_table.toString())
     console.log('\nSymbol Risk Analysis:')
     console.log(symbol_risk_table.toString())
+    console.log('\nExpected Value Analysis:')
+    console.log(expected_value_table.toString())
 
     const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
-    const cash_balance = Number(account_info.TotalCashValue)
+    const cash_balance = Number(account_info.summary.TotalCashValue)
 
     inserts.push({
       link: `/${publicKey}/interactive_brokers/USD`, // TODO - include hash of accountId
