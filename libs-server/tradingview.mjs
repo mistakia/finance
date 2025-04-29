@@ -6,6 +6,7 @@ import {
   get_symbol_info,
   save_symbols
 } from './symbols/index.mjs'
+import { get as get_cache, set as set_cache } from './cache.mjs'
 
 const log = debug('tradingview')
 
@@ -120,6 +121,14 @@ export const get_option_data = async ({
 }) => {
   log({ symbol, expiration_date, exchange })
   try {
+    // Try to get from cache first
+    const cache_key = `tradingview/options/${symbol}/${expiration_date}/${exchange}`
+    const cached_data = await get_cache({ key: cache_key })
+    if (cached_data) {
+      log(`Using cached option data for ${symbol} ${expiration_date}`)
+      return cached_data
+    }
+
     const config = await get_config()
 
     // Format the exchange name correctly
@@ -188,6 +197,10 @@ export const get_option_data = async ({
     }
 
     const data = await response.json()
+
+    // Cache the response
+    await set_cache({ key: cache_key, value: data })
+
     return data
   } catch (error) {
     console.error('Error fetching option data from TradingView:', error)

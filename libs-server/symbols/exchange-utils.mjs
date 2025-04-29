@@ -6,17 +6,6 @@ import { search_symbol } from '../tradingview.mjs'
 const log = debug('exchange-utils')
 
 /**
- * Gets the TradingView configuration from the database
- * @returns {Promise<Object>} - TradingView configuration object
- */
-const get_config = async () => {
-  const config_row = await db('config')
-    .where({ key: 'tradingview_config' })
-    .first()
-  return config_row.value
-}
-
-/**
  * Save symbol data to the database
  * @param {Array} symbols - Array of symbol objects to save
  * @returns {Promise<void>}
