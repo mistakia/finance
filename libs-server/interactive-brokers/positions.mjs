@@ -1,5 +1,6 @@
 import { EventName } from '@stoqey/ib'
 import debug from 'debug'
+import { create_event_promise } from './utils/events.mjs'
 
 const log = debug('interactive-brokers:positions')
 
@@ -10,88 +11,71 @@ export const account_summary_tags = [
   'GrossPositionValue'
 ]
 
-export const get_account_summary = (ib) =>
-  new Promise((resolve, reject) => {
-    const summary = new Map()
+export const get_account_summary = (ib) => {
+  const summary = new Map()
 
-    const cleanupListeners = []
-
-    const accountSummaryHandler = (req_id, account, tag, value) => {
-      if (!summary.has(tag)) {
-        summary.set(tag, value)
-      }
+  const account_summary_handler = (req_id, account, tag, value) => {
+    if (!summary.has(tag) && account_summary_tags.includes(tag)) {
+      summary.set(tag, value)
     }
+  }
 
-    const accountSummaryEndHandler = () => {
-      cleanup()
-      resolve(summary)
-    }
+  return new Promise((resolve, reject) => {
+    create_event_promise({
+      emitter: ib.api,
+      success_event: EventName.accountSummaryEnd,
+      error_event: EventName.error,
+      handlers: {
+        [EventName.accountSummary]: account_summary_handler
+      },
+      timeout_ms: 30000
+    })
+      .then(() => {
+        resolve(summary)
+      })
+      .catch(reject)
 
-    const errorHandler = (err) => {
-      cleanup()
-      reject(err)
-    }
-
-    const cleanup = () => {
-      cleanupListeners.forEach((remove) => remove())
-    }
-
-    cleanupListeners.push(
-      () => ib.api.off(EventName.accountSummary, accountSummaryHandler),
-      () => ib.api.off(EventName.accountSummaryEnd, accountSummaryEndHandler),
-      () => ib.api.off(EventName.error, errorHandler)
-    )
-
-    ib.api.on(EventName.accountSummary, accountSummaryHandler)
-    ib.api.on(EventName.accountSummaryEnd, accountSummaryEndHandler)
-    ib.api.on(EventName.error, errorHandler)
-
+    // Important: Start the account summary request
     ib.getAccountSummary('All', account_summary_tags.join(',')).subscribe({
       error: (err) => {
         log('Error in account summary subscription:', err)
-        cleanup()
         reject(err)
       }
     })
   })
+}
 
-export const get_account_positions = (ib) =>
-  new Promise((resolve, reject) => {
-    const positions = []
-    const cleanupListeners = []
+export const get_account_positions = (ib) => {
+  const positions = []
 
-    const positionHandler = (account, contract, pos, avgCost) => {
-      positions.push({ account, contract, pos, avgCost })
-    }
+  const position_handler = (account, contract, pos, avgCost) => {
+    positions.push({ account, contract, pos, avgCost })
+  }
 
-    const positionEndHandler = () => {
-      cleanup()
-      resolve(positions)
-    }
+  return new Promise((resolve, reject) => {
+    create_event_promise({
+      emitter: ib.api,
+      success_event: EventName.positionEnd,
+      error_event: EventName.error,
+      handlers: {
+        [EventName.position]: position_handler
+      },
+      timeout_ms: 30000
+    })
+      .then(() => {
+        resolve(positions)
+      })
+      .catch(reject)
 
-    const errorHandler = (err) => {
-      cleanup()
-      reject(err)
-    }
-
-    const cleanup = () => {
-      cleanupListeners.forEach((remove) => remove())
-    }
-
-    cleanupListeners.push(
-      () => ib.api.off(EventName.position, positionHandler),
-      () => ib.api.off(EventName.positionEnd, positionEndHandler),
-      () => ib.api.off(EventName.error, errorHandler)
-    )
-
-    ib.api.on(EventName.position, positionHandler)
-    ib.api.on(EventName.positionEnd, positionEndHandler)
-    ib.api.on(EventName.error, errorHandler)
-
+    // Important: Start the positions request
     ib.getPositions().subscribe({
-      error: errorHandler
+      error: (err) => {
+        log('Error in positions subscription:', err)
+        reject(err)
+      }
     })
   })
+}
 
 // Group positions by underlying and expiration for strategy analysis
 export const group_positions_by_strategy = (positions) => {

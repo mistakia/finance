@@ -127,8 +127,167 @@ const import_interactive_brokers_accounts = async ({
       ])
     })
 
+    const positions_table = new Table({
+      head: [
+        'Symbol',
+        'Type',
+        'Quantity',
+        'Cost Basis',
+        'Strike',
+        'Expiration',
+        'Right'
+      ],
+      style: { head: ['cyan'] }
+    })
+
+    // Add all positions to the table
+    account_info.positions.forEach((position) => {
+      const is_option = position.contract.secType === 'OPT'
+      positions_table.push([
+        position.contract.symbol,
+        position.contract.secType,
+        position.pos,
+        position.avgCost,
+        is_option ? position.contract.strike : '-',
+        is_option ? position.contract.lastTradeDateOrContractMonth : '-',
+        is_option ? position.contract.right : '-'
+      ])
+    })
+
+    // Create a new table for symbol-specific risk analysis
+    const symbol_risk_table = new Table({
+      head: [
+        'Symbol',
+        'Uncovered Calls',
+        'Uncovered Puts',
+        'Holdings',
+        'Total Risk'
+      ],
+      style: { head: ['cyan'] }
+    })
+
+    // Group positions by symbol
+    const symbols = new Map()
+
+    // First collect all stock positions
+    account_info.positions.forEach((position) => {
+      if (position.contract.secType === 'STK') {
+        const symbol = position.contract.symbol
+        if (!symbols.has(symbol)) {
+          symbols.set(symbol, {
+            symbol,
+            stock_position: {
+              quantity: position.pos,
+              cost_basis: position.avgCost
+            },
+            uncovered_calls: [],
+            uncovered_puts: [],
+            covered_calls: []
+          })
+        } else {
+          symbols.get(symbol).stock_position = {
+            quantity: position.pos,
+            cost_basis: position.avgCost
+          }
+        }
+      }
+    })
+
+    // Add option positions to the appropriate categories
+    account_info.unlimited_risk_positions.forEach((pos) => {
+      if (!symbols.has(pos.symbol)) {
+        symbols.set(pos.symbol, {
+          symbol: pos.symbol,
+          stock_position: null,
+          uncovered_calls: [],
+          uncovered_puts: [],
+          covered_calls: []
+        })
+      }
+
+      symbols.get(pos.symbol).uncovered_calls.push({
+        strike: pos.strike,
+        expiration: pos.expiration,
+        contracts: pos.contracts
+      })
+    })
+
+    account_info.limited_risk_positions.forEach((pos) => {
+      if (!symbols.has(pos.symbol)) {
+        symbols.set(pos.symbol, {
+          symbol: pos.symbol,
+          stock_position: null,
+          uncovered_calls: [],
+          uncovered_puts: [],
+          covered_calls: []
+        })
+      }
+
+      const symbol_data = symbols.get(pos.symbol)
+
+      if (pos.risk_type === 'COVERED') {
+        symbol_data.covered_calls.push({
+          strike: pos.strike,
+          expiration: pos.expiration,
+          contracts: pos.contracts
+        })
+      } else if (pos.risk_type === 'UNCOVERED_PUT') {
+        symbol_data.uncovered_puts.push({
+          strike: pos.strike,
+          expiration: pos.expiration,
+          contracts: pos.contracts,
+          liability: pos.liability
+        })
+      }
+    })
+
+    // Calculate total risk and populate the symbol risk table
+    symbols.forEach((symbol_data) => {
+      const holdings_value = symbol_data.stock_position
+        ? symbol_data.stock_position.quantity *
+          symbol_data.stock_position.cost_basis
+        : 0
+
+      const uncovered_calls_formatted = symbol_data.uncovered_calls
+        .map((call) => `${call.strike} ${call.expiration} (${call.contracts})`)
+        .join('\n')
+
+      const uncovered_puts_formatted = symbol_data.uncovered_puts
+        .map((put) => `${put.strike} ${put.expiration} (${put.contracts})`)
+        .join('\n')
+
+      const holdings_formatted = symbol_data.stock_position
+        ? `${symbol_data.stock_position.quantity} shares @ ${symbol_data.stock_position.cost_basis}`
+        : 'None'
+
+      const covered_calls_formatted = symbol_data.covered_calls.length
+        ? `\nCovered Calls:\n${symbol_data.covered_calls
+            .map(
+              (call) => `${call.strike} ${call.expiration} (${call.contracts})`
+            )
+            .join('\n')}`
+        : ''
+
+      const total_put_liability = symbol_data.uncovered_puts.reduce(
+        (sum, put) => sum + (put.liability || 0),
+        0
+      )
+
+      const total_risk = holdings_value + total_put_liability
+
+      symbol_risk_table.push([
+        symbol_data.symbol,
+        uncovered_calls_formatted || 'None',
+        uncovered_puts_formatted || 'None',
+        holdings_formatted + covered_calls_formatted,
+        total_risk.toFixed(2)
+      ])
+    })
+
     console.log('\nCash Balances:')
     console.log(cash_table.toString())
+    console.log('\nAll Positions:')
+    console.log(positions_table.toString())
     console.log('\nUnlimited Risk Positions:')
     console.log(unlimited_risk_table.toString())
     console.log('\nLimited Risk Positions:')
@@ -139,6 +298,8 @@ const import_interactive_brokers_accounts = async ({
     console.log(probability_table.toString())
     console.log('\nStrategies:')
     console.log(strategy_table.toString())
+    console.log('\nSymbol Risk Analysis:')
+    console.log(symbol_risk_table.toString())
 
     const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
     const cash_balance = Number(account_info.TotalCashValue)

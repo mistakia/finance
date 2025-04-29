@@ -262,6 +262,20 @@ export const get_account_info = async ({
       0
     )
 
+    // Add all positions to the result
+    result.positions = account_positions.map((position) => ({
+      contract: {
+        symbol: position.contract.symbol,
+        secType: position.contract.secType,
+        strike: position.contract.strike,
+        lastTradeDateOrContractMonth:
+          position.contract.lastTradeDateOrContractMonth,
+        right: position.contract.right
+      },
+      pos: position.pos,
+      avgCost: position.avgCost
+    }))
+
     ib.disconnect()
 
     if (!keep_alive) {
