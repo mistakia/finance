@@ -21,10 +21,10 @@ const run = async ({
   const cpi = await db('cpi')
   const cpi_map = {}
   cpi.forEach((i) => {
-    cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.v
+    cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.volume
   })
 
-  const query = db('eod_equity_quotes')
+  const query = db('end_of_day_equity_quotes')
     .where({ symbol })
     .orderBy('quote_date', 'asc')
 
@@ -50,7 +50,7 @@ const run = async ({
     let price
 
     for (let j = i; j < data.length; j++) {
-      let target_value = data[i].c_adj * rate
+      let target_value = data[i].adjusted_close_price * rate
       if (inflation_adjusted) {
         const cpi_value = cpi_map[data[j].cpi_quote_date]
         if (!cpi_value) continue
@@ -59,14 +59,14 @@ const run = async ({
       }
 
       // higher than entry and previous period was not
-      if (data[j].c_adj > target_value && !date) {
+      if (data[j].adjusted_close_price > target_value && !date) {
         date = data[j].quote_date
         days = j - i
         price = target_value
       }
 
       // lower than entry
-      if (data[j].c_adj < target_value) {
+      if (data[j].adjusted_close_price < target_value) {
         date = null
         days = Infinity
       }
@@ -79,7 +79,7 @@ const run = async ({
     results.push({
       days,
       entry_date: data[i].quote_date.format('YYYY-MM-DD'),
-      entry_price: data[i].c_adj,
+      entry_price: data[i].adjusted_close_price,
       entry_cpi,
       price: price && price.toFixed(2),
       date: date && date.format('YYYY-MM-DD'),

@@ -11,7 +11,7 @@ const batch_size = 500000
 const get_data_table_name = (quote_type) => {
   switch (quote_type) {
     case `${constants.HOLDING_TYPE.EQUITY}_${constants.RESOLUTION.DAY}`:
-      return 'eod_equity_quotes'
+      return 'end_of_day_equity_quotes'
 
     case `${constants.HOLDING_TYPE.OPTION}_${constants.RESOLUTION.DAY}`:
       return 'eod_option_quotes'

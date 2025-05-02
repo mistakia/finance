@@ -18,7 +18,7 @@ const log = debug('refresh-historical-quotes')
 export default async ({ symbol, force_import = false, max_days_old = 2 }) => {
   log(`Checking if historical quotes for ${symbol} need to be imported`)
 
-  const last_entry = await db('eod_equity_quotes')
+  const last_entry = await db('end_of_day_equity_quotes')
     .where('symbol', symbol)
     .orderBy('quote_date', 'desc')
     .first()
@@ -89,7 +89,7 @@ export default async ({ symbol, force_import = false, max_days_old = 2 }) => {
   import_performed = true
 
   // Get the updated last entry after import
-  const updated_last_entry = await db('eod_equity_quotes')
+  const updated_last_entry = await db('end_of_day_equity_quotes')
     .where('symbol', symbol)
     .orderBy('quote_date', 'desc')
     .first()

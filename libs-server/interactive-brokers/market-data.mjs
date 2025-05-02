@@ -162,8 +162,8 @@ export const get_stock_market_data = async ({ ib, symbol }) => {
 
   // If no realtime price available, get latest from database
   if (!market_data.price) {
-    const latest_quote = await db('eod_equity_quotes')
-      .select('c', 'quote_date')
+    const latest_quote = await db('end_of_day_equity_quotes')
+      .select('close_price', 'quote_date')
       .where('symbol', symbol)
       .orderBy('quote_date', 'desc')
       .limit(1)
@@ -185,20 +185,20 @@ export const get_stock_market_data = async ({ ib, symbol }) => {
         })
 
         // Get the updated quote after import
-        const updated_quote = await db('eod_equity_quotes')
-          .select('c', 'quote_date')
+        const updated_quote = await db('end_of_day_equity_quotes')
+          .select('close_price', 'quote_date')
           .where('symbol', symbol)
           .orderBy('quote_date', 'desc')
           .limit(1)
           .first()
 
         if (updated_quote) {
-          market_data.price = updated_quote.c
+          market_data.price = updated_quote.close_price
         } else {
-          market_data.price = latest_quote.c
+          market_data.price = latest_quote.close_price
         }
       } else {
-        market_data.price = latest_quote.c
+        market_data.price = latest_quote.close_price
       }
     } else {
       log(`No market data found in database for ${symbol}`)
@@ -209,15 +209,15 @@ export const get_stock_market_data = async ({ ib, symbol }) => {
       })
 
       // Check if we now have data after import
-      const updated_quote = await db('eod_equity_quotes')
-        .select('c', 'quote_date')
+      const updated_quote = await db('end_of_day_equity_quotes')
+        .select('close_price', 'quote_date')
         .where('symbol', symbol)
         .orderBy('quote_date', 'desc')
         .limit(1)
         .first()
 
       if (updated_quote) {
-        market_data.price = updated_quote.c
+        market_data.price = updated_quote.close_price
       }
     }
   }

@@ -18,7 +18,7 @@ const get_underylying_price_at_date = ({ underlying_eod_quotes, date }) => {
   for (let i = 0; i < underlying_eod_quotes.length; i += 1) {
     const eod_quote = underlying_eod_quotes[i]
     if (dayjs(eod_quote.quote_date).isSameOrAfter(date)) {
-      return eod_quote.c || null
+      return eod_quote.close_price || null
     }
   }
 
@@ -35,7 +35,7 @@ const calculate_option_metrics = async ({ symbol }) => {
     // retrieve the next batch of option quotes
     const batch = await db('eod_option_quotes')
       .where({ underlying_symbol: symbol })
-      .orderBy('quote_unixtime', 'asc')
+      .orderBy('quote_unix_timestamp', 'asc')
       .limit(batchSize)
       .offset(offset)
     offset += batchSize
@@ -49,7 +49,7 @@ const calculate_option_metrics = async ({ symbol }) => {
       `Processing ${batch.length} rows for ${symbol} starting at ${batch[0].quote_date}`
     )
 
-    const underlying_eod_quotes = await db('eod_equity_quotes')
+    const underlying_eod_quotes = await db('end_of_day_equity_quotes')
       .where({ symbol })
       .where('quote_date', '>=', batch[0].quote_date)
       .where('quote_date', '<=', batch[batch.length - 1].expire_date)

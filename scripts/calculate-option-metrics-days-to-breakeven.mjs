@@ -15,7 +15,7 @@ debug.enable('calculate-days-to-breakeven')
 dayjs.extend(isSameOrAfter)
 
 const get_underlying_quotes = async ({ symbol, start_date, end_date }) =>
-  db('eod_equity_quotes')
+  db('end_of_day_equity_quotes')
     .where({ symbol })
     .where('quote_date', '>=', start_date)
     .where('quote_date', '<=', end_date)
@@ -32,7 +32,7 @@ const get_days_to_breakeven = async ({
   )
 
   for (let d = start_index; d < underlying_eod_quotes.length; d++) {
-    if (underlying_eod_quotes[d].c >= cost_basis) {
+    if (underlying_eod_quotes[d].close_price >= cost_basis) {
       return d - start_index
     }
   }

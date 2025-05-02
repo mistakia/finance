@@ -20,10 +20,10 @@ const run = async ({ start, adjusted = true, symbol = 'SPY' }) => {
   const cpi = await db('cpi')
   const cpi_map = {}
   cpi.forEach((i) => {
-    cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.v
+    cpi_map[dayjs(i.quote_date).format('YYYY-MM-DD')] = i.volume
   })
 
-  const query = db('eod_equity_quotes')
+  const query = db('end_of_day_equity_quotes')
     .where({ symbol })
     .orderBy('quote_date', 'asc')
   if (start) {
@@ -34,7 +34,7 @@ const run = async ({ start, adjusted = true, symbol = 'SPY' }) => {
   const data_map = {}
   data = data.map(({ quote_date, ...i }) => {
     const date = dayjs(quote_date)
-    data_map[date.format('YYYY-MM-DD')] = i.c_adj
+    data_map[date.format('YYYY-MM-DD')] = i.adjusted_close_price
 
     return {
       quote_date: date,
@@ -91,7 +91,9 @@ const run = async ({ start, adjusted = true, symbol = 'SPY' }) => {
     return_years.forEach((years) => {
       const future_close = future_closes[`return${years}_close`]
       if (!future_close) return
-      const value = (future_close - data[i].c_adj) / data[i].c_adj
+      const value =
+        (future_close - data[i].adjusted_close_price) /
+        data[i].adjusted_close_price
       if (isNaN(value)) return
       future_returns_lump[`return${years}_lump`] = value
     })
@@ -106,7 +108,7 @@ const run = async ({ start, adjusted = true, symbol = 'SPY' }) => {
       return_years.forEach((years) => {
         const future_close = future_closes[`return${years}_close`]
         if (!future_close) return
-        const basis = dca_basis[intervals] || data[i].c_adj
+        const basis = dca_basis[intervals] || data[i].adjusted_close_price
         const value = (future_close - basis) / basis
         if (isNaN(value)) return
         future_dca_returns[`return${years}_dca_${intervals}`] = value
@@ -115,7 +117,7 @@ const run = async ({ start, adjusted = true, symbol = 'SPY' }) => {
 
     results.push({
       entry_date: data[i].quote_date.format('YYYY-MM-DD'),
-      entry_price: data[i].c_adj,
+      entry_price: data[i].adjusted_close_price,
       ...future_returns_lump,
       ...future_dca_returns
     })

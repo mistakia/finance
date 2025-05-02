@@ -11,11 +11,11 @@ debug.enable('import-historical-prices-alphavantage')
 
 // TODO add close adjusted
 const getItem = (item) => ({
-  o: parseFloat(item['1. open']),
-  h: parseFloat(item['2. high']),
-  l: parseFloat(item['3. low']),
-  c: parseFloat(item['4. close']),
-  v: parseInt(item['5. volume'], 10)
+  open_price: parseFloat(item['1. open']),
+  high_price: parseFloat(item['2. high']),
+  low_price: parseFloat(item['3. low']),
+  close_price: parseFloat(item['4. close']),
+  volume: parseInt(item['5. volume'], 10)
 })
 
 const runOne = async ({ symbol }) => {
@@ -35,9 +35,9 @@ const runOne = async ({ symbol }) => {
   //   return
   // }
 
-  // TODO missing quote_unixtime and close_adjusted
+  // TODO missing quote_unix_timestamp and adjusted_close_price
   // log(`Inserting ${inserts.length} prices into database`)
-  // await db('eod_equity_quotes').insert(inserts).onConflict(['symbol', 'quote_date']).merge()
+  // await db('end_of_day_equity_quotes').insert(inserts).onConflict(['symbol', 'quote_date']).merge()
 }
 
 const run = async () => {

@@ -97,9 +97,9 @@ const calculate_equity_metrics = async ({ symbol }) => {
     cumulative_change_200: null
   }
 
-  const quotes = await db('eod_equity_quotes')
+  const quotes = await db('end_of_day_equity_quotes')
     .where({ symbol })
-    .orderBy('quote_unixtime', 'asc')
+    .orderBy('quote_unix_timestamp', 'asc')
 
   const inserts = []
   let index = 0
@@ -136,27 +136,31 @@ const calculate_equity_metrics = async ({ symbol }) => {
       index
     }).pct
 
-    metrics.relative_strength_index_14 = rsi_14.nextValue(quote.c) || null
-    metrics.relative_strength_index_10 = rsi_10.nextValue(quote.c) || null
-    metrics.moving_average_14 = sma_14.nextValue(quote.c)
-    metrics.moving_average_125 = sma_125.nextValue(quote.c)
+    metrics.relative_strength_index_14 =
+      rsi_14.nextValue(quote.close_price) || null
+    metrics.relative_strength_index_10 =
+      rsi_10.nextValue(quote.close_price) || null
+    metrics.moving_average_14 = sma_14.nextValue(quote.close_price)
+    metrics.moving_average_125 = sma_125.nextValue(quote.close_price)
     metrics.average_true_range_14_normalized =
-      BigNumber(atr_14.nextValue(quote.h, quote.l, quote.c))
+      BigNumber(
+        atr_14.nextValue(quote.high_price, quote.low_price, quote.close_price)
+      )
         .dividedBy(metrics.moving_average_14)
         .multipliedBy(100)
         .toNumber() || null
-    metrics.weighted_moving_average_9 = wma_9.nextValue(quote.c)
+    metrics.weighted_moving_average_9 = wma_9.nextValue(quote.close_price)
     metrics.weighted_moving_average_diff_pct = metrics.weighted_moving_average_9
-      ? ((quote.c - metrics.weighted_moving_average_9) /
+      ? ((quote.close_price - metrics.weighted_moving_average_9) /
           metrics.weighted_moving_average_9) *
         100
       : null
 
-    metrics.trailing_volatility_2 = hv_2.next_value(quote.c)
-    metrics.trailing_volatility_7 = hv_7.next_value(quote.c)
-    metrics.trailing_volatility_10 = hv_10.next_value(quote.c)
-    metrics.trailing_volatility_14 = hv_14.next_value(quote.c)
-    metrics.trailing_volatility_30 = hv_30.next_value(quote.c)
+    metrics.trailing_volatility_2 = hv_2.next_value(quote.close_price)
+    metrics.trailing_volatility_7 = hv_7.next_value(quote.close_price)
+    metrics.trailing_volatility_10 = hv_10.next_value(quote.close_price)
+    metrics.trailing_volatility_14 = hv_14.next_value(quote.close_price)
+    metrics.trailing_volatility_30 = hv_30.next_value(quote.close_price)
 
     metrics.trailing_volatility_2_moving_average_9 = hv_2_sma_9.nextValue(
       metrics.trailing_volatility_2
@@ -218,19 +222,19 @@ const calculate_equity_metrics = async ({ symbol }) => {
           100
         : null
 
-    metrics.maxdrawdown_10 = maxdraw_10.nextValue(quote.c)
-    metrics.maxdrawdown_14 = maxdraw_14.nextValue(quote.c)
-    metrics.maxdrawdown_30 = maxdraw_30.nextValue(quote.c)
-    metrics.maxdrawdown_60 = maxdraw_60.nextValue(quote.c)
+    metrics.maxdrawdown_10 = maxdraw_10.nextValue(quote.close_price)
+    metrics.maxdrawdown_14 = maxdraw_14.nextValue(quote.close_price)
+    metrics.maxdrawdown_30 = maxdraw_30.nextValue(quote.close_price)
+    metrics.maxdrawdown_60 = maxdraw_60.nextValue(quote.close_price)
 
-    metrics.cumulative_change_1 = roc_1.nextValue(quote.c)
-    metrics.cumulative_change_5 = roc_5.nextValue(quote.c)
-    metrics.cumulative_change_7 = roc_7.nextValue(quote.c)
-    metrics.cumulative_change_10 = roc_10.nextValue(quote.c)
-    metrics.cumulative_change_21 = roc_21.nextValue(quote.c)
-    metrics.cumulative_change_42 = roc_42.nextValue(quote.c)
-    metrics.cumulative_change_60 = roc_60.nextValue(quote.c)
-    metrics.cumulative_change_200 = roc_200.nextValue(quote.c)
+    metrics.cumulative_change_1 = roc_1.nextValue(quote.close_price)
+    metrics.cumulative_change_5 = roc_5.nextValue(quote.close_price)
+    metrics.cumulative_change_7 = roc_7.nextValue(quote.close_price)
+    metrics.cumulative_change_10 = roc_10.nextValue(quote.close_price)
+    metrics.cumulative_change_21 = roc_21.nextValue(quote.close_price)
+    metrics.cumulative_change_42 = roc_42.nextValue(quote.close_price)
+    metrics.cumulative_change_60 = roc_60.nextValue(quote.close_price)
+    metrics.cumulative_change_200 = roc_200.nextValue(quote.close_price)
 
     inserts.push({
       ...quote,
@@ -241,11 +245,11 @@ const calculate_equity_metrics = async ({ symbol }) => {
   }
 
   if (inserts.length) {
-    await db('eod_equity_quotes')
+    await db('end_of_day_equity_quotes')
       .insert(inserts)
       .onConflict(['symbol', 'quote_date'])
       .merge()
-    log(`Inserted ${inserts.length} rows into eod_equity_quotes`)
+    log(`Inserted ${inserts.length} rows into end_of_day_equity_quotes`)
   }
 }
 

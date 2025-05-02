@@ -17,13 +17,13 @@ dayjs.extend(utc)
  */
 const get_item = (item) => ({
   quote_date: dayjs.utc(item.date).format('YYYY-MM-DD'),
-  o: parseFloat(item.open),
-  h: parseFloat(item.high),
-  l: parseFloat(item.low),
-  c: parseFloat(item.close),
-  c_adj: parseFloat(item.adjClose),
-  v: Number(item.volume),
-  quote_unixtime: dayjs.utc(item.date).unix()
+  open_price: parseFloat(item.open),
+  high_price: parseFloat(item.high),
+  low_price: parseFloat(item.low),
+  close_price: parseFloat(item.close),
+  adjusted_close_price: parseFloat(item.adjClose),
+  volume: Number(item.volume),
+  quote_unix_timestamp: dayjs.utc(item.date).unix()
 })
 
 /**
@@ -54,7 +54,7 @@ const request_data = async ({ symbol, start_year, end_year }) => {
   }))
 
   log(`Inserting ${inserts.length} prices into database`)
-  await db('eod_equity_quotes')
+  await db('end_of_day_equity_quotes')
     .insert(inserts)
     .onConflict(['symbol', 'quote_date'])
     .merge()

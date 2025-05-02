@@ -95,14 +95,14 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
 
     for (const symbol of this.indicator_symbols) {
       const max_window = indicator_windows[symbol]
-      const result = await db('eod_equity_quotes')
+      const result = await db('end_of_day_equity_quotes')
         .where('symbol', symbol)
         .andWhere('quote_date', '<=', start_date)
-        .orderBy('quote_unixtime', 'desc')
+        .orderBy('quote_unix_timestamp', 'desc')
         .limit(max_window)
 
       quotes[symbol] = result.sort(
-        (a, b) => a.quote_unixtime - b.quote_unixtime
+        (a, b) => a.quote_unix_timestamp - b.quote_unix_timestamp
       )
     }
 
@@ -130,7 +130,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     // Process historical quotes to initialize indicator values
     for (const symbol in this.historical_quotes) {
       this.historical_quotes[symbol].forEach((quote) => {
-        const close_price = quote.c
+        const close_price = quote.close_price
         const indicator_suffixes = [
           '_rsi_10',
           '_cum_return_6',
@@ -157,7 +157,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
   on_quote_data(quote_data) {
     // log('Received new quote data:', quote_data)
     // Update indicators with new quote data
-    const { symbol, c: close_price } = quote_data
+    const { symbol, close_price } = quote_data
     const indicator_suffixes = [
       '_rsi_10',
       '_cum_return_6',
@@ -424,21 +424,21 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
         'Latest quote found for symbol:',
         symbol,
         'Price:',
-        holding.latest_quote.c
+        holding.latest_quote.close_price
       )
-      return holding.latest_quote.c
+      return holding.latest_quote.close_price
     }
 
     // TODO get live current price
 
     // get latest quote from the database
-    const latest_quote = await db('eod_equity_quotes')
+    const latest_quote = await db('end_of_day_equity_quotes')
       .where('symbol', symbol)
-      .andWhere('quote_unixtime', '<=', quote_date_unix)
-      .orderBy('quote_unixtime', 'desc')
+      .andWhere('quote_unix_timestamp', '<=', quote_date_unix)
+      .orderBy('quote_unix_timestamp', 'desc')
       .first()
 
-    return latest_quote.c
+    return latest_quote.close_price
   }
 
   async allocate_assets({ assets, current_date_unix }) {

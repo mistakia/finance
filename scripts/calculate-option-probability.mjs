@@ -84,7 +84,7 @@ const calculate_option_probability = async ({
   const is_negative = percent_change < 0
   let earnings_dates = []
 
-  const prices = await db('eod_equity_quotes')
+  const prices = await db('end_of_day_equity_quotes')
     .where({ symbol })
     .andWhere('quote_date', '>=', `${start_year}-01-01`)
     .orderBy('quote_date', 'asc')
