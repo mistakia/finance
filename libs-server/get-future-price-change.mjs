@@ -21,18 +21,18 @@ export default function ({ prices, price, index, days }) {
 
   if (!future_price) {
     return {
-      c: null,
+      close_price: null,
       quote_date: null,
       pct: null
     }
   }
 
   // calculate the change in price
-  const change_in_price = future_price.c - price.c
-  const change_in_price_percent = (change_in_price / price.c) * 100
+  const change_in_price = future_price.close_price - price.close_price
+  const change_in_price_percent = (change_in_price / price.close_price) * 100
 
   return {
-    c: future_price.c,
+    close_price: future_price.close_price,
     quote_date: future_price.quote_date,
     pct: change_in_price_percent
   }
