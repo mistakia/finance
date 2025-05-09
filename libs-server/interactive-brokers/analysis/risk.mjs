@@ -3,6 +3,8 @@ export const analyze_position_risk = (symbols_map) => {
   const result = {
     unlimited_risk_positions: [],
     limited_risk_positions: [],
+    uncovered_put_positions: [], // Separate collection for uncovered puts
+    long_spread_positions: [],
     uncovered_put_liabilities: [],
     total_uncovered_put_liability: 0,
     option_cash_liability: 0
@@ -39,7 +41,8 @@ export const analyze_position_risk = (symbols_map) => {
         shares_held: symbol_data.total_shares,
         shares_needed,
         delta: call_position.market_data?.delta || null,
-        unlimited_risk: false
+        unlimited_risk: false,
+        is_short: true // Mark this as a short position
       }
 
       // Calculate coverage and risk
@@ -158,6 +161,35 @@ export const analyze_position_risk = (symbols_map) => {
       }
     })
 
+    // Process long calls (not used for protection)
+    symbol_data.long_calls.forEach((call_position) => {
+      // Skip if this call was used for protection
+      if (used_long_calls.has(call_position.contract.conId)) {
+        return
+      }
+
+      const contracts = Math.abs(call_position.pos)
+
+      // Create position info for long call
+      const position_info = {
+        symbol: call_position.contract.symbol,
+        right: call_position.contract.right,
+        strike: call_position.contract.strike,
+        expiration: call_position.contract.lastTradeDateOrContractMonth,
+        contracts,
+        shares_held: symbol_data.total_shares,
+        shares_needed: 0,
+        delta: call_position.market_data?.delta || null,
+        unlimited_risk: false,
+        is_short: false, // Mark this as a long position
+        risk_type: 'LONG_OPTION',
+        liability: 0 // Long options have no liability beyond the premium paid
+      }
+
+      // Add to long spread positions
+      result.long_spread_positions.push(position_info)
+    })
+
     // Analyze put risk
     symbol_data.short_puts.forEach((put_position) => {
       const contracts = Math.abs(put_position.pos)
@@ -179,7 +211,8 @@ export const analyze_position_risk = (symbols_map) => {
         shares_held: symbol_data.total_shares,
         shares_needed: 0,
         delta: put_position.market_data?.delta || null,
-        unlimited_risk: false
+        unlimited_risk: false,
+        is_short: true // Mark this as a short position
       }
 
       // Calculate put liability - base value
@@ -249,21 +282,60 @@ export const analyze_position_risk = (symbols_map) => {
           strike: protective_put.contract.strike,
           expiration: protective_put.contract.lastTradeDateOrContractMonth
         }
+
+        // Add to limited risk positions
+        result.limited_risk_positions.push(position_info)
       } else {
         // Uncovered put - limited risk but potentially large liability
         position_info.risk_type = 'UNCOVERED_PUT'
         position_info.liability = base_liability
+
+        // Add to uncovered put positions (new separate collection)
+        result.uncovered_put_positions.push(position_info)
+
+        // Also add to uncovered put liabilities for backward compatibility
         result.uncovered_put_liabilities.push(position_info)
         result.total_uncovered_put_liability += base_liability
       }
 
-      // Add to limited risk positions
-      result.limited_risk_positions.push(position_info)
-
       // Add to cash liability
       result.option_cash_liability += position_info.liability
     })
+
+    // Process long puts (not used for protection)
+    symbol_data.long_puts.forEach((put_position) => {
+      // Skip if this put was used for protection
+      if (used_long_puts.has(put_position.contract.conId)) {
+        return
+      }
+
+      const contracts = Math.abs(put_position.pos)
+
+      // Create position info for long put
+      const position_info = {
+        symbol: put_position.contract.symbol,
+        right: put_position.contract.right,
+        strike: put_position.contract.strike,
+        expiration: put_position.contract.lastTradeDateOrContractMonth,
+        contracts,
+        shares_held: symbol_data.total_shares,
+        shares_needed: 0,
+        delta: put_position.market_data?.delta || null,
+        unlimited_risk: false,
+        is_short: false, // Mark this as a long position
+        risk_type: 'LONG_OPTION',
+        liability: 0 // Long options have no liability beyond the premium paid
+      }
+
+      // Add to long spread positions
+      result.long_spread_positions.push(position_info)
+    })
   }
+
+  // Filter limited_risk_positions to include only short positions
+  result.limited_risk_positions = result.limited_risk_positions.filter(
+    (position) => position.is_short
+  )
 
   return result
 }
@@ -280,7 +352,8 @@ export const calculate_total_liability = (risk_analysis) => {
   // Group liabilities by symbol
   const all_positions = [
     ...risk_analysis.unlimited_risk_positions,
-    ...risk_analysis.limited_risk_positions
+    ...risk_analysis.limited_risk_positions,
+    ...risk_analysis.uncovered_put_positions
   ]
 
   all_positions.forEach((position) => {
@@ -289,6 +362,7 @@ export const calculate_total_liability = (risk_analysis) => {
         symbol: position.symbol,
         unlimited_risk: 0,
         limited_risk: 0,
+        uncovered_put_risk: 0,
         total_liability: 0
       })
     }
@@ -298,6 +372,11 @@ export const calculate_total_liability = (risk_analysis) => {
     if (position.unlimited_risk) {
       symbol_data.unlimited_risk += 1
       symbol_data.total_liability = Infinity
+    } else if (position.risk_type === 'UNCOVERED_PUT') {
+      symbol_data.uncovered_put_risk += position.liability
+      if (symbol_data.total_liability !== Infinity) {
+        symbol_data.total_liability += position.liability
+      }
     } else {
       symbol_data.limited_risk += position.liability
       if (symbol_data.total_liability !== Infinity) {

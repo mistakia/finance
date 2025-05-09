@@ -53,30 +53,30 @@ const import_interactive_brokers_accounts = async ({
       ])
     })
 
-    const limited_risk_table = new Table({
+    const uncovered_put_table = new Table({
       head: [
         'Symbol',
         'Strike',
         'Expiration',
         'Contracts',
-        'Shares Held',
-        'Shares Needed',
         'Liability',
-        'Risk Type'
+        'Delta',
+        'Prob. ITM'
       ],
       style: { head: ['cyan'] }
     })
 
-    account_info.analysis.risk.limited_risk_positions.forEach((pos) => {
-      limited_risk_table.push([
+    account_info.analysis.risk.uncovered_put_positions.forEach((pos) => {
+      // For puts, Prob. ITM = abs(delta)
+      const probability_itm = pos.delta ? Math.abs(pos.delta).toFixed(4) : 'N/A'
+      uncovered_put_table.push([
         pos.symbol,
         pos.strike,
         pos.expiration,
         pos.contracts,
-        pos.shares_held,
-        pos.shares_needed,
         pos.liability,
-        pos.risk_type
+        pos.delta !== null ? pos.delta.toFixed(4) : 'N/A',
+        probability_itm
       ])
     })
 
@@ -98,16 +98,31 @@ const import_interactive_brokers_accounts = async ({
       ]
     )
 
-    const probability_table = new Table({
-      head: ['Probability Threshold', 'Liability'],
+    const delta_liability_table = new Table({
+      head: ['Delta Threshold', 'Liability'],
       style: { head: ['cyan'] }
     })
 
-    Object.entries(account_info.analysis.probability.by_threshold).forEach(
-      ([threshold, liability]) => {
-        probability_table.push([threshold, liability])
+    // Sort delta thresholds for better presentation (largest to smallest for greater than)
+    const delta_entries = Object.entries(
+      account_info.analysis.delta_liability.by_delta
+    ).sort((a, b) => {
+      // Extract numeric values from keys like "delta_greater_than_0.1"
+      const extractValue = (key) => {
+        const match = key.match(/delta_greater_than_(\d+\.\d+)/)
+        return match ? parseFloat(match[1]) : 0
       }
-    )
+      return extractValue(b[0]) - extractValue(a[0]) // Sort descending
+    })
+
+    delta_entries.forEach(([threshold, liability]) => {
+      // Format the threshold to be more readable
+      const formatted_threshold = threshold.replace(
+        'delta_greater_than_',
+        'δ > '
+      )
+      delta_liability_table.push([formatted_threshold, liability])
+    })
 
     const strategy_table = new Table({
       head: [
@@ -222,12 +237,12 @@ const import_interactive_brokers_accounts = async ({
     console.log(positions_table.toString())
     console.log('\nUnlimited Risk Positions:')
     console.log(unlimited_risk_table.toString())
-    console.log('\nLimited Risk Positions:')
-    console.log(limited_risk_table.toString())
+    console.log('\nUncovered Put Positions:')
+    console.log(uncovered_put_table.toString())
     console.log('\nLiabilities:')
     console.log(liability_table.toString())
-    console.log('\nLiability by Probability:')
-    console.log(probability_table.toString())
+    console.log('\nLiability by Delta:')
+    console.log(delta_liability_table.toString())
     console.log('\nStrategies:')
     console.log(strategy_table.toString())
     console.log('\nSymbol Risk Analysis:')

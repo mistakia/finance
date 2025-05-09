@@ -146,8 +146,8 @@ export const get_account_info = async ({
     log('Identifying option strategies...')
     const strategies = identify_strategies(symbols_with_metrics)
 
-    log('Analyzing probability-based risk...')
-    const probability_analysis = analyze_probability_risk(symbols_with_metrics)
+    log('Analyzing delta-based liability...')
+    const delta_liability = analyze_probability_risk(risk_analysis)
 
     log('Calculating expected values...')
     const expected_value = calculate_expected_value(symbols_with_metrics)
@@ -181,8 +181,8 @@ export const get_account_info = async ({
         // Strategy analysis
         strategies,
 
-        // Probability analysis
-        probability: probability_analysis,
+        // Liability by delta
+        delta_liability,
         expected_value: {
           total: expected_value.total_expected_value,
           by_symbol: Array.from(expected_value.by_symbol.values())

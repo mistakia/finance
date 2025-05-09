@@ -1,111 +1,48 @@
-// Default probability thresholds to analyze
-const DEFAULT_THRESHOLDS = [0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9]
+// Delta thresholds for grouping position liability
+const DELTA_THRESHOLDS = [
+  0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+]
 
-// Analyze position risk by probability thresholds
-export const analyze_probability_risk = (
-  symbols_map,
-  thresholds = DEFAULT_THRESHOLDS
-) => {
-  const liability_by_probability = {}
+/**
+ * Analyze uncovered put positions by delta thresholds
+ * @param {Object} risk_analysis - Risk analysis output containing uncovered put positions
+ * @returns {Object} Liability grouped by delta thresholds
+ */
+export const analyze_probability_risk = (risk_analysis) => {
+  // Only analyze uncovered puts for delta liability table
+  const uncovered_puts = risk_analysis.uncovered_put_positions || []
+  const liability_by_delta = {}
 
-  // Initialize threshold liabilities
-  thresholds.forEach((threshold) => {
-    liability_by_probability[
-      `total_liability_greater_than_${threshold * 100}pct_prob`
-    ] = 0
+  // Initialize delta threshold liabilities
+  DELTA_THRESHOLDS.forEach((threshold) => {
+    liability_by_delta[`delta_greater_than_${threshold}`] = 0
   })
 
-  // Initialize breakdowns by symbol
-  const symbol_breakdown = new Map()
+  // Process each uncovered put
+  uncovered_puts.forEach((position) => {
+    if (!position.delta) return // Skip if no delta data
 
-  for (const [symbol, symbol_data] of symbols_map) {
-    // Track each symbol's liabilities separately
-    symbol_breakdown.set(symbol, {
-      symbol,
-      thresholds: Object.fromEntries(
-        thresholds.map((threshold) => [`${threshold * 100}pct`, 0])
-      ),
-      option_positions: []
-    })
+    const abs_delta = Math.abs(position.delta)
+    const liability = position.liability
 
-    // Analyze each option position with market data
-    symbol_data.option_positions.forEach((position) => {
-      if (!position.market_data?.delta || position.pos >= 0) {
-        return // Skip positions without market data or long positions
+    // For put options, HIGHER delta means higher probability of assignment
+    DELTA_THRESHOLDS.forEach((threshold) => {
+      if (abs_delta >= threshold) {
+        liability_by_delta[`delta_greater_than_${threshold}`] += liability
       }
-
-      const delta = position.market_data.delta
-      const total_shares = symbol_data.total_shares
-      const contracts = Math.abs(position.pos)
-      const shares_needed = contracts * position.contract.multiplier
-
-      // Calculate position-specific metrics
-      const position_metrics = {
-        symbol: position.contract.symbol,
-        right: position.contract.right,
-        strike: position.contract.strike,
-        expiration: position.contract.lastTradeDateOrContractMonth,
-        contracts,
-        delta,
-        probability:
-          position.contract.right === 'P'
-            ? 1 - Math.abs(delta) // For puts
-            : Math.abs(delta), // For calls
-        liabilities_by_threshold: {}
-      }
-
-      thresholds.forEach((threshold) => {
-        let liability = 0
-
-        if (position_metrics.probability >= threshold) {
-          if (
-            position.contract.right === 'C' &&
-            total_shares >= shares_needed
-          ) {
-            // Call is fully covered, no liability
-            liability = 0
-          } else if (position.contract.right === 'C' && total_shares > 0) {
-            // Call is partially covered
-            const uncovered_contracts =
-              (shares_needed - total_shares) / position.contract.multiplier
-            liability =
-              position.contract.strike *
-              uncovered_contracts *
-              position.contract.multiplier
-          } else {
-            // Put or uncovered call
-            liability =
-              position.contract.strike *
-              contracts *
-              position.contract.multiplier
-          }
-
-          // Update global liability for this threshold
-          liability_by_probability[
-            `total_liability_greater_than_${threshold * 100}pct_prob`
-          ] += liability
-
-          // Update symbol-specific liability
-          const symbol_data = symbol_breakdown.get(symbol)
-          symbol_data.thresholds[`${threshold * 100}pct`] += liability
-        }
-
-        position_metrics.liabilities_by_threshold[`${threshold * 100}pct`] =
-          liability
-      })
-
-      // Add position to symbol breakdown
-      symbol_breakdown.get(symbol).option_positions.push(position_metrics)
     })
-  }
+  })
 
   return {
-    by_threshold: liability_by_probability,
-    by_symbol: Array.from(symbol_breakdown.values())
+    by_delta: liability_by_delta
   }
 }
 
-// Calculate expected value of positions based on probability
+/**
+ * Calculate expected value of positions based on probability
+ * @param {Map} symbols_map - Map of symbols to position data
+ * @returns {Object} Expected value calculations for positions
+ */
 export const calculate_expected_value = (symbols_map) => {
   const results = {
     total_expected_value: 0,
@@ -154,8 +91,8 @@ export const calculate_expected_value = (symbols_map) => {
             probability * Math.max(0, potential_loss)
         }
       } else {
-        // For puts: 1-delta approximates probability of expiring ITM
-        probability = 1 - Math.abs(delta)
+        // For puts: delta (abs value) approximates probability of expiring ITM
+        probability = Math.abs(delta)
 
         // Expected value calculation
         if (is_long) {
@@ -187,10 +124,7 @@ export const calculate_expected_value = (symbols_map) => {
         strike: position.contract.strike,
         expiration: position.contract.lastTradeDateOrContractMonth,
         delta,
-        probability:
-          position.contract.right === 'C'
-            ? Math.abs(delta)
-            : 1 - Math.abs(delta),
+        probability: Math.abs(delta), // Use abs(delta) for both puts and calls
         expected_value: position_ev
       })
 
