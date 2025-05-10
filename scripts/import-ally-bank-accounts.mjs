@@ -8,7 +8,7 @@ import { isMain, allyBank, addAsset } from '#libs-shared'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-bank')
-debug.enable('import-ally-bank')
+debug.enable('import-ally-bank,ally-bank')
 
 const run = async ({ credentials, publicKey, cli = false }) => {
   let accounts = []
@@ -17,7 +17,8 @@ const run = async ({ credentials, publicKey, cli = false }) => {
     accounts = await allyBank.getBalances({
       publicKey,
       cli,
-      ...credentials
+      ...credentials,
+      download_transactions: true
     })
   } catch (err) {
     log(err)
