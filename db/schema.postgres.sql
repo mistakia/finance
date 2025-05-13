@@ -26,24 +26,24 @@ ALTER TABLE IF EXISTS ONLY public.transactions DROP CONSTRAINT IF EXISTS transac
 ALTER TABLE IF EXISTS ONLY public.holdings DROP CONSTRAINT IF EXISTS holdings_pkey;
 ALTER TABLE IF EXISTS ONLY public.exchange_symbols DROP CONSTRAINT IF EXISTS exchange_symbols_pkey;
 ALTER TABLE IF EXISTS ONLY public.eod_option_quotes DROP CONSTRAINT IF EXISTS eod_option_quotes_pkey;
-ALTER TABLE IF EXISTS ONLY public.eod_equity_quotes DROP CONSTRAINT IF EXISTS eod_equity_quotes_pkey;
+ALTER TABLE IF EXISTS ONLY public.end_of_day_equity_quotes DROP CONSTRAINT IF EXISTS eod_equity_quotes_pkey;
 ALTER TABLE IF EXISTS ONLY public.earnings DROP CONSTRAINT IF EXISTS earnings_pkey;
 ALTER TABLE IF EXISTS ONLY public.cpi DROP CONSTRAINT IF EXISTS cpi_pkey;
 ALTER TABLE IF EXISTS ONLY public.config DROP CONSTRAINT IF EXISTS config_pkey;
 ALTER TABLE IF EXISTS ONLY public.backtests DROP CONSTRAINT IF EXISTS backtests_pkey;
 ALTER TABLE IF EXISTS ONLY public.assets DROP CONSTRAINT IF EXISTS assets_pkey;
-ALTER TABLE IF EXISTS ONLY public.adjusted_daily_prices DROP CONSTRAINT IF EXISTS adjusted_daily_prices_pkey;
+ALTER TABLE IF EXISTS ONLY public.adjusted_equity_quotes DROP CONSTRAINT IF EXISTS adjusted_daily_prices_pkey;
 DROP TABLE IF EXISTS public.transactions;
 DROP TABLE IF EXISTS public.holdings;
 DROP TABLE IF EXISTS public.exchange_symbols;
 DROP TABLE IF EXISTS public.eod_option_quotes;
-DROP TABLE IF EXISTS public.eod_equity_quotes;
+DROP TABLE IF EXISTS public.end_of_day_equity_quotes;
 DROP TABLE IF EXISTS public.earnings;
 DROP TABLE IF EXISTS public.cpi;
 DROP TABLE IF EXISTS public.config;
 DROP TABLE IF EXISTS public.backtests;
 DROP TABLE IF EXISTS public.assets;
-DROP TABLE IF EXISTS public.adjusted_daily_prices;
+DROP TABLE IF EXISTS public.adjusted_equity_quotes;
 DROP TYPE IF EXISTS public.transaction_type_enum;
 DROP TYPE IF EXISTS public.event_time_type_enum;
 DROP TYPE IF EXISTS public.asset_type_enum;
@@ -94,17 +94,17 @@ CREATE TYPE public.transaction_type_enum AS ENUM (
 SET default_table_access_method = heap;
 
 --
--- Name: adjusted_daily_prices; Type: TABLE; Schema: public; Owner: -
+-- Name: adjusted_equity_quotes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.adjusted_daily_prices (
+CREATE TABLE public.adjusted_equity_quotes (
     symbol character varying(10) NOT NULL,
     quote_date timestamp without time zone NOT NULL,
-    o numeric(12,2) NOT NULL,
-    h numeric(12,2) NOT NULL,
-    l numeric(12,2) NOT NULL,
-    c numeric(12,2) NOT NULL,
-    v bigint NOT NULL
+    open_price numeric(12,2) NOT NULL,
+    high_price numeric(12,2) NOT NULL,
+    low_price numeric(12,2) NOT NULL,
+    close_price numeric(12,2) NOT NULL,
+    volume bigint NOT NULL
 );
 
 
@@ -180,19 +180,19 @@ CREATE TABLE public.earnings (
 
 
 --
--- Name: eod_equity_quotes; Type: TABLE; Schema: public; Owner: -
+-- Name: end_of_day_equity_quotes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.eod_equity_quotes (
+CREATE TABLE public.end_of_day_equity_quotes (
     symbol character varying(10) NOT NULL,
     quote_date timestamp with time zone NOT NULL,
-    o numeric(12,2) NOT NULL,
-    h numeric(12,2) NOT NULL,
-    l numeric(12,2) NOT NULL,
-    c numeric(12,2) NOT NULL,
-    c_adj numeric(12,2) NOT NULL,
-    v bigint NOT NULL,
-    quote_unixtime bigint NOT NULL,
+    open_price numeric(12,2) NOT NULL,
+    high_price numeric(12,2) NOT NULL,
+    low_price numeric(12,2) NOT NULL,
+    close_price numeric(12,2) NOT NULL,
+    adjusted_close_price numeric(12,2) NOT NULL,
+    volume bigint NOT NULL,
+    quote_unix_timestamp bigint NOT NULL,
     change_in_1d numeric(6,3),
     change_in_7d numeric(6,3),
     change_in_14d numeric(6,3),
@@ -202,20 +202,20 @@ CREATE TABLE public.eod_equity_quotes (
     moving_average_14 numeric(7,3),
     moving_average_125 numeric(7,3),
     average_true_range_14_normalized numeric(4,3),
-    weighted_moving_average_9 numeric(7,2),
+    weighted_moving_average_9 numeric(12,2),
     weighted_moving_average_diff_pct numeric(6,3),
-    trailing_volatility_2 numeric(6,3),
-    trailing_volatility_7 numeric(6,3),
-    trailing_volatility_10 numeric(6,3),
-    trailing_volatility_14 numeric(6,3),
-    trailing_volatility_30 numeric(6,3),
-    trailing_volatility_2_moving_average_9 numeric(6,3),
+    trailing_volatility_2 numeric(8,3),
+    trailing_volatility_7 numeric(8,3),
+    trailing_volatility_10 numeric(8,3),
+    trailing_volatility_14 numeric(8,3),
+    trailing_volatility_30 numeric(8,3),
+    trailing_volatility_2_moving_average_9 numeric(8,3),
     trailing_volatility_2_moving_average_9_change_pct double precision,
     trailing_volatility_2_moving_average_9_diff_pct numeric(4,1),
-    trailing_volatility_10_moving_average_9 numeric(6,3),
+    trailing_volatility_10_moving_average_9 numeric(8,3),
     trailing_volatility_10_moving_average_9_change_pct numeric(4,1),
     trailing_volatility_10_moving_average_9_diff_pct numeric(4,1),
-    trailing_volatility_30_moving_average_9 numeric(6,3),
+    trailing_volatility_30_moving_average_9 numeric(8,3),
     trailing_volatility_30_moving_average_9_change_pct numeric(4,1),
     trailing_volatility_30_moving_average_9_diff_pct numeric(4,1),
     maxdrawdown_10 numeric(6,3),
@@ -355,10 +355,10 @@ COMMENT ON COLUMN public.transactions.link IS '/[user]/[link]/[link-id]';
 
 
 --
--- Name: adjusted_daily_prices adjusted_daily_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: adjusted_equity_quotes adjusted_daily_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.adjusted_daily_prices
+ALTER TABLE ONLY public.adjusted_equity_quotes
     ADD CONSTRAINT adjusted_daily_prices_pkey UNIQUE (symbol, quote_date);
 
 
@@ -403,10 +403,10 @@ ALTER TABLE ONLY public.earnings
 
 
 --
--- Name: eod_equity_quotes eod_equity_quotes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: end_of_day_equity_quotes eod_equity_quotes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.eod_equity_quotes
+ALTER TABLE ONLY public.end_of_day_equity_quotes
     ADD CONSTRAINT eod_equity_quotes_pkey UNIQUE (symbol, quote_date);
 
 
