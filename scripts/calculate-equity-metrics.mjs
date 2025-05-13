@@ -10,7 +10,8 @@ import { isMain } from '#libs-shared'
 import {
   get_future_price_change,
   HistoricalVolatility,
-  MaxDrawdown
+  MaxDrawdown,
+  chunk_inserts
 } from '#libs-server'
 
 const argv = yargs(hideBin(process.argv)).argv
@@ -245,10 +246,16 @@ const calculate_equity_metrics = async ({ symbol }) => {
   }
 
   if (inserts.length) {
-    await db('end_of_day_equity_quotes')
-      .insert(inserts)
-      .onConflict(['symbol', 'quote_date'])
-      .merge()
+    await chunk_inserts({
+      inserts,
+      chunk_size: 1000,
+      save: async (chunk) => {
+        await db('end_of_day_equity_quotes')
+          .insert(chunk)
+          .onConflict(['symbol', 'quote_date'])
+          .merge()
+      }
+    })
     log(`Inserted ${inserts.length} rows into end_of_day_equity_quotes`)
   }
 }
