@@ -130,7 +130,7 @@ export default class Trashman_Core_V2_Trading_Account extends Trading_Account {
     // Process historical quotes to initialize indicator values
     for (const symbol in this.historical_quotes) {
       this.historical_quotes[symbol].forEach((quote) => {
-        const close_price = quote.close_price
+        const close_price = Number(quote.close_price)
         const indicator_suffixes = [
           '_rsi_10',
           '_cum_return_6',
