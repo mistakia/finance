@@ -53,7 +53,12 @@ const format_date = (date_str) => {
   return `${month}/${day}/${year}`
 }
 
-const create_safe_filename = (account_name, account_last_four, from_date, to_date) => {
+const create_safe_filename = (
+  account_name,
+  account_last_four,
+  from_date,
+  to_date
+) => {
   const safe_name = account_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()
   return `ally_${safe_name}_${account_last_four}_${from_date}_to_${to_date}.csv`
 }
@@ -111,7 +116,10 @@ export const get_transactions = async ({
   // First navigate to the account page to generate necessary cookies
   const account_url = `https://secure.ally.com/account/${account_id}/details`
   log(`Navigating to account page: ${account_url}`)
-  await page.goto(account_url, { waitUntil: 'networkidle0', timeout: PAGE_LOAD_TIMEOUT })
+  await page.goto(account_url, {
+    waitUntil: 'networkidle0',
+    timeout: PAGE_LOAD_TIMEOUT
+  })
 
   // Wait for page to load
   await wait(DIALOG_WAIT_TIME)
@@ -145,7 +153,9 @@ export const get_transactions = async ({
 
       // Set the from date
       const formatted_from_date = format_date(from_date)
-      const from_date_group = await page.waitForSelector(SELECTORS.DATE_PICKER_GROUP)
+      const from_date_group = await page.waitForSelector(
+        SELECTORS.DATE_PICKER_GROUP
+      )
       await from_date_group.click()
       await page.keyboard.type(formatted_from_date)
       log(`Set from date to ${formatted_from_date}`)
@@ -172,7 +182,10 @@ export const get_transactions = async ({
       log('Clicked download button in dialog')
 
       // Wait for the file to appear and rename it
-      const downloaded_file = await wait_for_file(DOWNLOAD_PATH, DOWNLOAD_TIMEOUT)
+      const downloaded_file = await wait_for_file(
+        DOWNLOAD_PATH,
+        DOWNLOAD_TIMEOUT
+      )
 
       if (!downloaded_file) {
         throw new Error('Downloaded file not found after waiting')
@@ -186,10 +199,14 @@ export const get_transactions = async ({
 
       return target_filename
     } catch (error) {
-      log(`Dialog handling error: ${error.message}. Trying direct URL approach.`)
+      log(
+        `Dialog handling error: ${error.message}. Trying direct URL approach.`
+      )
     }
   } catch (error) {
-    log(`Could not find or click Download Transactions button: ${error.message}. Trying direct URL approach.`)
+    log(
+      `Could not find or click Download Transactions button: ${error.message}. Trying direct URL approach.`
+    )
   }
 
   throw new Error('Could not find or click Download Transactions button')
@@ -239,7 +256,10 @@ export const getBalances = async ({
   await elementHandle.press('Enter')
   log('Pressed Enter')
 
-  await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: PAGE_LOAD_TIMEOUT })
+  await page.waitForNavigation({
+    waitUntil: 'networkidle0',
+    timeout: PAGE_LOAD_TIMEOUT
+  })
   log('Waited for navigation')
 
   // TODO improve this to something more stable
@@ -280,7 +300,10 @@ export const getBalances = async ({
     await elementHandle2.press('Enter')
     log('Pressed Enter')
 
-    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: PAGE_LOAD_TIMEOUT })
+    await page.waitForNavigation({
+      waitUntil: 'networkidle0',
+      timeout: PAGE_LOAD_TIMEOUT
+    })
     log('Waited for navigation')
   }
 
