@@ -287,8 +287,8 @@ CREATE TABLE public.eod_option_quotes (
 --
 
 CREATE TABLE public.exchange_symbols (
-    symbol character varying(20) NOT NULL,
-    exchange character varying(20) NOT NULL,
+    symbol character varying(50) NOT NULL,
+    exchange character varying(50) NOT NULL,
     full_name character varying(200),
     description character varying(500),
     type character varying(50),
