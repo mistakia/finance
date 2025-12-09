@@ -32,7 +32,7 @@ export default async function ({ asset_type, symbol }) {
       return {
         ...info,
         market_value_usd: alphavantage_quote['Global Quote']['05. price'],
-        asset_class: `/public_equity/${category}`
+        asset_class: `/public-equity/${category}`
       }
     }
 
@@ -44,8 +44,8 @@ export default async function ({ asset_type, symbol }) {
 
       const isToken = Boolean(coin.asset_platform_id)
       const asset_class = isToken
-        ? '/crypto_currency/token'
-        : '/crypto_currency/native'
+        ? '/crypto-currency/token'
+        : '/crypto-currency/native'
 
       return {
         ...info,

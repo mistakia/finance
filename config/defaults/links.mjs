@@ -4,7 +4,7 @@ export default {
   institutions: [
     {
       patterns: [/ally bank|ally financial/i],
-      link: '/custodian/ally_bank'
+      link: '/custodian/ally-bank'
     },
     {
       patterns: [/chase bank|jpmorgan|chase credit/i],
@@ -12,7 +12,7 @@ export default {
     },
     {
       patterns: [/capital one|capitalone/i],
-      link: '/creditor/capital_one'
+      link: '/creditor/capital-one'
     }
   ],
 
@@ -24,7 +24,7 @@ export default {
     },
     {
       patterns: [/home depot|homedepot/i],
-      link: '/merchant/home_depot'
+      link: '/merchant/home-depot'
     }
   ],
 
@@ -32,11 +32,11 @@ export default {
   government: [
     {
       patterns: [/irs|internal revenue|treasury|united states treasury/i],
-      link: '/government/united_states'
+      link: '/government/united-states'
     }
   ],
 
   // Default link format function for merchants not specifically mapped
   default_format: (clean_name) =>
-    `/merchant/${clean_name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`
+    `/merchant/${clean_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
 }
