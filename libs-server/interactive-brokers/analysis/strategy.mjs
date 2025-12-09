@@ -98,11 +98,32 @@ const identify_call_spread_strategy = (strategy, short_calls, long_calls) => {
 
   strategy.strategy_type = 'CALL_SPREAD'
 
-  if (short_call.contract.strike < long_call.contract.strike) {
-    // Bull call spread
+  if (long_call.contract.strike < short_call.contract.strike) {
+    // Bull call spread (debit spread): buy lower strike, sell higher strike
     strategy.variation = 'BULL'
 
     const cost_basis =
+      Math.abs(Math.abs(long_call.avgCost) - Math.abs(short_call.avgCost)) *
+      Math.abs(short_call.pos) *
+      short_call.contract.multiplier
+
+    const width =
+      (short_call.contract.strike - long_call.contract.strike) *
+      Math.abs(short_call.pos) *
+      short_call.contract.multiplier
+
+    strategy.max_risk = cost_basis
+    strategy.max_profit = width - cost_basis
+
+    strategy.breakeven_points = [
+      long_call.contract.strike +
+        cost_basis / (Math.abs(short_call.pos) * short_call.contract.multiplier)
+    ]
+  } else {
+    // Bear call spread (credit spread): sell lower strike, buy higher strike
+    strategy.variation = 'BEAR'
+
+    const credit_received =
       Math.abs(Math.abs(short_call.avgCost) - Math.abs(long_call.avgCost)) *
       Math.abs(short_call.pos) *
       short_call.contract.multiplier
@@ -112,32 +133,11 @@ const identify_call_spread_strategy = (strategy, short_calls, long_calls) => {
       Math.abs(short_call.pos) *
       short_call.contract.multiplier
 
-    strategy.max_risk = cost_basis
-    strategy.max_profit = width - cost_basis
-
-    strategy.breakeven_points = [
-      short_call.contract.strike +
-        cost_basis / (Math.abs(short_call.pos) * short_call.contract.multiplier)
-    ]
-  } else {
-    // Bear call spread
-    strategy.variation = 'BEAR'
-
-    const credit_received =
-      Math.abs(Math.abs(short_call.avgCost) - Math.abs(long_call.avgCost)) *
-      Math.abs(short_call.pos) *
-      short_call.contract.multiplier
-
-    const width =
-      (short_call.contract.strike - long_call.contract.strike) *
-      Math.abs(short_call.pos) *
-      short_call.contract.multiplier
-
     strategy.max_profit = credit_received
     strategy.max_risk = width - credit_received
 
     strategy.breakeven_points = [
-      short_call.contract.strike -
+      short_call.contract.strike +
         credit_received /
           (Math.abs(short_call.pos) * short_call.contract.multiplier)
     ]
