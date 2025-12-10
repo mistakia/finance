@@ -3,7 +3,7 @@ import debug from 'debug'
 import dayjs from 'dayjs'
 import db from '#db'
 import refresh_historical_quotes from '../refresh-historical-quotes.mjs'
-import { get_option_delta } from '../tradingview.mjs'
+import { get_option_market_data } from '../tradingview.mjs'
 
 const log = debug('interactive-brokers:market-data')
 
@@ -11,8 +11,12 @@ export const get_market_data = async ({ ib, contract, delayed = false }) => {
   return new Promise((resolve, reject) => {
     let market_data = {
       price: null,
+      bid: null,
+      ask: null,
       impliedVol: null,
       delta: null,
+      theta: null,
+      gamma: null,
       underlying_price: null
     }
     let has_received_data = false
@@ -36,32 +40,79 @@ export const get_market_data = async ({ ib, contract, delayed = false }) => {
         clearTimeout(timeout_id)
       }
 
-      // If no delta value was received, try to get it from TradingView
-      if (market_data.delta === null && contract.secType === 'OPT') {
+      // For options: if missing price or delta, try to get full market data from TradingView
+      if (
+        contract.secType === 'OPT' &&
+        (!market_data.price || market_data.delta === null)
+      ) {
         try {
-          const delta = await get_option_delta({
+          const tv_data = await get_option_market_data({
             symbol: contract.symbol,
             expiration_date: parseInt(contract.lastTradeDateOrContractMonth),
             option_type: contract.right === 'C' ? 'call' : 'put',
             strike: parseFloat(contract.strike)
           })
 
-          if (delta !== null) {
-            market_data.delta = Math.abs(delta)
-            log(
-              `Retrieved delta for ${contract.symbol} ${contract.lastTradeDateOrContractMonth} ${contract.right} ${contract.strike} from TradingView: ${delta}`
-            )
+          if (tv_data) {
+            // Fill in missing values from TradingView
+            if (!market_data.price && tv_data.price) {
+              market_data.price = tv_data.price
+            }
+            if (!market_data.bid && tv_data.bid) {
+              market_data.bid = tv_data.bid
+            }
+            if (!market_data.ask && tv_data.ask) {
+              market_data.ask = tv_data.ask
+            }
+            if (market_data.delta === null && tv_data.delta !== null) {
+              market_data.delta = Math.abs(tv_data.delta)
+            }
+            if (market_data.theta === null && tv_data.theta !== null) {
+              market_data.theta = tv_data.theta
+            }
+            if (market_data.gamma === null && tv_data.gamma !== null) {
+              market_data.gamma = tv_data.gamma
+            }
+            if (
+              market_data.impliedVol === null &&
+              tv_data.impliedVol !== null
+            ) {
+              market_data.impliedVol = tv_data.impliedVol
+            }
+
+            if (tv_data.price || tv_data.delta) {
+              log(
+                `Retrieved option data for ${contract.symbol} ${
+                  contract.lastTradeDateOrContractMonth
+                } ${contract.right} ${
+                  contract.strike
+                } from TradingView: price=${
+                  tv_data.price?.toFixed(2) || 'N/A'
+                } delta=${tv_data.delta?.toFixed(4) || 'N/A'}`
+              )
+            }
           }
         } catch (error) {
-          log(`Failed to get delta from TradingView: ${error.message}`)
+          log(`Failed to get option data from TradingView: ${error.message}`)
         }
       }
 
-      if (!has_received_data) {
+      if (!has_received_data && !market_data.price) {
         log(
           `No market data received for contract: ${JSON.stringify(
             contract_with_exchange
           )}`
+        )
+      } else if (market_data.price) {
+        log(
+          `Final market data for ${contract.symbol} ${contract.strike || ''} ${
+            contract.right || ''
+          }: ` +
+            `price=${market_data.price?.toFixed(2) || 'NULL'} ` +
+            `bid=${market_data.bid?.toFixed(2) || 'NULL'} ` +
+            `ask=${market_data.ask?.toFixed(2) || 'NULL'} ` +
+            `delta=${market_data.delta?.toFixed(4) || 'NULL'} ` +
+            `theta=${market_data.theta?.toFixed(4) || 'NULL'}`
         )
       }
       resolve(market_data)
@@ -83,13 +134,19 @@ export const get_market_data = async ({ ib, contract, delayed = false }) => {
             update_data.set(tick_type, tick.value)
           })
 
-          // Extract option-specific data
+          // Extract option-specific data (greeks)
           const model_delta =
             update_data.get('MODEL_OPTION_DELTA') ||
             update_data.get('DELAYED_MODEL_OPTION_DELTA')
           const model_iv =
             update_data.get('MODEL_OPTION_IV') ||
             update_data.get('DELAYED_MODEL_OPTION_IV')
+          const model_theta =
+            update_data.get('MODEL_OPTION_THETA') ||
+            update_data.get('DELAYED_MODEL_OPTION_THETA')
+          const model_gamma =
+            update_data.get('MODEL_OPTION_GAMMA') ||
+            update_data.get('DELAYED_MODEL_OPTION_GAMMA')
 
           // Extract price data with fallbacks
           const last_price =
@@ -106,27 +163,54 @@ export const get_market_data = async ({ ib, contract, delayed = false }) => {
             bid_price && ask_price ? (bid_price + ask_price) / 2 : null
           const price = last_price || close_price || mid_price
 
-          if (model_delta || model_iv || price) {
+          if (model_delta || model_iv || price || bid_price || ask_price) {
             market_data = {
               ...market_data,
               delta: model_delta ? Math.abs(model_delta) : market_data.delta,
+              theta: model_theta || market_data.theta,
+              gamma: model_gamma || market_data.gamma,
               impliedVol: model_iv || market_data.impliedVol,
-              price: price || market_data.price
+              price: price || market_data.price,
+              bid: bid_price || market_data.bid,
+              ask: ask_price || market_data.ask
             }
             has_received_data = true
+
+            log(
+              `Market data for ${contract.symbol} ${contract.strike || ''} ${
+                contract.right || ''
+              }: ` +
+                `price=${price?.toFixed(2) || '-'} bid=${
+                  bid_price?.toFixed(2) || '-'
+                } ask=${ask_price?.toFixed(2) || '-'} ` +
+                `delta=${model_delta?.toFixed(4) || '-'} theta=${
+                  model_theta?.toFixed(4) || '-'
+                } gamma=${model_gamma?.toFixed(4) || '-'}`
+            )
 
             // If we have all the data we need, resolve immediately
             if (
               market_data.price &&
               market_data.delta &&
-              market_data.impliedVol
+              market_data.impliedVol &&
+              market_data.bid &&
+              market_data.ask
             ) {
               cleanup_and_resolve()
             }
           }
         },
         error: (err) => {
-          log('Error receiving market data:', err)
+          // Log only the message for known/expected errors, full error for unexpected ones
+          // 10089: Market data requires subscription
+          // 10090: Market data subscription errors
+          // 10091: Part of requested market data requires subscription
+          const known_error_codes = [10089, 10090, 10091]
+          if (err.code && known_error_codes.includes(err.code)) {
+            log(`Market data error (${err.code}): ${err.message}`)
+          } else {
+            log('Error receiving market data:', err)
+          }
           cleanup_and_resolve()
         }
       })
@@ -146,8 +230,12 @@ export const get_stock_market_data = async ({ ib, symbol }) => {
 
   let market_data = {
     price: null,
+    bid: null,
+    ask: null,
     impliedVol: null,
     delta: null,
+    theta: null,
+    gamma: null,
     underlying_price: null
   }
 
@@ -193,12 +281,12 @@ export const get_stock_market_data = async ({ ib, symbol }) => {
           .first()
 
         if (updated_quote) {
-          market_data.price = updated_quote.close_price
+          market_data.price = parseFloat(updated_quote.close_price)
         } else {
-          market_data.price = latest_quote.close_price
+          market_data.price = parseFloat(latest_quote.close_price)
         }
       } else {
-        market_data.price = latest_quote.close_price
+        market_data.price = parseFloat(latest_quote.close_price)
       }
     } else {
       log(`No market data found in database for ${symbol}`)
@@ -217,7 +305,7 @@ export const get_stock_market_data = async ({ ib, symbol }) => {
         .first()
 
       if (updated_quote) {
-        market_data.price = updated_quote.close_price
+        market_data.price = parseFloat(updated_quote.close_price)
       }
     }
   }

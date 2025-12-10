@@ -356,3 +356,67 @@ export const get_option_delta = async ({
     return null
   }
 }
+
+/**
+ * Get full market data for an option from TradingView (fallback for when IB data is unavailable)
+ * Returns price (theoPrice or mid), bid, ask, and all greeks
+ * @param {Object} params - Parameters for the option
+ * @param {string} params.symbol - Underlying symbol
+ * @param {string|number} params.expiration_date - Option expiration date in YYYYMMDD format
+ * @param {string} params.option_type - Option type ("call" or "put")
+ * @param {number} params.strike - Strike price
+ * @param {string} [params.exchange] - Exchange for the symbol (if null, will be looked up)
+ * @returns {Promise<Object|null>} - Market data object or null if unavailable
+ */
+export const get_option_market_data = async ({
+  symbol,
+  expiration_date,
+  option_type,
+  strike,
+  exchange = null
+}) => {
+  try {
+    log({ symbol, expiration_date, option_type, strike, exchange })
+
+    // If exchange not provided, look it up
+    if (!exchange) {
+      exchange = await get_primary_exchange(symbol)
+    }
+
+    const option_data = await get_specific_option_data({
+      symbol,
+      expiration_date,
+      option_type,
+      strike,
+      exchange
+    })
+
+    if (!option_data) {
+      return null
+    }
+
+    // Calculate mid price if bid and ask are available
+    const bid = option_data.bid
+    const ask = option_data.ask
+    const mid_price = bid && ask ? (bid + ask) / 2 : null
+
+    // Use theoPrice (theoretical/model price) as primary, fall back to mid price
+    const price = option_data.theoPrice || mid_price
+
+    return {
+      price,
+      bid,
+      ask,
+      delta: option_data.delta,
+      gamma: option_data.gamma,
+      theta: option_data.theta,
+      vega: option_data.vega,
+      rho: option_data.rho,
+      impliedVol: option_data.iv,
+      source: 'tradingview'
+    }
+  } catch (error) {
+    console.error('Error getting option market data from TradingView:', error)
+    return null
+  }
+}

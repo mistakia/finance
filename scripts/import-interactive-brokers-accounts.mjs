@@ -129,8 +129,8 @@ const import_interactive_brokers_accounts = async ({
         'Underlying',
         'Expiration',
         'Strategy Type',
-        'Max Risk',
-        'Max Profit',
+        'Unrealized P&L',
+        'Status',
         'Positions'
       ],
       style: { head: ['cyan'] }
@@ -141,16 +141,31 @@ const import_interactive_brokers_accounts = async ({
         .map((pos) => {
           const quantity = pos.quantity > 0 ? `+${pos.quantity}` : pos.quantity
           const delta = pos.delta !== null ? ` (δ=${pos.delta.toFixed(4)})` : ''
-          return `${pos.symbol} ${pos.right} ${pos.strike} ${quantity}${delta}`
+          const pnl =
+            pos.unrealized_pnl !== null
+              ? ` [${
+                  pos.unrealized_pnl >= 0 ? '+' : ''
+                }$${pos.unrealized_pnl.toFixed(0)}]`
+              : ''
+          return `${pos.symbol} ${pos.right} ${pos.strike} ${quantity}${delta}${pnl}`
         })
         .join('\n')
+
+      const pnl_display =
+        strat.unrealized_pnl !== null
+          ? `${
+              strat.unrealized_pnl >= 0 ? '+' : ''
+            }$${strat.unrealized_pnl.toFixed(2)}`
+          : 'N/A'
+
+      const status_display = strat.status || '-'
 
       strategy_table.push([
         strat.underlying,
         strat.expiration,
         strat.strategy_type + (strat.variation ? ` (${strat.variation})` : ''),
-        strat.max_risk,
-        strat.max_profit,
+        pnl_display,
+        status_display,
         positions
       ])
     })
@@ -161,8 +176,11 @@ const import_interactive_brokers_accounts = async ({
         'Type',
         'Quantity',
         'Cost Basis',
+        'Cur Price',
+        'Cur Value',
+        'P&L',
         'Strike',
-        'Expiration',
+        'Exp',
         'Right'
       ],
       style: { head: ['cyan'] }
@@ -171,11 +189,42 @@ const import_interactive_brokers_accounts = async ({
     // Add all positions to the table
     account_info.positions.forEach((position) => {
       const is_option = position.contract.secType === 'OPT'
+      const multiplier = is_option ? position.contract.multiplier : 1
+      const contracts = Math.abs(position.pos)
+
+      // Calculate current value and P&L
+      // Note: IB's avgCost for options already includes the multiplier (it's total cost per contract)
+      // But TradingView prices are per-share, so we need to multiply by multiplier for current_value
+      const current_price = position.market_data?.price
+      const cost_basis = is_option
+        ? position.avgCost * contracts // avgCost already includes multiplier for options
+        : position.avgCost * contracts // for stocks, avgCost is per-share
+      const current_value = current_price
+        ? current_price * contracts * multiplier
+        : null
+
+      let pnl = null
+      if (current_value !== null) {
+        if (position.pos > 0) {
+          pnl = current_value - cost_basis
+        } else {
+          pnl = cost_basis - current_value
+        }
+      }
+
+      const pnl_display =
+        pnl !== null ? `${pnl >= 0 ? '+' : ''}${pnl.toFixed(0)}` : '-'
+      const cur_price_display = current_price ? current_price.toFixed(2) : '-'
+      const cur_value_display = current_value ? current_value.toFixed(0) : '-'
+
       positions_table.push([
         position.contract.symbol,
         position.contract.secType,
         position.pos,
-        position.avgCost,
+        position.avgCost.toFixed(2),
+        cur_price_display,
+        cur_value_display,
+        pnl_display,
         is_option ? position.contract.strike : '-',
         is_option ? position.contract.lastTradeDateOrContractMonth : '-',
         is_option ? position.contract.right : '-'
@@ -206,28 +255,66 @@ const import_interactive_brokers_accounts = async ({
       ])
     })
 
-    // Expected value table
-    const expected_value_table = new Table({
-      head: ['Symbol', 'Expected Value', 'Position Details'],
+    // Close analysis table
+    const close_analysis_table = new Table({
+      head: [
+        'Strategy',
+        'Exp (DTE)',
+        'Close For',
+        'Net P&L',
+        'Profit %',
+        'Theta/Day',
+        'Recommendation'
+      ],
       style: { head: ['cyan'] }
     })
 
-    account_info.analysis.expected_value.by_symbol.forEach((symbol) => {
-      if (symbol.positions.length === 0) return
+    account_info.analysis.close_analysis.forEach((analysis) => {
+      const strategy_name = `${analysis.underlying} ${analysis.strategy_type}${
+        analysis.variation ? ` (${analysis.variation})` : ''
+      }`
 
-      const positions_detail = symbol.positions
-        .map(
-          (p) =>
-            `${p.symbol} ${p.right} ${
-              p.strike
-            } (EV: $${p.expected_value.toFixed(2)})`
-        )
-        .join('\n')
+      const dte_display =
+        analysis.days_to_expiration !== null
+          ? `${analysis.expiration} (${analysis.days_to_expiration}d)`
+          : analysis.expiration
 
-      expected_value_table.push([
-        symbol.symbol,
-        `$${symbol.expected_value.toFixed(2)}`,
-        positions_detail
+      const close_cost_display =
+        analysis.close_cost !== null
+          ? `${
+              analysis.close_cost >= 0 ? '+' : ''
+            }$${analysis.close_cost.toFixed(0)}`
+          : 'N/A'
+
+      const net_pnl_display =
+        analysis.net_pnl !== null
+          ? `${analysis.net_pnl >= 0 ? '+' : ''}$${analysis.net_pnl.toFixed(0)}`
+          : 'N/A'
+
+      const profit_pct_display =
+        analysis.profit_captured_pct !== null
+          ? `${analysis.profit_captured_pct.toFixed(0)}%`
+          : '-'
+
+      const theta_display =
+        analysis.theta_per_day !== null
+          ? `${
+              analysis.theta_per_day >= 0 ? '+' : ''
+            }$${analysis.theta_per_day.toFixed(0)}`
+          : '-'
+
+      const recommendation_display = analysis.recommendation
+        ? `${analysis.recommendation}\n${analysis.recommendation_reason || ''}`
+        : '-'
+
+      close_analysis_table.push([
+        strategy_name,
+        dte_display,
+        close_cost_display,
+        net_pnl_display,
+        profit_pct_display,
+        theta_display,
+        recommendation_display
       ])
     })
 
@@ -245,10 +332,10 @@ const import_interactive_brokers_accounts = async ({
     console.log(delta_liability_table.toString())
     console.log('\nStrategies:')
     console.log(strategy_table.toString())
+    console.log('\nClose Analysis:')
+    console.log(close_analysis_table.toString())
     console.log('\nSymbol Risk Analysis:')
     console.log(symbol_risk_table.toString())
-    console.log('\nExpected Value Analysis:')
-    console.log(expected_value_table.toString())
 
     const asset = await addAsset({ asset_type: 'currency', symbol: 'USD' })
     const cash_balance = Number(account_info.summary.TotalCashValue)

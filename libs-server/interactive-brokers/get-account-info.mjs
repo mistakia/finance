@@ -23,10 +23,8 @@ import {
   calculate_delta_exposure
 } from './analysis/risk.mjs'
 import { identify_strategies } from './analysis/strategy.mjs'
-import {
-  analyze_probability_risk,
-  calculate_expected_value
-} from './analysis/probability.mjs'
+import { analyze_probability_risk } from './analysis/probability.mjs'
+import { calculate_close_analysis } from './analysis/close.mjs'
 import config from '#config'
 
 const log = debug('interactive-brokers')
@@ -97,25 +95,22 @@ export const get_account_info = async ({
       }
     }
 
-    // Fetch option market data for short positions
+    // Fetch option market data for all positions
     log('Fetching option market data...')
     // eslint-disable-next-line no-unused-vars
     for (const [_, symbol_data] of symbols_map) {
       for (const position of symbol_data.option_positions) {
-        if (position.pos < 0) {
-          // Only fetch data for short positions
-          try {
-            const market_data = await get_market_data({
-              ib,
-              contract: position.contract
-            })
-            option_market_data.set(position.contract.conId, market_data)
-          } catch (error) {
-            log(
-              `Error fetching option market data for ${position.contract.symbol}:`,
-              error
-            )
-          }
+        try {
+          const market_data = await get_market_data({
+            ib,
+            contract: position.contract
+          })
+          option_market_data.set(position.contract.conId, market_data)
+        } catch (error) {
+          log(
+            `Error fetching option market data for ${position.contract.symbol}:`,
+            error
+          )
         }
       }
     }
@@ -149,10 +144,16 @@ export const get_account_info = async ({
     log('Analyzing delta-based liability...')
     const delta_liability = analyze_probability_risk(risk_analysis)
 
-    log('Calculating expected values...')
-    const expected_value = calculate_expected_value(symbols_with_metrics)
+    log('Calculating close analysis...')
+    const close_analysis = calculate_close_analysis(strategies)
 
     // 7. PREPARE RESULT OBJECT WITH RAW AND ANALYZED DATA
+    // Extract enriched positions from symbols_map (includes market data)
+    const enriched_positions = []
+    for (const symbol_data of symbols_with_metrics.values()) {
+      enriched_positions.push(...symbol_data.all_positions)
+    }
+
     const result = {
       // Raw data
       raw: {
@@ -163,8 +164,8 @@ export const get_account_info = async ({
       // Summary data
       summary: Object.fromEntries(account_summary),
 
-      // Base position data
-      positions: create_position_summary(account_positions),
+      // Base position data (with market data attached)
+      positions: create_position_summary(enriched_positions),
 
       // Analysis results
       analysis: {
@@ -181,12 +182,11 @@ export const get_account_info = async ({
         // Strategy analysis
         strategies,
 
+        // Close analysis
+        close_analysis,
+
         // Liability by delta
         delta_liability,
-        expected_value: {
-          total: expected_value.total_expected_value,
-          by_symbol: Array.from(expected_value.by_symbol.values())
-        },
 
         // Symbol-based analysis
         symbols: Array.from(symbols_with_metrics.values()).map((symbol) => ({

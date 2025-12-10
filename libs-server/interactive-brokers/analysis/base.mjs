@@ -82,6 +82,13 @@ export const enrich_with_market_data = ({
       symbol_data.market_data = stock_market_data.get(symbol)
     }
 
+    // Attach market data to individual stock positions
+    symbol_data.stock_positions.forEach((position) => {
+      if (symbol_data.market_data) {
+        position.market_data = { ...symbol_data.market_data }
+      }
+    })
+
     // Attach market data to individual option positions
     symbol_data.option_positions.forEach((position) => {
       if (
@@ -93,6 +100,18 @@ export const enrich_with_market_data = ({
         // If option market data doesn't have underlying price, use the stock market data
         if (!position.market_data.underlying_price && symbol_data.market_data) {
           position.market_data.underlying_price = symbol_data.market_data.price
+        }
+      } else if (symbol_data.market_data) {
+        // If no option market data, create a placeholder with underlying price
+        position.market_data = {
+          price: null,
+          bid: null,
+          ask: null,
+          impliedVol: null,
+          delta: null,
+          theta: null,
+          gamma: null,
+          underlying_price: symbol_data.market_data.price
         }
       }
     })
@@ -116,9 +135,10 @@ export const calculate_basic_metrics = (symbols_map) => {
     }, 0)
 
     // Calculate option value (rough estimate based on avgCost)
+    // Note: IB's avgCost already includes the multiplier (total cost per contract)
     symbol_data.option_value = symbol_data.option_positions.reduce(
       (sum, pos) => {
-        const value = pos.pos * pos.avgCost * pos.contract.multiplier
+        const value = pos.pos * pos.avgCost
         total_option_value += value
         return sum + value
       },
