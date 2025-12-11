@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "concurrently \"yarn start\" \"yarn start:api\"",
-    "start": "webpack serve --mode=development --config internals/webpack/webpack.dev.babel.mjs --port 8083 --history-api-fallback",
+    "start": "webpack serve --mode=development --config internals/webpack/webpack.dev.babel.mjs --port 8084 --history-api-fallback",
     "start:api": "NODE_ENV=development node server.mjs",
     "build": "cross-env NODE_ENV=production webpack --config internals/webpack/webpack.prod.babel.mjs --color --progress",
     "lint": "eslint . --ext js,mjs",

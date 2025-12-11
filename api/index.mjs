@@ -64,7 +64,7 @@ api.use('/api/assets', routes.assets)
 
 if (IS_DEV) {
   api.get('*', (req, res) => {
-    res.redirect(307, `http://localhost:8083${req.path}`)
+    res.redirect(307, `http://localhost:8084${req.path}`)
   })
 } else {
   const buildPath = path.join(__dirname, '..', 'build')
