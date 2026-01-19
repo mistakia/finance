@@ -2724,7 +2724,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv-formats@npm:^2.1.1":
+"ajv-formats@npm:2.1.1, ajv-formats@npm:^2.1.1":
   version: 2.1.1
   resolution: "ajv-formats@npm:2.1.1"
   dependencies:
@@ -2755,6 +2755,18 @@ __metadata:
   peerDependencies:
     ajv: ^8.8.2
   checksum: 10/5021f96ab7ddd03a4005326bd06f45f448ebfbb0fe7018b1b70b6c28142fa68372bda2057359814b83fd0b2d4c8726c297f0a7557b15377be7b56ce5344533d8
+  languageName: node
+  linkType: hard
+
+"ajv@npm:8.10.0":
+  version: 8.10.0
+  resolution: "ajv@npm:8.10.0"
+  dependencies:
+    fast-deep-equal: "npm:^3.1.1"
+    json-schema-traverse: "npm:^1.0.0"
+    require-from-string: "npm:^2.0.2"
+    uri-js: "npm:^4.2.2"
+  checksum: 10/19f265a0895d1156cb13cb22a973cfce5587718b56c7e0141d8d60c1e7a016eb698aecffca158e06d2bac6d199d86c803a7ad686ba61a38e50a9e2e93894209b
   languageName: node
   linkType: hard
 
@@ -5755,6 +5767,7 @@ __metadata:
     webpack-dev-server: "npm:^4.15.1"
     ws: "npm:^8.13.0"
     yahoo-finance2: "npm:^2.13.2"
+    yahoo-finance2-custom: "github:mistakia/node-yahoo-finance2#proto/expose-get-crumb"
     yahoo-stock-prices: "npm:^1.1.0"
     yargs: "npm:^17.7.2"
   languageName: unknown
@@ -8357,6 +8370,20 @@ __metadata:
     encoding:
       optional: true
   checksum: 10/4bc9245383db92c35601a798c9a992fdf38d99920ceac11e0e6512ef3014d188b3807ccb060bc6c4bdb57a145030c73f5b5fd6730f665979f9264bc43ca3afea
+  languageName: node
+  linkType: hard
+
+"node-fetch@npm:^2.6.1":
+  version: 2.7.0
+  resolution: "node-fetch@npm:2.7.0"
+  dependencies:
+    whatwg-url: "npm:^5.0.0"
+  peerDependencies:
+    encoding: ^0.1.0
+  peerDependenciesMeta:
+    encoding:
+      optional: true
+  checksum: 10/b24f8a3dc937f388192e59bcf9d0857d7b6940a2496f328381641cb616efccc9866e89ec43f2ec956bbd6c3d3ee05524ce77fe7b29ccd34692b3a16f237d6676
   languageName: node
   linkType: hard
 
@@ -11835,6 +11862,22 @@ __metadata:
   version: 5.0.8
   resolution: "y18n@npm:5.0.8"
   checksum: 10/5f1b5f95e3775de4514edbb142398a2c37849ccfaf04a015be5d75521e9629d3be29bd4432d23c57f37e5b61ade592fb0197022e9993f81a06a5afbdcda9346d
+  languageName: node
+  linkType: hard
+
+"yahoo-finance2-custom@github:mistakia/node-yahoo-finance2#proto/expose-get-crumb":
+  version: 0.0.1
+  resolution: "yahoo-finance2-custom@https://github.com/mistakia/node-yahoo-finance2.git#commit=a02040d514f6008759ab593f49aacb34ea66fed7"
+  dependencies:
+    "@types/tough-cookie": "npm:^4.0.2"
+    ajv: "npm:8.10.0"
+    ajv-formats: "npm:2.1.1"
+    node-fetch: "npm:^2.6.1"
+    tough-cookie: "npm:^4.1.2"
+    tough-cookie-file-store: "npm:^2.0.3"
+  bin:
+    yahoo-finance: bin/yahoo-finance.js
+  checksum: 10/39cb981b49d4bc82843a623fa0c04dbbbdbc86cdd2507e65a8dfe108e4a5dce8a606fb4083ab420aebb077829dfbaa8df29701f0b5ebf2335caf86a2eaafda5e
   languageName: node
   linkType: hard
 
