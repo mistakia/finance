@@ -35,7 +35,6 @@
     "@mui/material": "^5.14.0",
     "@stoqey/ib": "^1.5.1",
     "@tsmx/secure-config": "^2.3.0",
-    "@yahoo-finance2": "mistakia/node-yahoo-finance2#proto/expose-get-crumb",
     "babel-loader": "^8.3.0",
     "babel-plugin-module-resolver": "^5.0.0",
     "bignumber.js": "^9.1.1",
@@ -133,7 +132,7 @@
   "repository": "git@github.com:mistakia/finance.git",
   "author": "mistakia <1823355+mistakia@users.noreply.github.com>",
   "license": "MIT",
-  "packageManager": "yarn@3.2.0",
+  "packageManager": "yarn@4.12.0",
   "engines": {
     "node": "22.11.0"
   }
