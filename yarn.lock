@@ -1982,13 +1982,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinclair/typebox@npm:^0.32.27":
-  version: 0.32.35
-  resolution: "@sinclair/typebox@npm:0.32.35"
-  checksum: 10/5319164290cde0fae75681ac57ba5caa70850252a015e09725569ff7df3496731135604da77fa614706e3882f2d301e5c1748914b850727191dea4fcdfa8d06f
-  languageName: node
-  linkType: hard
-
 "@stoqey/ib@npm:^1.5.1":
   version: 1.5.3
   resolution: "@stoqey/ib@npm:1.5.3"
@@ -5766,8 +5759,7 @@ __metadata:
     webpack-cli: "npm:^4.10.0"
     webpack-dev-server: "npm:^4.15.1"
     ws: "npm:^8.13.0"
-    yahoo-finance2: "npm:^2.13.2"
-    yahoo-finance2-custom: "github:mistakia/node-yahoo-finance2#proto/expose-get-crumb"
+    yahoo-finance2: "github:mistakia/node-yahoo-finance2#proto/expose-get-crumb"
     yahoo-stock-prices: "npm:^1.1.0"
     yargs: "npm:^17.7.2"
   languageName: unknown
@@ -11865,9 +11857,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yahoo-finance2-custom@github:mistakia/node-yahoo-finance2#proto/expose-get-crumb":
+"yahoo-finance2@github:mistakia/node-yahoo-finance2#proto/expose-get-crumb":
   version: 0.0.1
-  resolution: "yahoo-finance2-custom@https://github.com/mistakia/node-yahoo-finance2.git#commit=a02040d514f6008759ab593f49aacb34ea66fed7"
+  resolution: "yahoo-finance2@https://github.com/mistakia/node-yahoo-finance2.git#commit=a02040d514f6008759ab593f49aacb34ea66fed7"
   dependencies:
     "@types/tough-cookie": "npm:^4.0.2"
     ajv: "npm:8.10.0"
@@ -11877,21 +11869,7 @@ __metadata:
     tough-cookie-file-store: "npm:^2.0.3"
   bin:
     yahoo-finance: bin/yahoo-finance.js
-  checksum: 10/39cb981b49d4bc82843a623fa0c04dbbbdbc86cdd2507e65a8dfe108e4a5dce8a606fb4083ab420aebb077829dfbaa8df29701f0b5ebf2335caf86a2eaafda5e
-  languageName: node
-  linkType: hard
-
-"yahoo-finance2@npm:^2.13.2":
-  version: 2.14.2
-  resolution: "yahoo-finance2@npm:2.14.2"
-  dependencies:
-    "@sinclair/typebox": "npm:^0.32.27"
-    "@types/tough-cookie": "npm:^4.0.2"
-    tough-cookie: "npm:^4.1.2"
-    tough-cookie-file-store: "npm:^2.0.3"
-  bin:
-    yahoo-finance: bin/yahoo-finance.js
-  checksum: 10/3f6f37a87dd73a69522ea6889d763b9287b4f67c8afd4c51c0c6558764efa63dec7a9c2e88f0985541aac322337357702360123110d589a197c65e6dde503cab
+  checksum: 10/bdb364599c0f09507a38e69f03d912eb5f7f6e814eae2ca899ec213c8c69563d20ad02a6029c908b08d4edbeadd441f5eec9099c5ac33bf6ad1cb5c085f924a2
   languageName: node
   linkType: hard
 
