@@ -1258,6 +1258,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@deno/shim-deno-test@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@deno/shim-deno-test@npm:0.5.0"
+  checksum: 10/167072948c1b582d6e5555e0ec385a9fa98c21d15e3aadf525b256880c54d382fe65744d2da49f550817b782b9aa8111fa16a33c42deb2ad2343b2fb99674ba5
+  languageName: node
+  linkType: hard
+
+"@deno/shim-deno@npm:~0.18.0":
+  version: 0.18.2
+  resolution: "@deno/shim-deno@npm:0.18.2"
+  dependencies:
+    "@deno/shim-deno-test": "npm:^0.5.0"
+    which: "npm:^4.0.0"
+  checksum: 10/8ca41731d31858007ba9103b707491f854f15561f35f34b9d8ea0f940dadd28b2948cf2481a0c5a0083fbfbb399c9411891655a4a4bac294a7942ac1ecb74709
+  languageName: node
+  linkType: hard
+
 "@discoveryjs/json-ext@npm:^0.5.0":
   version: 0.5.7
   resolution: "@discoveryjs/json-ext@npm:0.5.7"
@@ -2361,13 +2378,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/tough-cookie@npm:^4.0.2":
-  version: 4.0.5
-  resolution: "@types/tough-cookie@npm:4.0.5"
-  checksum: 10/01fd82efc8202670865928629697b62fe9bf0c0dcbc5b1c115831caeb073a2c0abb871ff393d7df1ae94ea41e256cb87d2a5a91fd03cdb1b0b4384e08d4ee482
-  languageName: node
-  linkType: hard
-
 "@types/ws@npm:^8.5.5":
   version: 8.18.1
   resolution: "@types/ws@npm:8.18.1"
@@ -2717,7 +2727,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv-formats@npm:2.1.1, ajv-formats@npm:^2.1.1":
+"ajv-formats@npm:^2.1.1":
   version: 2.1.1
   resolution: "ajv-formats@npm:2.1.1"
   dependencies:
@@ -2748,18 +2758,6 @@ __metadata:
   peerDependencies:
     ajv: ^8.8.2
   checksum: 10/5021f96ab7ddd03a4005326bd06f45f448ebfbb0fe7018b1b70b6c28142fa68372bda2057359814b83fd0b2d4c8726c297f0a7557b15377be7b56ce5344533d8
-  languageName: node
-  linkType: hard
-
-"ajv@npm:8.10.0":
-  version: 8.10.0
-  resolution: "ajv@npm:8.10.0"
-  dependencies:
-    fast-deep-equal: "npm:^3.1.1"
-    json-schema-traverse: "npm:^1.0.0"
-    require-from-string: "npm:^2.0.2"
-    uri-js: "npm:^4.2.2"
-  checksum: 10/19f265a0895d1156cb13cb22a973cfce5587718b56c7e0141d8d60c1e7a016eb698aecffca158e06d2bac6d199d86c803a7ad686ba61a38e50a9e2e93894209b
   languageName: node
   linkType: hard
 
@@ -4989,6 +4987,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"escape-string-regexp@npm:^1.0.2":
+  version: 1.0.5
+  resolution: "escape-string-regexp@npm:1.0.5"
+  checksum: 10/6092fda75c63b110c706b6a9bfde8a612ad595b628f0bd2147eea1d3406723020810e591effc7db1da91d80a71a737a313567c5abb3813e8d9c71f4aa595b410
+  languageName: node
+  linkType: hard
+
 "escape-string-regexp@npm:^4.0.0":
   version: 4.0.0
   resolution: "escape-string-regexp@npm:4.0.0"
@@ -5609,6 +5614,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fetch-mock-cache@npm:fetch-mock-cache@^2.1.3":
+  version: 2.3.1
+  resolution: "fetch-mock-cache@npm:2.3.1"
+  dependencies:
+    debug: "npm:^4.3.4"
+    filenamify-url: "npm:2.1.2"
+  checksum: 10/3807542a2f99476b17e581bc3e96073871142a446efa5c7868adc2eedbdf7080a50325fc6d9b10c6ff8a209eca44dd844978d5e8f4757be1cc759ae35a707ef9
+  languageName: node
+  linkType: hard
+
 "file-entry-cache@npm:^6.0.1":
   version: 6.0.1
   resolution: "file-entry-cache@npm:6.0.1"
@@ -5622,6 +5637,34 @@ __metadata:
   version: 1.0.0
   resolution: "file-uri-to-path@npm:1.0.0"
   checksum: 10/b648580bdd893a008c92c7ecc96c3ee57a5e7b6c4c18a9a09b44fb5d36d79146f8e442578bc0e173dc027adf3987e254ba1dfd6e3ec998b7c282873010502144
+  languageName: node
+  linkType: hard
+
+"filename-reserved-regex@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "filename-reserved-regex@npm:2.0.0"
+  checksum: 10/9322b45726b86c45d0b4fe91be5c51e62b2e7e63db02c4a6ff3fd499bbc134d12fbf3c8b91979440ef45b3be834698ab9c3e66cb63b79fea4817e33da237d32a
+  languageName: node
+  linkType: hard
+
+"filenamify-url@npm:2.1.2":
+  version: 2.1.2
+  resolution: "filenamify-url@npm:2.1.2"
+  dependencies:
+    filenamify: "npm:^4.3.0"
+    humanize-url: "npm:^2.1.1"
+  checksum: 10/727adaed9b2050935018df7b180e3ed919c6949073b14f80775d43d6b4375e94f0909856acfa36c659e94d8eaf990a1cc7fb23ecac1f255cd29c27bea38a5653
+  languageName: node
+  linkType: hard
+
+"filenamify@npm:^4.3.0":
+  version: 4.3.0
+  resolution: "filenamify@npm:4.3.0"
+  dependencies:
+    filename-reserved-regex: "npm:^2.0.0"
+    strip-outer: "npm:^1.0.1"
+    trim-repeated: "npm:^1.0.0"
+  checksum: 10/5b71a7ff8e958c8621957e6fbf7872024126d3b5da50f59b1634af3343ba1a69d4cc15cfe4ca4bbfa7c959ad4d98614ee51e6f1d9fa7326eef8ceda2da8cd74e
   languageName: node
   linkType: hard
 
@@ -5759,7 +5802,7 @@ __metadata:
     webpack-cli: "npm:^4.10.0"
     webpack-dev-server: "npm:^4.15.1"
     ws: "npm:^8.13.0"
-    yahoo-finance2: "github:mistakia/node-yahoo-finance2#proto/expose-get-crumb"
+    yahoo-finance2: "npm:^3.13.0"
     yahoo-stock-prices: "npm:^1.1.0"
     yargs: "npm:^17.7.2"
   languageName: unknown
@@ -6701,6 +6744,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"humanize-url@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "humanize-url@npm:2.1.1"
+  dependencies:
+    normalize-url: "npm:^4.5.1"
+  checksum: 10/f702e6da9edd507051a7b887945163bb0c83b059662d53c0f589c30817d17d5cec47c19725c7326d206e2b1c3ea948bcaf058fd2576ccdb0830ffe48ee13e004
+  languageName: node
+  linkType: hard
+
 "hyphenate-style-name@npm:^1.0.3":
   version: 1.1.0
   resolution: "hyphenate-style-name@npm:1.1.0"
@@ -7358,7 +7410,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"json-schema@npm:0.4.0":
+"json-schema@npm:0.4.0, json-schema@npm:^0.4.0":
   version: 0.4.0
   resolution: "json-schema@npm:0.4.0"
   checksum: 10/8b3b64eff4a807dc2a3045b104ed1b9335cd8d57aa74c58718f07f0f48b8baa3293b00af4dcfbdc9144c3aafea1e97982cc27cc8e150fc5d93c540649507a458
@@ -8365,20 +8417,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:^2.6.1":
-  version: 2.7.0
-  resolution: "node-fetch@npm:2.7.0"
-  dependencies:
-    whatwg-url: "npm:^5.0.0"
-  peerDependencies:
-    encoding: ^0.1.0
-  peerDependenciesMeta:
-    encoding:
-      optional: true
-  checksum: 10/b24f8a3dc937f388192e59bcf9d0857d7b6940a2496f328381641cb616efccc9866e89ec43f2ec956bbd6c3d3ee05524ce77fe7b29ccd34692b3a16f237d6676
-  languageName: node
-  linkType: hard
-
 "node-fetch@npm:^3.3.1":
   version: 3.3.2
   resolution: "node-fetch@npm:3.3.2"
@@ -8439,6 +8477,13 @@ __metadata:
   version: 3.0.0
   resolution: "normalize-path@npm:3.0.0"
   checksum: 10/88eeb4da891e10b1318c4b2476b6e2ecbeb5ff97d946815ffea7794c31a89017c70d7f34b3c2ebf23ef4e9fc9fb99f7dffe36da22011b5b5c6ffa34f4873ec20
+  languageName: node
+  linkType: hard
+
+"normalize-url@npm:^4.5.1":
+  version: 4.5.1
+  resolution: "normalize-url@npm:4.5.1"
+  checksum: 10/20ced2845fcfaa46da74efc0aa39b7bed22f3db39e6e8b844261613082a36a2dcd468decad89fa9313b5464bebab4034f96bda7880e8fc468027fecf6a6fa254
   languageName: node
   linkType: hard
 
@@ -10814,6 +10859,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"strip-outer@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "strip-outer@npm:1.0.1"
+  dependencies:
+    escape-string-regexp: "npm:^1.0.2"
+  checksum: 10/f8d65d33ca2b49aabc66bb41d689dda7b8b9959d320e3a40a2ef4d7079ff2f67ffb72db43f179f48dbf9495c2e33742863feab7a584d180fa62505439162c191
+  languageName: node
+  linkType: hard
+
 "style-loader@npm:^3.3.3":
   version: 3.3.4
   resolution: "style-loader@npm:3.3.4"
@@ -11034,6 +11088,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tldts-core@npm:^6.1.86":
+  version: 6.1.86
+  resolution: "tldts-core@npm:6.1.86"
+  checksum: 10/cb5dff9cc15661ac773a2099e98c99a5cb3cebc35909c23cc4261ff7992032c7501995ae995de3574dbbf3431e59c47496534d52f5e96abcb231f0e72144c020
+  languageName: node
+  linkType: hard
+
+"tldts@npm:^6.1.32":
+  version: 6.1.86
+  resolution: "tldts@npm:6.1.86"
+  dependencies:
+    tldts-core: "npm:^6.1.86"
+  bin:
+    tldts: bin/cli.js
+  checksum: 10/f7e66824e44479ccdda55ea556af14ce61c4d27708be403e3f90631defde49f82a580e1ca07187cc7e3b349e257a30c2808a22903f3a0548e136ebb609ccc109
+  languageName: node
+  linkType: hard
+
 "to-buffer@npm:^1.2.0, to-buffer@npm:^1.2.1, to-buffer@npm:^1.2.2":
   version: 1.2.2
   resolution: "to-buffer@npm:1.2.2"
@@ -11061,7 +11133,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tough-cookie-file-store@npm:^2.0.3":
+"tough-cookie-file-store@npm:tough-cookie-file-store@^2.0.3":
   version: 2.0.3
   resolution: "tough-cookie-file-store@npm:2.0.3"
   dependencies:
@@ -11070,7 +11142,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tough-cookie@npm:^4.0.0, tough-cookie@npm:^4.1.2":
+"tough-cookie@npm:^4.0.0":
   version: 4.1.4
   resolution: "tough-cookie@npm:4.1.4"
   dependencies:
@@ -11079,6 +11151,15 @@ __metadata:
     universalify: "npm:^0.2.0"
     url-parse: "npm:^1.5.3"
   checksum: 10/75663f4e2cd085f16af0b217e4218772adf0617fb3227171102618a54ce0187a164e505d61f773ed7d65988f8ff8a8f935d381f87da981752c1171b076b4afac
+  languageName: node
+  linkType: hard
+
+"tough-cookie@npm:tough-cookie@^5.1.1":
+  version: 5.1.2
+  resolution: "tough-cookie@npm:5.1.2"
+  dependencies:
+    tldts: "npm:^6.1.32"
+  checksum: 10/de430e6e6d34b794137e05b8ac2aa6b74ebbe6cdceb4126f168cf1e76101162a4b2e0e7587c3b70e728bd8654fc39958b2035be7619ee6f08e7257610ba4cd04
   languageName: node
   linkType: hard
 
@@ -11105,6 +11186,15 @@ __metadata:
   bin:
     tree-kill: cli.js
   checksum: 10/49117f5f410d19c84b0464d29afb9642c863bc5ba40fcb9a245d474c6d5cc64d1b177a6e6713129eb346b40aebb9d4631d967517f9fbe8251c35b21b13cd96c7
+  languageName: node
+  linkType: hard
+
+"trim-repeated@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "trim-repeated@npm:1.0.0"
+  dependencies:
+    escape-string-regexp: "npm:^1.0.2"
+  checksum: 10/e25c235305b82c43f1d64a67a71226c406b00281755e4c2c4f3b1d0b09c687a535dd3c4483327f949f28bb89dc400a0bc5e5b749054f4b99f49ebfe48ba36496
   languageName: node
   linkType: hard
 
@@ -11749,6 +11839,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"which@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "which@npm:4.0.0"
+  dependencies:
+    isexe: "npm:^3.1.1"
+  bin:
+    node-which: bin/which.js
+  checksum: 10/f17e84c042592c21e23c8195108cff18c64050b9efb8459589116999ea9da6dd1509e6a1bac3aeebefd137be00fabbb61b5c2bc0aa0f8526f32b58ee2f545651
+  languageName: node
+  linkType: hard
+
 "which@npm:^6.0.0":
   version: 6.0.0
   resolution: "which@npm:6.0.0"
@@ -11857,19 +11958,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yahoo-finance2@github:mistakia/node-yahoo-finance2#proto/expose-get-crumb":
-  version: 0.0.1
-  resolution: "yahoo-finance2@https://github.com/mistakia/node-yahoo-finance2.git#commit=a02040d514f6008759ab593f49aacb34ea66fed7"
+"yahoo-finance2@npm:^3.13.0":
+  version: 3.13.0
+  resolution: "yahoo-finance2@npm:3.13.0"
   dependencies:
-    "@types/tough-cookie": "npm:^4.0.2"
-    ajv: "npm:8.10.0"
-    ajv-formats: "npm:2.1.1"
-    node-fetch: "npm:^2.6.1"
-    tough-cookie: "npm:^4.1.2"
-    tough-cookie-file-store: "npm:^2.0.3"
+    "@deno/shim-deno": "npm:~0.18.0"
+    fetch-mock-cache: "npm:fetch-mock-cache@^2.1.3"
+    json-schema: "npm:^0.4.0"
+    tough-cookie: "npm:tough-cookie@^5.1.1"
+    tough-cookie-file-store: "npm:tough-cookie-file-store@^2.0.3"
   bin:
-    yahoo-finance: bin/yahoo-finance.js
-  checksum: 10/bdb364599c0f09507a38e69f03d912eb5f7f6e814eae2ca899ec213c8c69563d20ad02a6029c908b08d4edbeadd441f5eec9099c5ac33bf6ad1cb5c085f924a2
+    yahoo-finance: esm/bin/yahoo-finance.js
+  checksum: 10/a749bfc57675b6fd0aa2af96f714346f2dfd8e74c0f3c6a748161a99f915b8a55cd7b588cf1f9c1e7cccdb84c2f599ed6962c6f0d1bbc685f6c07c657ef0a41e
   languageName: node
   linkType: hard
 

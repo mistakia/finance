@@ -1,10 +1,19 @@
 import debug from 'debug'
-import yahoo_finance from 'yahoo-finance2'
+import YahooFinance from 'yahoo-finance2'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 
 import db from '#db'
 import { wait } from '#libs-shared'
+
+const yahoo_finance = new YahooFinance({
+  fetchOptions: {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    }
+  }
+})
 
 const log = debug('import-historical-prices-yahoo')
 dayjs.extend(utc)
