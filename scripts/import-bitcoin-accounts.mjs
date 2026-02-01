@@ -5,6 +5,7 @@ import { hideBin } from 'yargs/helpers'
 import db from '#db'
 import config from '#config'
 import { isMain, addAsset, bitcoin } from '#libs-shared'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-bitcoin-accounts')
@@ -31,6 +32,17 @@ const run = async ({ credentials, publicKey }) => {
 
     log('saving btc holding')
     await db('holdings').insert(insert).onConflict('link').merge()
+
+    // Emit balance assertion
+    const assertions = create_balance_assertions({
+      positions: [{ symbol: 'BTC', quantity: balance, address: credentials.address }],
+      institution: 'bitcoin',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 

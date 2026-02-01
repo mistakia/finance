@@ -5,6 +5,7 @@ import { hideBin } from 'yargs/helpers'
 import db from '#db'
 import config from '#config'
 import { isMain, addAsset, fidelity } from '#libs-shared'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-fidelity-accounts')
@@ -79,6 +80,25 @@ const import_fidelity_accounts = async ({ credentials, publicKey }) => {
     // Then insert new holdings
     await db('holdings').insert(inserts).onConflict('link').merge()
     log(`Inserted ${inserts.length} Fidelity holdings`)
+
+    // Emit balance assertions
+    const positions = inserts.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      account_id: h.link.split('/').slice(-2, -1)[0] || 'default',
+      account_type: 'brokerage',
+      cost_basis: h.cost_basis,
+      name: h.name
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'fidelity',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 

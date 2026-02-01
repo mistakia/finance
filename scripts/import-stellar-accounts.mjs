@@ -5,6 +5,7 @@ import { hideBin } from 'yargs/helpers'
 import db from '#db'
 import config from '#config'
 import { isMain, stellar, addAsset } from '#libs-shared'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-stellar-accounts')
@@ -35,6 +36,22 @@ const import_stellar_accounts = async ({ credentials, publicKey }) => {
   if (inserts.length) {
     log(`saving ${inserts.length} stellar holdings`)
     await db('holdings').insert(inserts).onConflict('link').merge()
+
+    // Emit balance assertions
+    const positions = inserts.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      address: credentials.address
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'stellar',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 

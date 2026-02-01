@@ -1,6 +1,8 @@
 // Default transfer detection rules configuration
+// Keyed by institution directory name (hyphenated)
 export default {
-  ally: [
+  // Institution-based keys (match directory names in source-exports)
+  'ally-bank': [
     /internet transfer/i,
     /credit crd/i,
     /ach transfer/i,
@@ -15,8 +17,8 @@ export default {
     /schwab/i,
     /fid bkg svc llc moneyline/i
   ],
-  amex: [/autopay payment/i, /renewal membership fee/i, /intuit/i, /turbotax/i],
-  capital_one: [
+  'american-express': [/autopay payment/i, /renewal membership fee/i, /intuit/i, /turbotax/i],
+  'capital-one': [
     /capital one (auto|mobile|online) pymt/i,
     /payment\/credit/i,
     /^capital one autopay pymt$/i // Exact match for autopay format

@@ -6,6 +6,7 @@ import BigNumber from 'bignumber.js'
 import db from '#db'
 import config from '#config'
 import { isMain, addAsset, nano } from '#libs-shared'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-nano-accounts')
@@ -39,6 +40,22 @@ const run = async ({ credentials, publicKey }) => {
   if (inserts.length) {
     log(`saving ${inserts.length} holdings`)
     await db('holdings').insert(inserts).onConflict('link').merge()
+
+    // Emit balance assertions
+    const positions = inserts.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      address: credentials.address
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'nano',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 

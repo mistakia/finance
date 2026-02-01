@@ -1,12 +1,13 @@
 // Default merchant name formatting rules
+// Keyed by institution directory name (hyphenated)
 export default {
   default_formatters: {
     // Generic cleanup that applies to all formats if no specific rule matches
     clean_whitespace: (text) => text.replace(/\s+/g, ' ').trim()
   },
 
-  // Format-specific rules
-  ally: [
+  // Institution-based keys (match directory names in source-exports)
+  'ally-bank': [
     { pattern: /^PwP\s+/, replacement: '' },
     { pattern: /\s+Privacycom$/, replacement: '' },
     { pattern: /\s*~\s*Future Amount.*$/, replacement: '' },
@@ -15,14 +16,14 @@ export default {
     { pattern: /\s*TRANNO:.*$/, replacement: '' }
   ],
 
-  amex: [
+  'american-express': [
     { pattern: /^AplPay\s+/, replacement: '' },
     { pattern: /\s+\d{5,}.*$/, replacement: '' },
     { pattern: /\s+[A-Z]{2}\s*$/, replacement: '' },
     { pattern: /\s+\(.*\)$/, replacement: '' }
   ],
 
-  capital_one: [
+  'capital-one': [
     // Special handling for "IN *" prefix (handled in function)
     { pattern: /^SP\s+/, replacement: '' },
     { pattern: /^BT\*/, replacement: '' },
@@ -48,7 +49,7 @@ export default {
   special_cases: [
     {
       test: (text, format) =>
-        format === 'capital_one' &&
+        format === 'capital-one' &&
         (text.match(/^AMZN\s+Mktp\s+US\*[A-Z0-9]+/) ||
           text.match(/^Amazon\.com\*[A-Z0-9]+/)),
       result: 'AMAZON'

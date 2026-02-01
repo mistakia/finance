@@ -12,6 +12,7 @@ import {
   robinhood,
   addAsset
 } from '#libs-shared'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-robinhood-accounts')
@@ -74,6 +75,24 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
 
     await db('holdings').insert(items).onConflict('link').merge()
     log(`Inserted ${items.length} robinhood holdings`)
+
+    // Emit balance assertions
+    const positions = items.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      account_type: 'brokerage',
+      cost_basis: h.cost_basis,
+      name: h.name
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'robinhood',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 
   return session

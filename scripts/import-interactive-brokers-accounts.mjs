@@ -7,6 +7,7 @@ import db from '#db'
 import config from '#config'
 import { isMain, addAsset } from '#libs-shared'
 import { interactive_brokers } from '#libs-server'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-interactive-brokers-accounts')
@@ -355,6 +356,24 @@ const import_interactive_brokers_accounts = async ({
   if (inserts.length) {
     log(`Inserting ${inserts.length} interactive brokers accounts`)
     await db('holdings').insert(inserts).onConflict('link').merge()
+
+    // Emit balance assertions
+    const positions = inserts.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      account_type: 'brokerage',
+      cost_basis: h.cost_basis,
+      name: h.name
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'interactive-brokers',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 

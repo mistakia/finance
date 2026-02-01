@@ -28,7 +28,7 @@ export const format_merchant_name = ({
   // Handle format-specific rules
   if (format && config.merchants[format]) {
     // Special case for Capital One "IN *" prefix
-    if (format === 'capital_one' && cleaned.startsWith('IN *')) {
+    if (format === 'capital-one' && cleaned.startsWith('IN *')) {
       cleaned = cleaned.substring(4)
     }
 

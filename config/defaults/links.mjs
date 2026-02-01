@@ -1,4 +1,5 @@
 // Default link format rules for merchants and institutions
+// Account links use format: /{owner}/{institution}/{account-type}/{account-id}
 export default {
   // Special institution/merchant mappings
   institutions: [
@@ -13,6 +14,22 @@ export default {
     {
       patterns: [/capital one|capitalone/i],
       link: '/creditor/capital-one'
+    },
+    {
+      patterns: [/fidelity/i],
+      link: '/custodian/fidelity'
+    },
+    {
+      patterns: [/schwab/i],
+      link: '/custodian/schwab'
+    },
+    {
+      patterns: [/robinhood/i],
+      link: '/custodian/robinhood'
+    },
+    {
+      patterns: [/interactive brokers|ibkr/i],
+      link: '/custodian/interactive-brokers'
     }
   ],
 

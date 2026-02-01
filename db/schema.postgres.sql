@@ -87,7 +87,8 @@ CREATE TYPE public.transaction_type_enum AS ENUM (
     'purchase',
     'income',
     'return',
-    'fee'
+    'fee',
+    'balance_assertion'
 );
 
 
@@ -343,7 +344,9 @@ CREATE TABLE public.transactions (
     categories text[],
     original_data jsonb,
     transaction_info jsonb,
-    transaction_date date
+    transaction_date date,
+    enrichment_data jsonb,
+    source_file character varying(500) DEFAULT NULL::character varying
 );
 
 
@@ -482,6 +485,20 @@ CREATE INDEX idx_transactions_tx_dest ON public.transactions USING btree (tx_des
 --
 
 CREATE INDEX idx_transactions_tx_src ON public.transactions USING btree (tx_src);
+
+
+--
+-- Name: idx_transactions_enrichment_data; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_enrichment_data ON public.transactions USING gin (enrichment_data);
+
+
+--
+-- Name: idx_transactions_source_file; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_source_file ON public.transactions USING btree (source_file);
 
 
 --
