@@ -59,7 +59,7 @@ const getWallet = (string) => string.replace(/\s+/g, '-').toLowerCase()
 const formatTransaction = ({ item, publicKey }) => {
   const data = {
     link: `/${publicKey}/koinly/${item.id}`,
-    type: getType(item),
+    transaction_type: getType(item),
     from_link:
       item.from &&
       `/${publicKey}/${getWallet(item.from.wallet.name)}/${
@@ -81,12 +81,12 @@ const formatTransaction = ({ item, publicKey }) => {
       `/${publicKey}/${getWallet(item.fee.wallet.name)}/${
         item.fee.currency.symbol
       }`,
-    date: dayjs(item.date).unix(),
+    transaction_unix: dayjs(item.date).unix(),
     tx_id: item.txhash,
     tx_src: item.txsrc,
     tx_dest: item.tx_dest,
     tx_label: item.label,
-    desc: item.description
+    description: item.description
   }
 
   if (item.txdest && !data.to_link) {
