@@ -48,13 +48,20 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
       const avg_buy = parseFloat(position.average_buy_price)
       const symbol = instrument_info.symbol
 
-      const asset = await addAsset({
-        asset_type: `${instrument_info.country.toLowerCase()}_${
-          instrument_info.type
-        }`,
-        symbol,
-        update: true
-      })
+      let asset_link = null
+      try {
+        const asset = await addAsset({
+          asset_type: `${instrument_info.country.toLowerCase()}_${
+            instrument_info.type
+          }`,
+          symbol,
+          update: false
+        })
+        asset_link = asset.link
+      } catch (err) {
+        log(`Warning: could not resolve asset for ${symbol}: ${err.message}`)
+        asset_link = `/${instrument_info.country.toLowerCase()}_${instrument_info.type}/${symbol}`
+      }
 
       items.push({
         link: `${robinhood_asset_link}/${symbol}`,
@@ -62,7 +69,7 @@ const run = async ({ session = {}, credentials, publicKey, cli = false }) => {
         cost_basis: quantity * avg_buy,
         quantity,
         symbol,
-        asset_link: asset.link
+        asset_link
       })
     }
   }

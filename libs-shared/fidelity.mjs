@@ -1,102 +1,167 @@
 import debug from 'debug'
-
-import { getPage } from './puppeteer.mjs'
+import os from 'os'
+import path from 'path'
+import puppeteer from 'puppeteer'
 
 const log = debug('fidelity')
 
-export const get_accounts = async ({ username, password }) => {
-  log('Starting getAccounts function')
-  const { page, browser } = await getPage('https://fidelity.com')
+const FIDELITY_USER_DATA_DIR = path.join(
+  os.homedir(),
+  '.fidelity-puppeteer-profile'
+)
+
+const launch_browser = async () => {
+  const launch_args = [
+    '--disable-blink-features=AutomationControlled',
+    '--window-position=0,0',
+    `--user-data-dir=${FIDELITY_USER_DATA_DIR}`
+  ]
+
+  const browser = await puppeteer.launch({
+    headless: false,
+    args: launch_args,
+    ignoreDefaultArgs: ['--enable-automation'],
+    executablePath:
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+  })
+
+  const page = await browser.newPage()
+  await page.setViewport({ width: 1366, height: 768 })
+
+  return { page, browser }
+}
+
+const is_authenticated = async (page) => {
+  try {
+    const url = new URL(page.url())
+    const pathname = url.pathname
+    return (
+      pathname.includes('/digital/portfolio') ||
+      pathname.includes('/ftgw/digital/portfolio') ||
+      pathname.includes('/digital/home')
+    )
+  } catch (_) {
+    return false
+  }
+}
+
+const login = async ({ username, password }) => {
+  log('Starting login')
+  const { page, browser } = await launch_browser()
   log('Got page and browser')
 
-  await page.waitForTimeout(10000)
-  log('Waited for network idle')
+  // Navigate to portfolio summary to check if already authenticated
+  await page.goto(
+    'https://digital.fidelity.com/ftgw/digital/portfolio/summary',
+    { waitUntil: 'networkidle2', timeout: 60000 }
+  )
+  log(`Navigated to: ${page.url()}`)
 
-  // navigate to login page
+  // Check if already authenticated (persistent session from profile)
+  if (await is_authenticated(page)) {
+    const current_url = page.url()
+    if (
+      current_url.includes('/portfolio/summary') ||
+      current_url.includes('/digital/home')
+    ) {
+      log('Already authenticated via persistent session')
+      return { page, browser }
+    }
+  }
+
+  // Not authenticated, navigate to login page
   await page.goto(
     'https://digital.fidelity.com/prgw/digital/login/full-page?AuthRedUrl=digital.fidelity.com/ftgw/digital/portfolio/summary'
   )
   log('Navigated to login page')
 
-  // Wait for login form elements to be present instead of network idle
+  // Wait for login form elements to be present
   await page.waitForSelector('#dom-username-input', { timeout: 30000 })
   await page.waitForSelector('#dom-pswd-input', { timeout: 30000 })
   await page.waitForSelector('#dom-login-button', { timeout: 30000 })
   log('Login page elements loaded')
 
-  // Login process
-  try {
-    // Enter username
-    await page.type('#dom-username-input', username)
-    log('Entered username')
+  // Enter username
+  await page.type('#dom-username-input', username)
+  log('Entered username')
 
-    // Enter password
-    await page.type('#dom-pswd-input', password)
-    log('Entered password')
+  // Enter password
+  await page.type('#dom-pswd-input', password)
+  log('Entered password')
 
-    // Click login button
-    await page.click('#dom-login-button')
-    log('Clicked login button')
+  // Click login button
+  await page.click('#dom-login-button')
+  log('Clicked login button')
 
-    await page.waitForTimeout(3000)
+  await new Promise((resolve) => setTimeout(resolve, 5000))
 
-    // Check for 2FA or security verification
-    const body_text = await page.evaluate(() => document.body.innerText)
+  // Check for errors or 2FA
+  const body_text = await page.evaluate(() => document.body.innerText)
 
-    log('Body text:', body_text)
-
-    if (body_text.includes('notification to the Fidelity Investments app')) {
-      log('Security verification required')
-
-      // Check if mobile notification method is available
-      const has_push_notification = await page.evaluate(() => {
-        return (
-          document.querySelector('#dom-push-primary-button') !== null ||
-          document.body.innerText.includes('Send notification') ||
-          document.body.innerText.includes(
-            'notification to the Fidelity Investments app'
-          )
-        )
-      })
-
-      if (!has_push_notification) {
-        log('Mobile notification 2FA method not available')
-        await browser.close()
-        throw new Error(
-          'Mobile notification 2FA method not available. Please set up mobile notifications in your Fidelity account settings.'
-        )
-      }
-
-      log('Using mobile notification 2FA method')
-
-      // Click the "Send notification" button
-      const send_notification_button = await page.$('#dom-push-primary-button')
-      if (send_notification_button) {
-        await send_notification_button.click()
-        log('Clicked send notification button')
-
-        // Wait for user to approve on mobile device
-        log('Waiting for mobile notification approval...')
-
-        // Wait for navigation to complete after mobile approval
-        await page.waitForNavigation({ timeout: 120000 }) // 2 minute timeout for user to approve
-        log('Mobile notification approved, continuing')
-      } else {
-        log('Send notification button not found')
-        await browser.close()
-        throw new Error(
-          'Mobile notification button not found. Please check your Fidelity account settings.'
-        )
-      }
-    }
-
-    // Wait for portfolio page to load
-    await page.waitForFunction(
-      'document.URL.includes("/digital/portfolio/summary")',
-      { timeout: 60000 }
+  // Check for rate limiting or errors
+  if (
+    body_text.includes("Sorry, we can't complete this action") ||
+    body_text.includes('try again')
+  ) {
+    log('Login temporarily blocked, waiting and retrying...')
+    await new Promise((resolve) => setTimeout(resolve, 15000))
+    await page.goto(
+      'https://digital.fidelity.com/prgw/digital/login/full-page?AuthRedUrl=digital.fidelity.com/ftgw/digital/portfolio/summary'
     )
-    log('Portfolio page loaded')
+    await page.waitForSelector('#dom-username-input', { timeout: 30000 })
+    await page.type('#dom-username-input', username)
+    await page.type('#dom-pswd-input', password)
+    await page.click('#dom-login-button')
+    await new Promise((resolve) => setTimeout(resolve, 5000))
 
+    const retry_text = await page.evaluate(() => document.body.innerText)
+    if (retry_text.includes("Sorry, we can't complete this action")) {
+      await browser.close()
+      throw new Error(
+        'Fidelity login temporarily blocked. Wait a few minutes and try again.'
+      )
+    }
+  }
+
+  // Re-check body text after potential retry
+  const current_text = await page.evaluate(() => document.body.innerText)
+
+  if (current_text.includes('notification to the Fidelity Investments app')) {
+    log('Security verification required')
+
+    // Click the "Send notification" button
+    const send_notification_button = await page.$('#dom-push-primary-button')
+    if (send_notification_button) {
+      await send_notification_button.click()
+      log('Clicked send notification button')
+
+      // Wait for user to approve on mobile device
+      log('Waiting for mobile notification approval...')
+
+      // Wait for navigation to complete after mobile approval
+      await page.waitForNavigation({ timeout: 120000 }) // 2 minute timeout
+      log('Mobile notification approved, continuing')
+    } else {
+      log('Send notification button not found, waiting for manual approval...')
+      await page.waitForNavigation({ timeout: 120000 })
+      log('Navigation completed after manual approval')
+    }
+  }
+
+  // Wait for portfolio page to load
+  await page.waitForFunction(
+    'document.URL.includes("/digital/portfolio") || document.URL.includes("/digital/home")',
+    { timeout: 60000 }
+  )
+  log('Portfolio page loaded')
+
+  return { page, browser }
+}
+
+export const get_accounts = async ({ username, password }) => {
+  const { page, browser } = await login({ username, password })
+
+  try {
     // navigate to positions page
     await page.goto(
       'https://digital.fidelity.com/ftgw/digital/portfolio/positions'
@@ -629,7 +694,7 @@ export const get_accounts = async ({ username, password }) => {
           )
 
           // Add a small delay between requests to avoid overloading the server
-          await page.waitForTimeout(1500)
+          await new Promise((resolve) => setTimeout(resolve, 1500))
         } catch (error) {
           log(`Error fetching option data: ${error.message}`)
         }
@@ -744,6 +809,234 @@ export const get_accounts = async ({ username, password }) => {
   } catch (error) {
     console.error('Error in Fidelity integration:', error)
     await browser.close()
+    throw error
+  }
+}
+
+export const get_activity = async ({ username, password }) => {
+  const { page, browser } = await login({ username, password })
+
+  try {
+    // Navigate to activity page
+    await page.goto(
+      'https://digital.fidelity.com/ftgw/digital/portfolio/activity',
+      { waitUntil: 'networkidle2', timeout: 60000 }
+    )
+    log('Navigated to activity page')
+    await new Promise((resolve) => setTimeout(resolve, 5000))
+
+    // Click the "History" tab to ensure we're on the right section
+    await page.evaluate(() => {
+      const tabs = document.querySelectorAll('a, button, [role="tab"]')
+      for (const tab of tabs) {
+        if (tab.textContent.trim() === 'History') {
+          tab.click()
+          return true
+        }
+      }
+      return false
+    })
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+
+    // Try to expand date range
+    const date_filter_expanded = await page.evaluate(() => {
+      // The date filter is in the activity section, look for specific pattern
+      // "Past 30 days" with a dropdown indicator
+      const all_elements = document.querySelectorAll('*')
+      for (const el of all_elements) {
+        // Only check direct text, not descendant text
+        const direct_text = Array.from(el.childNodes)
+          .filter(n => n.nodeType === 3)
+          .map(n => n.textContent.trim())
+          .join('')
+
+        if (direct_text.includes('Past 30') || direct_text.includes('Past 90')) {
+          el.click()
+          return direct_text
+        }
+      }
+
+      // Try specific Fidelity dropdown components
+      const dropdowns = document.querySelectorAll(
+        '[class*="date-range"], [class*="dateRange"], [class*="filter-date"], ' +
+        'ap154603-activity-orders-date-filter, [class*="time-period"]'
+      )
+      for (const dd of dropdowns) {
+        const clickable = dd.querySelector('button, a, [role="button"]')
+        if (clickable) {
+          clickable.click()
+          return `dropdown: ${dd.tagName}`
+        }
+      }
+
+      return null
+    })
+
+    if (date_filter_expanded) {
+      log(`Expanded date filter: ${date_filter_expanded}`)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      // Select "Year to Date" or longest period
+      await page.evaluate(() => {
+        const options = Array.from(
+          document.querySelectorAll(
+            'li, option, [role="option"], [role="menuitem"], a'
+          )
+        )
+        const preferred = ['year to date', '1 year', '12 months', '365', 'all']
+        for (const pref of preferred) {
+          for (const option of options) {
+            if (option.textContent.trim().toLowerCase().includes(pref)) {
+              option.click()
+              return
+            }
+          }
+        }
+      })
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+    }
+
+    // Scrape the history table from the page
+    const scraped = await page.evaluate(() => {
+      const activities = []
+
+      // The history section has a specific table structure
+      // Look for rows with date patterns in the history section
+      const all_text = document.body.innerText
+
+      // Find the "History" section - split by known markers
+      const history_marker = all_text.indexOf(' Past ')
+      if (history_marker === -1) return { activities: [], debug: 'no history marker found' }
+
+      const history_section = all_text.substring(history_marker)
+
+      // Parse rows: Date\nAccount\nDescription\nAmount
+      const lines = history_section.split('\n').map(l => l.trim()).filter(l => l)
+
+      let i = 0
+      // Skip header line ("Past 30 days", "Date", "Account", "Description", "Amount")
+      while (i < lines.length && !(/^[A-Z][a-z]{2}-\d{2}-\d{4}$/.test(lines[i]))) {
+        i++
+      }
+
+      while (i < lines.length) {
+        const line = lines[i]
+
+        // Check if this line is a date (format: Mon-DD-YYYY e.g., Jan-30-2026)
+        if (/^[A-Z][a-z]{2}-\d{2}-\d{4}$/.test(line)) {
+          const date = line
+          const account = lines[i + 1] || ''
+          const description = lines[i + 2] || ''
+          const amount = lines[i + 3] || ''
+
+          activities.push({
+            date,
+            account,
+            description,
+            amount_raw: amount
+          })
+
+          i += 4
+
+          // Skip any extra lines that aren't dates (sub-details of a transaction)
+          while (i < lines.length && !(/^[A-Z][a-z]{2}-\d{2}-\d{4}$/.test(lines[i]))) {
+            // Check if this is a continuation of the description or new section
+            if (lines[i].startsWith('To check') || lines[i].startsWith('If transfers')) {
+              break
+            }
+            i++
+          }
+        } else {
+          i++
+        }
+      }
+
+      return { activities, debug: `found ${activities.length} activities, history_section_length: ${history_section.length}` }
+    })
+
+    log(`Scraped: ${scraped.debug}`)
+
+    if (scraped.activities.length === 0) {
+      const screenshot_path = '/tmp/fidelity-activity-debug.png'
+      await page.screenshot({ path: screenshot_path, fullPage: true })
+      log(`Debug screenshot saved to ${screenshot_path}`)
+      await browser.close()
+      throw new Error(
+        'No activity data found on Fidelity activity page'
+      )
+    }
+
+    log(`Found ${scraped.activities.length} activities via page scraping`)
+
+    // Parse the scraped data into the expected format
+    const parsed_activities = scraped.activities.map((a) => {
+      // Parse description to extract action and symbol
+      const desc = a.description || ''
+      let action = ''
+      let symbol = ''
+
+      // Match patterns like "YOU SOLD OPENING TRANSACTION PUT (ETHU)"
+      // or "EXPIRED PUT (IREN)" or "DIVIDEND RECEIVED (VTI)"
+      // or "YOU BOUGHT (MSFT)"
+      if (desc.includes('SOLD')) action = 'sell'
+      else if (desc.includes('BOUGHT')) action = 'buy'
+      else if (desc.includes('DIVIDEND')) action = 'dividend'
+      else if (desc.includes('EXPIRED')) action = 'expired'
+      else if (desc.includes('TRANSFER')) action = 'transfer'
+      else if (desc.includes('REINVEST')) action = 'reinvestment'
+      else action = desc.split(' ').slice(0, 3).join(' ')
+
+      // Extract symbol from parentheses
+      const symbol_match = desc.match(/\(([A-Z]{1,5})\)/)
+      if (symbol_match) {
+        symbol = symbol_match[1]
+      }
+
+      // Parse amount
+      let amount = '0'
+      const amount_raw = (a.amount_raw || '').replace(/[$,]/g, '')
+      if (amount_raw && amount_raw !== '--') {
+        amount = amount_raw.replace('+', '')
+      }
+
+      // Parse account number from "Trust: Under Agreement ***6391" format
+      const account_match = (a.account || '').match(/\*{3}(\d+)/)
+      const account_number = account_match ? account_match[1] : a.account || ''
+
+      // Convert date from Mon-DD-YYYY to MM/DD/YYYY
+      const date_parts = (a.date || '').match(/([A-Z][a-z]{2})-(\d{2})-(\d{4})/)
+      let date = a.date
+      if (date_parts) {
+        const months = {
+          Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+          Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+        }
+        date = `${months[date_parts[1]]}/${date_parts[2]}/${date_parts[3]}`
+      }
+
+      return {
+        date,
+        action,
+        symbol,
+        name: desc,
+        quantity: '0',
+        price: '0',
+        amount,
+        account_number
+      }
+    })
+
+    await browser.close()
+    log(`Parsed ${parsed_activities.length} activities`)
+
+    return { activities: parsed_activities }
+  } catch (error) {
+    console.error('Error in Fidelity get_activity:', error)
+    try {
+      await browser.close()
+    } catch (_) {
+      // browser may already be closed
+    }
     throw error
   }
 }

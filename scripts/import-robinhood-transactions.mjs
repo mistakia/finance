@@ -45,7 +45,15 @@ const get_instrument_symbol = async ({ instrument_url, access_token }) => {
 const run = async ({ credentials, publicKey }) => {
   log('importing robinhood transactions')
 
-  const auth = await robinhood.authenticate(credentials)
+  const device_id = await robinhood.getDeviceId()
+  log(`Got device ID: ${device_id}`)
+  const auth = await robinhood.login({
+    device_id,
+    username: credentials.username,
+    password: credentials.password,
+    publicKey,
+    cli: true
+  })
   const access_token = auth.access_token
 
   let cursor = null

@@ -11,6 +11,7 @@ const get_transaction_type = (activity) => {
 export const parse_transactions = ({ items, owner }) => {
   const institution = 'fidelity'
   const transactions = []
+  const link_counts = {}
 
   for (const activity of items) {
     const account_number =
@@ -33,7 +34,14 @@ export const parse_transactions = ({ items, owner }) => {
       activity.date || activity.Date || activity['Settlement Date']
     )
 
-    const transaction_id = `${institution}_${account_number}_${date.format('YYYYMMDD')}_${symbol}_${amount}`
+    const action_key = action.replace(/\s+/g, '_').substring(0, 30)
+    let base_id = `${institution}_${account_number}_${date.format('YYYYMMDD')}_${symbol}_${action_key}_${amount}`
+
+    // Ensure uniqueness by appending sequence number if needed
+    link_counts[base_id] = (link_counts[base_id] || 0) + 1
+    const transaction_id = link_counts[base_id] > 1
+      ? `${base_id}_${link_counts[base_id]}`
+      : base_id
 
     const transaction = {
       link: `/${owner}/${institution}/${transaction_id}`,
