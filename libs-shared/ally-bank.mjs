@@ -2,13 +2,11 @@ import prompt from 'prompt'
 import debug from 'debug'
 import fs from 'fs'
 import path from 'path'
-import { fileURLToPath } from 'url'
 
 import { getPage } from './puppeteer.mjs'
 import websocket_prompt from '#root/api/prompt.mjs'
 import { wait } from '#libs-shared'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const log = debug('ally-bank')
 
 // Constants for timeouts and intervals
@@ -24,7 +22,6 @@ const DASHBOARD_CHECK_INTERVAL = 3500 // 3.5 seconds
 
 // Constants for file handling
 const DOWNLOADED_FILE_NAME = 'transactions.csv'
-const DOWNLOAD_PATH = path.join(__dirname, '..', 'import-data')
 
 // Constants for selectors
 const SELECTORS = {
@@ -90,7 +87,8 @@ export const get_transactions = async ({
   account_name,
   account_last_four,
   from_date = null,
-  to_date = null
+  to_date = null,
+  download_dir
 }) => {
   log(`Downloading transactions for account ${account_last_four}`)
 
@@ -106,10 +104,11 @@ export const get_transactions = async ({
   }
 
   // Set download behavior for Puppeteer
-  const client = await page.target().createCDPSession()
-  await client.send('Page.setDownloadBehavior', {
+  const client = await page.createCDPSession()
+  await client.send('Browser.setDownloadBehavior', {
     behavior: 'allow',
-    downloadPath: DOWNLOAD_PATH
+    downloadPath: download_dir,
+    eventsEnabled: true
   })
   log('Set download behavior')
 
@@ -183,7 +182,7 @@ export const get_transactions = async ({
 
       // Wait for the file to appear and rename it
       const downloaded_file = await wait_for_file(
-        DOWNLOAD_PATH,
+        download_dir,
         DOWNLOAD_TIMEOUT
       )
 
@@ -191,8 +190,8 @@ export const get_transactions = async ({
         throw new Error('Downloaded file not found after waiting')
       }
 
-      const downloaded_path = path.join(DOWNLOAD_PATH, downloaded_file)
-      const target_path = path.join(DOWNLOAD_PATH, target_filename)
+      const downloaded_path = path.join(download_dir, downloaded_file)
+      const target_path = path.join(download_dir, target_filename)
 
       fs.renameSync(downloaded_path, target_path)
       log(`Renamed downloaded file to ${target_filename}`)
@@ -218,6 +217,7 @@ export const getBalances = async ({
   password,
   cli = false,
   download_transactions = false,
+  download_dir,
   from_date = null,
   to_date = null
 }) => {
@@ -402,9 +402,13 @@ export const getBalances = async ({
   if (download_transactions) {
     log('Starting transaction downloads')
 
-    // Ensure import-data directory exists
-    if (!fs.existsSync(DOWNLOAD_PATH)) {
-      fs.mkdirSync(DOWNLOAD_PATH, { recursive: true })
+    if (!download_dir) {
+      throw new Error('download_dir is required when download_transactions is true')
+    }
+
+    // Ensure download directory exists
+    if (!fs.existsSync(download_dir)) {
+      fs.mkdirSync(download_dir, { recursive: true })
     }
 
     const download_results = []
@@ -418,7 +422,8 @@ export const getBalances = async ({
           account_name: account.name,
           account_last_four: account.last_four,
           from_date,
-          to_date
+          to_date,
+          download_dir
         })
 
         download_results.push({

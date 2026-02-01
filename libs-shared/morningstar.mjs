@@ -16,7 +16,7 @@ export async function search({ symbol }) {
     const { page, browser } = await getPage('https://www.morningstar.com/')
 
     // Wait a few seconds to establish cookies and pass verification
-    await page.waitForTimeout(30000)
+    await new Promise((resolve) => setTimeout(resolve, 30000))
 
     // Make the request using the page's fetch API to leverage browser cookies
     const url = `https://www.morningstar.com/api/v2/search?query=${symbol}`

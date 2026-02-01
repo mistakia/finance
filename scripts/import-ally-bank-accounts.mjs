@@ -10,7 +10,7 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-bank')
 debug.enable('import-ally-bank,ally-bank')
 
-const run = async ({ credentials, publicKey, cli = false }) => {
+const run = async ({ credentials, publicKey, cli = false, download_dir }) => {
   let accounts = []
 
   try {
@@ -18,7 +18,8 @@ const run = async ({ credentials, publicKey, cli = false }) => {
       publicKey,
       cli,
       ...credentials,
-      download_transactions: true
+      download_transactions: Boolean(download_dir),
+      download_dir
     })
   } catch (err) {
     log(err)
@@ -57,7 +58,8 @@ const main = async () => {
       return
     }
     const credentials = config.links.ally_bank
-    await run({ credentials, publicKey, cli: true })
+    const download_dir = argv.downloadDir || argv['download-dir']
+    await run({ credentials, publicKey, cli: true, download_dir })
   } catch (err) {
     error = err
     console.log(error)

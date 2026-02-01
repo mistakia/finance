@@ -74,7 +74,8 @@ export const getPage = async (
     notifications = true,
     plugins = true,
     languages = true,
-    timeout = 90000
+    timeout = 90000,
+    user_data_dir = null
   } = {}
 ) => {
   const args = [
@@ -86,6 +87,11 @@ export const getPage = async (
     '--ignore-certifcate-errors-spki-list',
     `--user-agent="${chromeUserAgent}"`
   ]
+
+  if (user_data_dir) {
+    args.push(`--user-data-dir=${user_data_dir}`)
+  }
+
   const browser = await puppeteer.launch({
     headless: false,
     args,
