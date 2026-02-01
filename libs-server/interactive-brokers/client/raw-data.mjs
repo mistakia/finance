@@ -45,6 +45,40 @@ export const get_account_summary = (ib) => {
   })
 }
 
+export const get_executions = async (ib) => {
+  // IBApiNext provides getExecutionDetails which returns Promise<ExecutionDetail[]>
+  // Each ExecutionDetail has { reqId, contract, execution }
+  const details = await ib.getExecutionDetails({})
+  return details.map((d) => ({ contract: d.contract, execution: d.execution }))
+}
+
+export const get_completed_orders = (ib) => {
+  const orders = []
+
+  const order_handler = (contract, order, orderState) => {
+    orders.push({ contract, order, orderState })
+  }
+
+  return new Promise((resolve, reject) => {
+    create_event_promise({
+      emitter: ib.api,
+      success_event: EventName.completedOrdersEnd,
+      error_event: EventName.error,
+      handlers: {
+        [EventName.completedOrder]: order_handler
+      },
+      timeout_ms: 30000
+    })
+      .then(() => {
+        resolve(orders)
+      })
+      .catch(reject)
+
+    // Use ib.api (low-level IBApi) since IBApiNext doesn't wrap reqCompletedOrders
+    ib.api.reqCompletedOrders(false)
+  })
+}
+
 export const get_account_positions = (ib) => {
   const positions = []
 

@@ -10,7 +10,7 @@ import { parse_transactions } from '../libs-server/parsers/interactive-brokers.m
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ib-transactions')
-debug.enable('import-ib-transactions')
+debug.enable('import-ib-transactions,interactive-brokers:*')
 
 const run = async ({ credentials, publicKey }) => {
   log('importing Interactive Brokers transactions')

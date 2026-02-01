@@ -2,6 +2,8 @@
 import {
   get_account_summary,
   get_account_positions,
+  get_executions,
+  get_completed_orders,
   account_summary_tags
 } from './client/raw-data.mjs'
 
@@ -25,18 +27,24 @@ import { create_ib_client, connect_ib_with_retry } from './connection.mjs'
 // Import main account info module
 import { get_account_info } from './get-account-info.mjs'
 
+// Import trades module
+import { get_trades } from './get-trades.mjs'
+
 // Import utility modules
 import { create_event_promise } from './utils/events.mjs'
 import { with_retry } from './utils/retry.mjs'
 
 // Export everything
 export {
-  // Main function
+  // Main functions
   get_account_info,
+  get_trades,
 
   // Client modules
   get_account_summary,
   get_account_positions,
+  get_executions,
+  get_completed_orders,
   get_market_data,
   get_stock_market_data,
   account_summary_tags,
