@@ -1,7 +1,8 @@
 import debug from 'debug'
 import os from 'os'
 import path from 'path'
-import puppeteer from 'puppeteer'
+
+import { getPage } from './puppeteer.mjs'
 
 const log = debug('fidelity')
 
@@ -9,27 +10,6 @@ const FIDELITY_USER_DATA_DIR = path.join(
   os.homedir(),
   '.fidelity-puppeteer-profile'
 )
-
-const launch_browser = async () => {
-  const launch_args = [
-    '--disable-blink-features=AutomationControlled',
-    '--window-position=0,0',
-    `--user-data-dir=${FIDELITY_USER_DATA_DIR}`
-  ]
-
-  const browser = await puppeteer.launch({
-    headless: false,
-    args: launch_args,
-    ignoreDefaultArgs: ['--enable-automation'],
-    executablePath:
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-  })
-
-  const page = await browser.newPage()
-  await page.setViewport({ width: 1366, height: 768 })
-
-  return { page, browser }
-}
 
 const is_authenticated = async (page) => {
   try {
@@ -47,115 +27,77 @@ const is_authenticated = async (page) => {
 
 const login = async ({ username, password }) => {
   log('Starting login')
-  const { page, browser } = await launch_browser()
-  log('Got page and browser')
-
-  // Navigate to portfolio summary to check if already authenticated
-  await page.goto(
+  const { page, browser } = await getPage(
     'https://digital.fidelity.com/ftgw/digital/portfolio/summary',
-    { waitUntil: 'networkidle2', timeout: 60000 }
+    { user_data_dir: FIDELITY_USER_DATA_DIR }
   )
-  log(`Navigated to: ${page.url()}`)
+  log(`Got page and browser, navigated to: ${page.url()}`)
 
-  // Check if already authenticated (persistent session from profile)
-  if (await is_authenticated(page)) {
-    const current_url = page.url()
-    if (
-      current_url.includes('/portfolio/summary') ||
-      current_url.includes('/digital/home')
-    ) {
+  try {
+    // Check if already authenticated (persistent session from profile)
+    if (await is_authenticated(page)) {
       log('Already authenticated via persistent session')
       return { page, browser }
     }
-  }
 
-  // Not authenticated, navigate to login page
-  await page.goto(
-    'https://digital.fidelity.com/prgw/digital/login/full-page?AuthRedUrl=digital.fidelity.com/ftgw/digital/portfolio/summary'
-  )
-  log('Navigated to login page')
-
-  // Wait for login form elements to be present
-  await page.waitForSelector('#dom-username-input', { timeout: 30000 })
-  await page.waitForSelector('#dom-pswd-input', { timeout: 30000 })
-  await page.waitForSelector('#dom-login-button', { timeout: 30000 })
-  log('Login page elements loaded')
-
-  // Enter username
-  await page.type('#dom-username-input', username)
-  log('Entered username')
-
-  // Enter password
-  await page.type('#dom-pswd-input', password)
-  log('Entered password')
-
-  // Click login button
-  await page.click('#dom-login-button')
-  log('Clicked login button')
-
-  await new Promise((resolve) => setTimeout(resolve, 5000))
-
-  // Check for errors or 2FA
-  const body_text = await page.evaluate(() => document.body.innerText)
-
-  // Check for rate limiting or errors
-  if (
-    body_text.includes("Sorry, we can't complete this action") ||
-    body_text.includes('try again')
-  ) {
-    log('Login temporarily blocked, waiting and retrying...')
-    await new Promise((resolve) => setTimeout(resolve, 15000))
+    // Not authenticated, navigate to login page
     await page.goto(
       'https://digital.fidelity.com/prgw/digital/login/full-page?AuthRedUrl=digital.fidelity.com/ftgw/digital/portfolio/summary'
     )
+    log('Navigated to login page')
+
+    // Wait for login form elements to be present
     await page.waitForSelector('#dom-username-input', { timeout: 30000 })
+    await page.waitForSelector('#dom-pswd-input', { timeout: 30000 })
+    await page.waitForSelector('#dom-login-button', { timeout: 30000 })
+    log('Login page elements loaded')
+
+    // Enter credentials and submit
     await page.type('#dom-username-input', username)
+    log('Entered username')
     await page.type('#dom-pswd-input', password)
+    log('Entered password')
     await page.click('#dom-login-button')
+    log('Clicked login button')
+
     await new Promise((resolve) => setTimeout(resolve, 5000))
 
-    const retry_text = await page.evaluate(() => document.body.innerText)
-    if (retry_text.includes("Sorry, we can't complete this action")) {
-      await browser.close()
+    // Check for rate limiting or errors
+    const body_text = await page.evaluate(() => document.body.innerText)
+    if (
+      body_text.includes("Sorry, we can't complete this action") ||
+      body_text.includes('try again')
+    ) {
       throw new Error(
         'Fidelity login temporarily blocked. Wait a few minutes and try again.'
       )
     }
-  }
 
-  // Re-check body text after potential retry
-  const current_text = await page.evaluate(() => document.body.innerText)
-
-  if (current_text.includes('notification to the Fidelity Investments app')) {
-    log('Security verification required')
-
-    // Click the "Send notification" button
-    const send_notification_button = await page.$('#dom-push-primary-button')
-    if (send_notification_button) {
-      await send_notification_button.click()
-      log('Clicked send notification button')
-
-      // Wait for user to approve on mobile device
-      log('Waiting for mobile notification approval...')
-
-      // Wait for navigation to complete after mobile approval
-      await page.waitForNavigation({ timeout: 120000 }) // 2 minute timeout
-      log('Mobile notification approved, continuing')
-    } else {
-      log('Send notification button not found, waiting for manual approval...')
+    // Handle 2FA if required
+    if (body_text.includes('notification to the Fidelity Investments app')) {
+      log('Security verification required')
+      const send_button = await page.$('#dom-push-primary-button')
+      if (send_button) {
+        await send_button.click()
+        log('Clicked send notification button')
+      }
+      log('Waiting for 2FA approval...')
       await page.waitForNavigation({ timeout: 120000 })
-      log('Navigation completed after manual approval')
+      log('2FA approved, continuing')
     }
+
+    // Wait for portfolio page to load
+    await page.waitForFunction(
+      'document.URL.includes("/digital/portfolio") || document.URL.includes("/digital/home")',
+      { timeout: 60000 }
+    )
+    log('Portfolio page loaded')
+
+    return { page, browser }
+  } catch (error) {
+    await browser.close()
+    throw error
   }
-
-  // Wait for portfolio page to load
-  await page.waitForFunction(
-    'document.URL.includes("/digital/portfolio") || document.URL.includes("/digital/home")',
-    { timeout: 60000 }
-  )
-  log('Portfolio page loaded')
-
-  return { page, browser }
 }
 
 export const get_accounts = async ({ username, password }) => {
@@ -838,42 +780,23 @@ export const get_activity = async ({ username, password }) => {
     })
     await new Promise((resolve) => setTimeout(resolve, 3000))
 
-    // Try to expand date range
-    const date_filter_expanded = await page.evaluate(() => {
-      // The date filter is in the activity section, look for specific pattern
-      // "Past 30 days" with a dropdown indicator
-      const all_elements = document.querySelectorAll('*')
-      for (const el of all_elements) {
-        // Only check direct text, not descendant text
-        const direct_text = Array.from(el.childNodes)
-          .filter(n => n.nodeType === 3)
-          .map(n => n.textContent.trim())
-          .join('')
-
-        if (direct_text.includes('Past 30') || direct_text.includes('Past 90')) {
-          el.click()
-          return direct_text
-        }
-      }
-
-      // Try specific Fidelity dropdown components
+    // Try to expand date range using targeted selectors
+    const date_filter_clicked = await page.evaluate(() => {
       const dropdowns = document.querySelectorAll(
-        '[class*="date-range"], [class*="dateRange"], [class*="filter-date"], ' +
-        'ap154603-activity-orders-date-filter, [class*="time-period"]'
+        '[class*="date-range"], [class*="dateRange"], [class*="filter-date"], [class*="time-period"]'
       )
       for (const dd of dropdowns) {
         const clickable = dd.querySelector('button, a, [role="button"]')
         if (clickable) {
           clickable.click()
-          return `dropdown: ${dd.tagName}`
+          return true
         }
       }
-
-      return null
+      return false
     })
 
-    if (date_filter_expanded) {
-      log(`Expanded date filter: ${date_filter_expanded}`)
+    if (date_filter_clicked) {
+      log('Expanded date filter')
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Select "Year to Date" or longest period

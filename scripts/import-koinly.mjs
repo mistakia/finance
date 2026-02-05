@@ -45,35 +45,24 @@ const CHROME_DEFAULT_PROFILE = path.join(
 )
 
 const ensure_profile = () => {
-  // Copy cookies from the main Chrome profile if the koinly profile doesn't exist
-  // or if the cookies are older than the source
   const profile_default = path.join(KOINLY_PROFILE_DIR, 'Default')
-  if (!fs.existsSync(profile_default)) {
-    fs.mkdirSync(profile_default, { recursive: true })
-  }
+  fs.mkdirSync(profile_default, { recursive: true })
 
   const source_cookies = path.join(CHROME_DEFAULT_PROFILE, 'Cookies')
   const dest_cookies = path.join(profile_default, 'Cookies')
 
   if (fs.existsSync(source_cookies)) {
-    const source_stat = fs.statSync(source_cookies)
-    const dest_exists = fs.existsSync(dest_cookies)
-    const dest_stat = dest_exists ? fs.statSync(dest_cookies) : null
-
-    if (!dest_exists || source_stat.mtimeMs > dest_stat.mtimeMs) {
-      fs.copyFileSync(source_cookies, dest_cookies)
-      const source_journal = `${source_cookies}-journal`
-      if (fs.existsSync(source_journal)) {
-        fs.copyFileSync(source_journal, `${dest_cookies}-journal`)
-      }
-      log('Copied cookies from main Chrome profile')
+    fs.copyFileSync(source_cookies, dest_cookies)
+    const source_journal = `${source_cookies}-journal`
+    if (fs.existsSync(source_journal)) {
+      fs.copyFileSync(source_journal, `${dest_cookies}-journal`)
     }
+    log('Copied cookies from main Chrome profile')
   }
 
-  // Copy Local Storage
   const source_ls = path.join(CHROME_DEFAULT_PROFILE, 'Local Storage')
   const dest_ls = path.join(profile_default, 'Local Storage')
-  if (fs.existsSync(source_ls) && !fs.existsSync(dest_ls)) {
+  if (fs.existsSync(source_ls)) {
     fs.cpSync(source_ls, dest_ls, { recursive: true })
     log('Copied Local Storage from main Chrome profile')
   }
@@ -174,6 +163,7 @@ const run = async ({ credentials, publicKey }) => {
 
     let api_page = 1
     let res
+    let pages_imported = 0
     do {
       res = await getTransactions({
         page,
@@ -183,14 +173,19 @@ const run = async ({ credentials, publicKey }) => {
         publicKey
       })
       if (res) {
+        pages_imported += 1
         api_page += 1
       }
 
       await wait(3000)
     } while (res && api_page <= res.meta.page.total_pages)
 
+    if (pages_imported === 0) {
+      throw new Error('No Koinly transaction pages were successfully imported')
+    }
+
     log(
-      `Finished importing ${res?.meta?.page?.total_items || 0} total Koinly transactions`
+      `Finished importing ${res.meta.page.total_items} total Koinly transactions across ${pages_imported} pages`
     )
   } finally {
     await browser.close()
