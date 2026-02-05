@@ -105,11 +105,19 @@ export const get_transactions = async ({
 
   // Set download behavior for Puppeteer
   const client = await page.createCDPSession()
-  await client.send('Browser.setDownloadBehavior', {
-    behavior: 'allow',
-    downloadPath: download_dir,
-    eventsEnabled: true
-  })
+  try {
+    await client.send('Browser.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: download_dir,
+      eventsEnabled: true
+    })
+  } catch (cdp_error) {
+    log(`Browser.setDownloadBehavior failed: ${cdp_error.message}, trying Page.setDownloadBehavior`)
+    await client.send('Page.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: download_dir
+    })
+  }
   log('Set download behavior')
 
   // First navigate to the account page to generate necessary cookies

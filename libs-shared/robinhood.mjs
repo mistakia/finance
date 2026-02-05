@@ -51,16 +51,42 @@ const postChallenge = async ({ code, challenge_id }) => {
   return data
 }
 
-const handle_verification_workflow = async ({
-  workflow_id,
-  device_id,
-  cli,
-  publicKey
-}) => {
-  log(`Handling verification workflow: ${workflow_id}`)
+const poll_push_status = async (challenge_id) => {
+  log('Approve the login request in the Robinhood app...')
+  const start = Date.now()
+  while (Date.now() - start < WORKFLOW_TIMEOUT) {
+    await wait(WORKFLOW_POLL_INTERVAL)
+    const response = await fetch(
+      `https://api.robinhood.com/push/${challenge_id}/get_prompts_status/`
+    )
+    const data = await response.json()
+    log(`Push status: ${JSON.stringify(data)}`)
+    if (
+      data.challenge_status === 'validated' ||
+      data.status === 'validated'
+    ) {
+      return data
+    }
+  }
+  throw new Error('App approval timed out')
+}
 
-  // Initialize the pathfinder machine
-  const machine_response = await fetch(
+const advance_workflow = async (machine_id) => {
+  await fetch(
+    `https://api.robinhood.com/pathfinder/inquiries/${machine_id}/user_view/`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sequence: 0,
+        user_input: { status: 'continue' }
+      })
+    }
+  )
+}
+
+const initialize_machine = async (workflow_id, device_id) => {
+  const response = await fetch(
     'https://api.robinhood.com/pathfinder/user_machine/',
     {
       method: 'POST',
@@ -72,17 +98,38 @@ const handle_verification_workflow = async ({
       })
     }
   )
-  const machine_data = await machine_response.json()
-  const machine_id = machine_data.id || machine_data.machine_id
-  log(`Machine ID: ${machine_id}`)
-
+  const data = await response.json()
+  const machine_id = data.id || data.machine_id
   if (!machine_id) {
     throw new Error(
-      `Failed to initialize pathfinder machine: ${JSON.stringify(machine_data)}`
+      `Failed to initialize pathfinder machine: ${JSON.stringify(data)}`
     )
   }
+  log(`Machine ID: ${machine_id}`)
+  return machine_id
+}
 
-  // Poll for challenge inquiries
+const get_verification_code = async ({ cli, publicKey }) => {
+  const inputs = ['code']
+  if (cli) {
+    log('Enter the verification code:')
+    const res = await prompt.get(inputs)
+    return res.code
+  }
+  const res = await websocket_prompt({ publicKey, inputs })
+  return res.code
+}
+
+const handle_verification_workflow = async ({
+  workflow_id,
+  device_id,
+  cli,
+  publicKey
+}) => {
+  log(`Handling verification workflow: ${workflow_id}`)
+
+  const machine_id = await initialize_machine(workflow_id, device_id)
+
   const start_time = Date.now()
   while (Date.now() - start_time < WORKFLOW_TIMEOUT) {
     const inquiry_response = await fetch(
@@ -92,89 +139,23 @@ const handle_verification_workflow = async ({
     const inquiry_data = await inquiry_response.json()
     log(`Inquiry response: ${JSON.stringify(inquiry_data)}`)
 
-    // Check for sheriff challenge
     const context = inquiry_data.context || inquiry_data.type_context || {}
     const sheriff = context.sheriff_challenge || {}
     const challenge_id = sheriff.id || context.challenge_id
 
     if (challenge_id && sheriff.type === 'prompt') {
-      // App-based approval -- poll push status endpoint
-      log('Approve the login request in the Robinhood app...')
-      const prompt_start = Date.now()
-      while (Date.now() - prompt_start < WORKFLOW_TIMEOUT) {
-        await wait(WORKFLOW_POLL_INTERVAL)
-        const status_response = await fetch(
-          `https://api.robinhood.com/push/${challenge_id}/get_prompts_status/`
-        )
-        const status_data = await status_response.json()
-        log(`Push status: ${JSON.stringify(status_data)}`)
-
-        if (status_data.challenge_status === 'validated') {
-          log('App approval validated')
-          // Advance the workflow with continue input
-          await fetch(
-            `https://api.robinhood.com/pathfinder/inquiries/${machine_id}/user_view/`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sequence: 0,
-                user_input: { status: 'continue' }
-              })
-            }
-          )
-          // Poll for workflow approval
-          for (let i = 0; i < 5; i++) {
-            await wait(WORKFLOW_POLL_INTERVAL)
-            const confirm_response = await fetch(
-              `https://api.robinhood.com/pathfinder/inquiries/${machine_id}/user_view/`
-            )
-            const confirm_data = await confirm_response.json()
-            log(
-              `Confirm status: ${JSON.stringify(confirm_data).substring(0, 300)}`
-            )
-            const confirm_context =
-              confirm_data.type_context || confirm_data.context || {}
-            if (confirm_context.result === 'workflow_status_approved') {
-              log('Workflow approved')
-              return true
-            }
-          }
-          // Proceed anyway after validation
-          return true
-        }
-      }
-      throw new Error('App approval timed out')
+      await poll_push_status(challenge_id)
+      await advance_workflow(machine_id)
+      await wait(WORKFLOW_POLL_INTERVAL)
+      return true
     }
 
     if (challenge_id && sheriff.type !== 'prompt') {
-      // SMS/email code challenge
       log(`SMS/email challenge found: ${challenge_id}`)
-      const inputs = ['code']
-      let code
-      if (cli) {
-        log('Enter the verification code:')
-        const res = await prompt.get(inputs)
-        code = res.code
-      } else {
-        const res = await websocket_prompt({ publicKey, inputs })
-        code = res.code
-      }
-
+      const code = await get_verification_code({ cli, publicKey })
       await postChallenge({ code, challenge_id })
       log('Challenge response submitted')
-      // Advance the workflow
-      await fetch(
-        `https://api.robinhood.com/pathfinder/inquiries/${machine_id}/user_view/`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sequence: 0,
-            user_input: { status: 'continue' }
-          })
-        }
-      )
+      await advance_workflow(machine_id)
       await wait(WORKFLOW_POLL_INTERVAL)
       continue
     }
@@ -221,21 +202,30 @@ export const login = async ({
   }
 
   // Handle new verification workflow (Dec 2024+)
-  if (response.verification_workflow) {
-    const workflow_id = response.verification_workflow.id
+  // Loop to handle chained workflows where Robinhood may require multiple steps
+  let current_response = response
+  const max_workflow_attempts = 3
+  for (
+    let attempt = 0;
+    attempt < max_workflow_attempts && current_response.verification_workflow;
+    attempt++
+  ) {
+    const workflow_id = current_response.verification_workflow.id
     await handle_verification_workflow({
       workflow_id,
       device_id,
       cli,
       publicKey
     })
-    // Re-attempt auth after workflow approval
-    const retry = await postAuth({ username, password, device_id })
-    if (retry.access_token) {
-      return retry
+    current_response = await postAuth({ username, password, device_id })
+    if (current_response.access_token) {
+      return current_response
     }
+  }
+
+  if (response.verification_workflow) {
     throw new Error(
-      `Auth failed after workflow approval: ${JSON.stringify(retry)}`
+      `Auth failed after workflow approval: ${JSON.stringify(current_response)}`
     )
   }
 
@@ -246,38 +236,12 @@ export const login = async ({
     log(`Challenge: ${JSON.stringify(challenge)}`)
 
     if (challenge.type === 'prompt') {
-      // App-based approval -- poll for resolution
-      log('Approve the login request in the Robinhood app...')
-      const poll_start = Date.now()
-      while (Date.now() - poll_start < WORKFLOW_TIMEOUT) {
-        await wait(WORKFLOW_POLL_INTERVAL)
-        const status_response = await fetch(
-          `https://api.robinhood.com/push/${challenge_id}/get_prompts_status/`,
-          { headers: { 'Content-Type': 'application/json' } }
-        )
-        const status_data = await status_response.json()
-        log(`Prompt status: ${JSON.stringify(status_data)}`)
-        if (
-          status_data.challenge_status === 'validated' ||
-          status_data.status === 'validated'
-        ) {
-          return postAuth({ username, password, device_id, challenge_id })
-        }
-      }
-      throw new Error('App approval timed out')
+      await poll_push_status(challenge_id)
+      return postAuth({ username, password, device_id, challenge_id })
     }
 
     // SMS/email code challenge
-    const inputs = ['code']
-    let code
-    if (cli) {
-      log('Enter the verification code:')
-      const res = await prompt.get(inputs)
-      code = res.code
-    } else {
-      const res = await websocket_prompt({ publicKey, inputs })
-      code = res.code
-    }
+    const code = await get_verification_code({ cli, publicKey })
     await postChallenge({ code, challenge_id })
     return postAuth({ username, password, device_id, challenge_id })
   }
