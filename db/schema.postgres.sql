@@ -19,9 +19,12 @@ SET row_security = off;
 DROP INDEX IF EXISTS public.idx_transactions_tx_src;
 DROP INDEX IF EXISTS public.idx_transactions_tx_dest;
 DROP INDEX IF EXISTS public.idx_transactions_transaction_info;
+DROP INDEX IF EXISTS public.idx_transactions_source_file;
 DROP INDEX IF EXISTS public.idx_transactions_original_data;
+DROP INDEX IF EXISTS public.idx_transactions_enrichment_data;
 DROP INDEX IF EXISTS public.idx_transactions_date;
 DROP INDEX IF EXISTS public.idx_transactions_categories;
+DROP INDEX IF EXISTS public.idx_account_connections_public_key;
 ALTER TABLE IF EXISTS ONLY public.transactions DROP CONSTRAINT IF EXISTS transactions_pkey;
 ALTER TABLE IF EXISTS ONLY public.holdings DROP CONSTRAINT IF EXISTS holdings_pkey;
 ALTER TABLE IF EXISTS ONLY public.exchange_symbols DROP CONSTRAINT IF EXISTS exchange_symbols_pkey;
@@ -33,7 +36,11 @@ ALTER TABLE IF EXISTS ONLY public.config DROP CONSTRAINT IF EXISTS config_pkey;
 ALTER TABLE IF EXISTS ONLY public.backtests DROP CONSTRAINT IF EXISTS backtests_pkey;
 ALTER TABLE IF EXISTS ONLY public.assets DROP CONSTRAINT IF EXISTS assets_pkey;
 ALTER TABLE IF EXISTS ONLY public.adjusted_equity_quotes DROP CONSTRAINT IF EXISTS adjusted_daily_prices_pkey;
+ALTER TABLE IF EXISTS ONLY public.account_connections DROP CONSTRAINT IF EXISTS account_connections_pkey;
+DROP TABLE IF EXISTS public.transactions_backup;
+DROP VIEW IF EXISTS public.holdings_derived;
 DROP TABLE IF EXISTS public.transactions;
+DROP TABLE IF EXISTS public.holdings_backup;
 DROP TABLE IF EXISTS public.holdings;
 DROP TABLE IF EXISTS public.exchange_symbols;
 DROP TABLE IF EXISTS public.eod_option_quotes;
@@ -44,6 +51,8 @@ DROP TABLE IF EXISTS public.config;
 DROP TABLE IF EXISTS public.backtests;
 DROP TABLE IF EXISTS public.assets;
 DROP TABLE IF EXISTS public.adjusted_equity_quotes;
+DROP TABLE IF EXISTS public.account_connections;
+DROP FUNCTION IF EXISTS public.holdings_as_of(as_of_date date);
 DROP TYPE IF EXISTS public.transaction_type_enum;
 DROP TYPE IF EXISTS public.event_time_type_enum;
 DROP TYPE IF EXISTS public.asset_type_enum;
@@ -92,7 +101,65 @@ CREATE TYPE public.transaction_type_enum AS ENUM (
 );
 
 
+--
+-- Name: holdings_as_of(date); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.holdings_as_of(as_of_date date) RETURNS TABLE(account_link character varying, symbol character varying, net_balance numeric)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    sub.account_link,
+    sub.symbol,
+    SUM(sub.amount) AS net_balance
+  FROM (
+    SELECT
+      t.to_link AS account_link,
+      t.to_symbol AS symbol,
+      t.to_amount AS amount
+    FROM public.transactions t
+    WHERE t.to_link IS NOT NULL
+      AND t.to_symbol IS NOT NULL
+      AND t.transaction_date <= as_of_date
+      AND t.transaction_type != 'balance_assertion'
+
+    UNION ALL
+
+    SELECT
+      t.from_link AS account_link,
+      t.from_symbol AS symbol,
+      t.from_amount AS amount
+    FROM public.transactions t
+    WHERE t.from_link IS NOT NULL
+      AND t.from_symbol IS NOT NULL
+      AND t.transaction_date <= as_of_date
+      AND t.transaction_type != 'balance_assertion'
+  ) sub
+  GROUP BY sub.account_link, sub.symbol
+  HAVING SUM(sub.amount) != 0;
+END;
+$$;
+
+
 SET default_table_access_method = heap;
+
+--
+-- Name: account_connections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.account_connections (
+    id character varying(100) NOT NULL,
+    public_key character varying(64) NOT NULL,
+    connection_type character varying(50) NOT NULL,
+    encrypted_params text NOT NULL,
+    encrypted_session text,
+    last_connection integer,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
 
 --
 -- Name: adjusted_equity_quotes; Type: TABLE; Schema: public; Owner: -
@@ -306,7 +373,7 @@ CREATE TABLE public.holdings (
     name character varying(200) NOT NULL,
     cost_basis numeric(65,30) DEFAULT NULL::numeric,
     quantity numeric(65,30) NOT NULL,
-    symbol character varying(20) DEFAULT NULL::character varying,
+    symbol character varying(100) DEFAULT NULL::character varying,
     asset_link character varying(2000) NOT NULL
 );
 
@@ -316,6 +383,20 @@ CREATE TABLE public.holdings (
 --
 
 COMMENT ON COLUMN public.holdings.link IS '/[user]/[custodian]/[symbol]';
+
+
+--
+-- Name: holdings_backup; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.holdings_backup (
+    link character varying(200),
+    name character varying(200),
+    cost_basis numeric(65,30),
+    quantity numeric(65,30),
+    symbol character varying(20),
+    asset_link character varying(2000)
+);
 
 
 --
@@ -355,6 +436,69 @@ CREATE TABLE public.transactions (
 --
 
 COMMENT ON COLUMN public.transactions.link IS '/[user]/[link]/[link-id]';
+
+
+--
+-- Name: holdings_derived; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.holdings_derived AS
+ SELECT sub.account_link,
+    sub.symbol,
+    sum(sub.amount) AS net_balance
+   FROM ( SELECT t.to_link AS account_link,
+            t.to_symbol AS symbol,
+            t.to_amount AS amount
+           FROM public.transactions t
+          WHERE ((t.to_link IS NOT NULL) AND (t.to_symbol IS NOT NULL) AND (t.transaction_type <> 'balance_assertion'::public.transaction_type_enum))
+        UNION ALL
+         SELECT t.from_link AS account_link,
+            t.from_symbol AS symbol,
+            t.from_amount AS amount
+           FROM public.transactions t
+          WHERE ((t.from_link IS NOT NULL) AND (t.from_symbol IS NOT NULL) AND (t.transaction_type <> 'balance_assertion'::public.transaction_type_enum))) sub
+  GROUP BY sub.account_link, sub.symbol
+ HAVING (sum(sub.amount) <> (0)::numeric);
+
+
+--
+-- Name: transactions_backup; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.transactions_backup (
+    link character varying(200),
+    transaction_type public.transaction_type_enum,
+    from_link character varying(1000),
+    from_amount numeric(65,30),
+    from_symbol character varying(50),
+    to_link character varying(1000),
+    to_amount numeric(65,30),
+    to_symbol character varying(50),
+    fee_amount numeric(65,30),
+    fee_symbol character varying(50),
+    fee_link character varying(1000),
+    transaction_unix integer,
+    tx_id character varying(200),
+    tx_src character varying(200),
+    tx_dest character varying(200),
+    tx_label character varying(100),
+    description character varying(200),
+    transaction_time time without time zone,
+    categories text[],
+    original_data jsonb,
+    transaction_info jsonb,
+    transaction_date date,
+    enrichment_data jsonb,
+    source_file character varying(500)
+);
+
+
+--
+-- Name: account_connections account_connections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.account_connections
+    ADD CONSTRAINT account_connections_pkey PRIMARY KEY (id);
 
 
 --
@@ -446,6 +590,13 @@ ALTER TABLE ONLY public.transactions
 
 
 --
+-- Name: idx_account_connections_public_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_account_connections_public_key ON public.account_connections USING btree (public_key);
+
+
+--
 -- Name: idx_transactions_categories; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -460,10 +611,24 @@ CREATE INDEX idx_transactions_date ON public.transactions USING btree (transacti
 
 
 --
+-- Name: idx_transactions_enrichment_data; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_enrichment_data ON public.transactions USING gin (enrichment_data);
+
+
+--
 -- Name: idx_transactions_original_data; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_transactions_original_data ON public.transactions USING gin (original_data);
+
+
+--
+-- Name: idx_transactions_source_file; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transactions_source_file ON public.transactions USING btree (source_file);
 
 
 --
@@ -485,20 +650,6 @@ CREATE INDEX idx_transactions_tx_dest ON public.transactions USING btree (tx_des
 --
 
 CREATE INDEX idx_transactions_tx_src ON public.transactions USING btree (tx_src);
-
-
---
--- Name: idx_transactions_enrichment_data; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_transactions_enrichment_data ON public.transactions USING gin (enrichment_data);
-
-
---
--- Name: idx_transactions_source_file; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_transactions_source_file ON public.transactions USING btree (source_file);
 
 
 --

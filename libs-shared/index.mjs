@@ -63,3 +63,38 @@ export const getSession = async () => {
 export const saveSession = async (session) => {
   await fs.writeJson(session_path, session)
 }
+
+export const get_api_url = (config) => {
+  const port = config?.port || 8080
+  return `http://localhost:${port}/api`
+}
+
+export const fetch_with_timeout = async (url, options = {}, timeout_ms = 30000) => {
+  const controller = new AbortController()
+  const timeout_id = setTimeout(() => controller.abort(), timeout_ms)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+    return response
+  } finally {
+    clearTimeout(timeout_id)
+  }
+}
+
+export const fetch_json = async (url, options = {}, timeout_ms = 30000) => {
+  const response = await fetch_with_timeout(url, options, timeout_ms)
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.statusText}`)
+  }
+
+  const content_type = response.headers.get('content-type')
+  if (!content_type?.includes('application/json')) {
+    throw new Error(`Expected JSON response but got: ${content_type}`)
+  }
+
+  return response.json()
+}
