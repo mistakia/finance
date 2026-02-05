@@ -1,81 +1,101 @@
 import {
   takeLatest,
-  takeLeading,
   fork,
   select,
   call,
   put
 } from 'redux-saga/effects'
-import dayjs from 'dayjs'
 
 import { appActions, getApp } from '@core/app'
 import { connectionActions } from './actions'
 import { getConnections } from './selectors'
-import { CONNECTIONS } from './supported-connections'
-import { localStorageAdapter } from '@core/utils'
-import { postJob } from '@core/api'
+import { postJob, getConnections as fetchConnections, saveConnection, deleteConnection } from '@core/api'
 import { dialogActions } from '@core/dialog'
-import { send, websocketActions } from '@core/websocket'
+import { send } from '@core/websocket'
 
-export function* save() {
+const params_to_credentials = (params) => {
+  const credentials = {}
+  for (const param of params) {
+    credentials[param.field] = param.value
+  }
+  return credentials
+}
+
+export function* save_single({ id }) {
   const state = yield select(getConnections)
-  const value = JSON.stringify(state.toJS())
-  localStorageAdapter.setItem('finance_connections', value)
+  const { publicKey } = yield select(getApp)
 
-  // encrypt connections
-  // backup to tint.finance server
+  if (!publicKey) {
+    return
+  }
+
+  const connection_data = state.get(id)
+
+  if (!connection_data) {
+    return
+  }
+
+  yield call(saveConnection, {
+    id,
+    public_key: publicKey,
+    connection_type: connection_data.connection,
+    params: connection_data.params,
+    session: connection_data.session || null
+  })
+}
+
+export function* save_by_id({ payload }) {
+  const { id } = payload
+  yield call(save_single, { id })
 }
 
 export function* sync({ payload }) {
   const { publicKey } = yield select(getApp)
   const { id, connection, params } = payload
-  const credentials = {}
-  for (const param of params) {
-    credentials[param.field] = param.value
-  }
+  const credentials = params_to_credentials(params)
   yield call(postJob, { id, publicKey, connection, credentials })
 }
 
 export function* add({ payload }) {
-  yield call(save)
-
+  const { id } = payload
+  yield call(save_single, { id })
   yield call(sync, { payload })
 }
 
-async function loadConnections() {
-  const connections = await localStorageAdapter.getItem('finance_connections')
-  if (connections) {
-    return JSON.parse(connections)
-  }
-
-  return null
+export function* del({ payload }) {
+  const { id } = payload
+  const { publicKey } = yield select(getApp)
+  yield call(deleteConnection, { id, public_key: publicKey })
 }
 
 export function* load() {
-  const connections = yield call(loadConnections)
-  if (connections) {
-    yield put(connectionActions.setConnections(connections))
+  const { publicKey } = yield select(getApp)
+  if (!publicKey) {
+    return
   }
+
+  yield call(fetchConnections, { public_key: publicKey })
 }
 
-export function* refresh() {
-  const connections = yield select(getConnections)
-  const { publicKey } = yield select(getApp)
-  const cutoff = dayjs().subtract(1, 'day')
-  for (const value of connections.valueSeq()) {
-    if (
-      !value.last_connection ||
-      dayjs.unix(value.last_connection).isBefore(cutoff)
-    ) {
-      const { id, params, session } = value
-      const credentials = {}
-      for (const param of params) {
-        credentials[param.field] = param.value
-      }
-      const connection = CONNECTIONS.find((c) => c.id === value.connection)
-      yield call(postJob, { id, publicKey, connection, credentials, session })
+export function* handle_get_connections_fulfilled({ payload }) {
+  const { data } = payload
+
+  if (!data || !data.length) {
+    return
+  }
+
+  const connections = {}
+  for (const row of data) {
+    connections[row.id] = {
+      id: row.id,
+      connection: row.connection_type,
+      params: row.params,
+      session: row.session,
+      last_connection: row.last_connection
     }
   }
+
+  yield put(connectionActions.setConnections(connections))
 }
 
 export function* showPrompt({ payload }) {
@@ -105,7 +125,7 @@ export function* watchSyncConnection() {
 }
 
 export function* watchDelConnection() {
-  yield takeLatest(connectionActions.DEL_CONNECTION, save)
+  yield takeLatest(connectionActions.DEL_CONNECTION, del)
 }
 
 export function* watchInitApp() {
@@ -121,15 +141,15 @@ export function* watchConnectionPromptResponse() {
 }
 
 export function* watchSetConnectionSession() {
-  yield takeLatest(connectionActions.SET_CONNECTION_SESSION, save)
-}
-
-export function* watchWebsocketOpen() {
-  yield takeLeading(websocketActions.WEBSOCKET_OPEN, refresh)
+  yield takeLatest(connectionActions.SET_CONNECTION_SESSION, save_by_id)
 }
 
 export function* watchSetConnectionLastConnection() {
-  yield takeLatest(connectionActions.SET_CONNECTION_LAST_CONNECTION, save)
+  yield takeLatest(connectionActions.SET_CONNECTION_LAST_CONNECTION, save_by_id)
+}
+
+export function* watchGetConnectionsFulfilled() {
+  yield takeLatest(connectionActions.GET_CONNECTIONS_FULFILLED, handle_get_connections_fulfilled)
 }
 
 //= ====================================
@@ -144,6 +164,6 @@ export const connectionSagas = [
   fork(watchConnectionPromptRequest),
   fork(watchConnectionPromptResponse),
   fork(watchSetConnectionSession),
-  // fork(watchWebsocketOpen),
-  fork(watchSetConnectionLastConnection)
+  fork(watchSetConnectionLastConnection),
+  fork(watchGetConnectionsFulfilled)
 ]

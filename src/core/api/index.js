@@ -1,1 +1,7 @@
-export { postJob, getAssets } from './sagas'
+export {
+  postJob,
+  getAssets,
+  getConnections,
+  saveConnection,
+  deleteConnection
+} from './sagas'

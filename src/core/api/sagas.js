@@ -4,6 +4,11 @@ import { call, put, cancelled } from 'redux-saga/effects'
 import { api, apiRequest } from '@core/api/service'
 import { postJobRequestActions } from '@core/jobs'
 import { getAssetsRequestActions } from '@core/assets/actions'
+import {
+  getConnectionsRequestActions,
+  saveConnectionRequestActions,
+  deleteConnectionRequestActions
+} from '@core/connections/actions'
 
 function* fetchAPI(apiFunction, actions, opts = {}) {
   const { abort, request } = apiRequest(apiFunction, opts)
@@ -37,4 +42,19 @@ export const getAssets = fetch.bind(
   null,
   api.getAssets,
   getAssetsRequestActions
+)
+export const getConnections = fetch.bind(
+  null,
+  api.getConnections,
+  getConnectionsRequestActions
+)
+export const saveConnection = fetch.bind(
+  null,
+  api.saveConnection,
+  saveConnectionRequestActions
+)
+export const deleteConnection = fetch.bind(
+  null,
+  api.deleteConnection,
+  deleteConnectionRequestActions
 )
