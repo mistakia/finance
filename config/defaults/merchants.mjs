@@ -6,7 +6,7 @@ export default {
     clean_whitespace: (text) => text.replace(/\s+/g, ' ').trim()
   },
 
-  // Institution-based keys (match directory names in source-exports)
+  // Institution-based keys (match directory names in data/finance)
   'ally-bank': [
     { pattern: /^PwP\s+/, replacement: '' },
     { pattern: /\s+Privacycom$/, replacement: '' },

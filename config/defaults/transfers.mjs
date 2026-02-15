@@ -1,7 +1,7 @@
 // Default transfer detection rules configuration
 // Keyed by institution directory name (hyphenated)
 export default {
-  // Institution-based keys (match directory names in source-exports)
+  // Institution-based keys (match directory names in data/finance)
   'ally-bank': [
     /internet transfer/i,
     /credit crd/i,

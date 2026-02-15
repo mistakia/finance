@@ -9,7 +9,7 @@
 //    - Log in to Chase in your regular browser
 //    - Navigate to credit card activity, click "Download account activity"
 //    - Select date range and download as CSV
-//    - Place file in ~/user-base/finance/source-exports/chase/<year>/
+//    - Place file in ~/user-base/data/finance/chase/<year>/
 //    - Run: node scripts/download-chase-transactions.mjs --publicKey <key> --import-only
 //
 // 2. Automated browser download (unreliable due to SPA rendering):
@@ -17,7 +17,7 @@
 //    - Requires manual 2FA and the SPA to load (may fail)
 //
 // You can also use the generic import script:
-//   node scripts/import-transactions.mjs --source-dir ~/user-base/finance/source-exports --owner <key> --institution chase
+//   node scripts/import-transactions.mjs --source-dir ~/user-base/data/finance --owner <key> --institution chase
 
 import debug from 'debug'
 import path from 'path'
@@ -38,7 +38,7 @@ debug.enable('download-chase,chase')
 
 const SOURCE_DIR = path.join(
   os.homedir(),
-  'user-base/finance/source-exports/chase'
+  'user-base/data/finance/chase'
 )
 
 const import_csv_files = async ({ directory, publicKey }) => {
