@@ -65,6 +65,9 @@ export const saveSession = async (session) => {
 }
 
 export const get_api_url = (config) => {
+  if (config?.url) {
+    return `${config.url}/api`
+  }
   const port = config?.port || 8080
   return `http://localhost:${port}/api`
 }
