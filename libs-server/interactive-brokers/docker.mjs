@@ -1,31 +1,44 @@
-import fetch from 'node-fetch'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 
-export const start_docker_container = async ({ host, port = 2375, id }) => {
-  const url = `http://${host}:${port}/containers/${id}/start`
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
+const execFileAsync = promisify(execFile)
 
-  return response.status
+const docker_exec = async (host, args) => {
+  const env = { ...process.env, DOCKER_HOST: `ssh://${host}` }
+  const { stdout } = await execFileAsync('docker', args, { env })
+  return stdout
 }
 
-export const stop_docker_container = async ({ host, port = 2375, id }) => {
-  const url = `http://${host}:${port}/containers/${id}/stop`
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-
-  return response.status
+export const start_docker_container = async ({ host, port, id }) => {
+  await docker_exec(host, ['start', id])
+  return 204
 }
 
-export const get_docker_containers = async ({ host, port = 2375 }) => {
-  const url = `http://${host}:${port}/containers/json?all=true`
-  const response = await fetch(url)
-  return response.json()
+export const stop_docker_container = async ({ host, port, id }) => {
+  await docker_exec(host, ['stop', id])
+  return 204
+}
+
+export const get_docker_containers = async ({ host, port }) => {
+  const stdout = await docker_exec(host, [
+    'ps',
+    '-a',
+    '--format',
+    '{{json .}}'
+  ])
+
+  return stdout
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const c = JSON.parse(line)
+      return {
+        Id: c.ID,
+        Names: c.Names ? c.Names.split(',').map((n) => `/${n}`) : [],
+        Image: c.Image,
+        State: c.State.toLowerCase(),
+        Status: c.Status
+      }
+    })
 }
