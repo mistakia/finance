@@ -1,23 +1,13 @@
 // Chase Transaction Download and Import
 //
-// Chase's SPA does not render in automated browsers (Puppeteer, headless Chrome).
-// The dashboard shows "loading" indefinitely due to Chase's bot detection.
+// Uses CloakBrowser (stealth Chromium) via stealth-browser.mjs to bypass Chase bot detection.
+// Logs in via www.chase.com homepage, handles 2FA with manual intervention.
 //
-// Two modes of operation:
+// Usage:
+//   node scripts/download-chase-transactions.mjs --publicKey <key> [--from 2025-01-01]
 //
-// 1. Import from manually-downloaded CSV (recommended):
-//    - Log in to Chase in your regular browser
-//    - Navigate to credit card activity, click "Download account activity"
-//    - Select date range and download as CSV
-//    - Place file in ~/user-base/data/finance/chase/<year>/
-//    - Run: node scripts/download-chase-transactions.mjs --publicKey <key> --import-only
-//
-// 2. Automated browser download (unreliable due to SPA rendering):
-//    - Run: node scripts/download-chase-transactions.mjs --publicKey <key> [--from 2025-01-01]
-//    - Requires manual 2FA and the SPA to load (may fail)
-//
-// You can also use the generic import script:
-//   node scripts/import-transactions.mjs --source-dir ~/user-base/data/finance --owner <key> --institution chase
+// Import-only mode (skip browser, import existing CSVs):
+//   node scripts/download-chase-transactions.mjs --publicKey <key> --import-only
 
 import debug from 'debug'
 import path from 'path'
@@ -27,7 +17,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { isMain } from '#libs-shared'
 import { download_transactions } from '../libs-shared/chase.mjs'
 import { parse_transactions } from '../libs-server/parsers/chase.mjs'
@@ -79,7 +69,7 @@ const run = async ({ credentials, publicKey, from_date, to_date }) => {
     return
   }
 
-  const user_data_dir = path.join(os.homedir(), '.chase-puppeteer-profile')
+  const user_data_dir = path.join(os.homedir(), '.chase-stealth-profile')
 
   log(`Downloading Chase transactions to ${download_dir}`)
   log(`Date range: ${from_date} to ${to_date}`)
@@ -126,7 +116,8 @@ const main = async () => {
     const from_date = argv.from || `${current_year}-01-01`
     const to_date = argv.to || new Date().toISOString().split('T')[0]
 
-    const credentials = config.links.chase
+    const result = await get_connection_credentials({ connection_type: 'chase', public_key: publicKey })
+    const { credentials } = result
     await run({ credentials, publicKey, from_date, to_date })
   } catch (err) {
     error = err
