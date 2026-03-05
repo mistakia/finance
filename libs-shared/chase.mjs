@@ -20,12 +20,39 @@ const create_target_filename = (from_date, to_date) => {
   return `chase_credit_card_${from_date}_to_${to_date}.csv`
 }
 
-const is_authenticated = (url) => {
-  return (
+const is_on_2fa_page = async (page) => {
+  try {
+    const body_text = await page.locator('body').textContent()
+    const lower = (body_text || '').toLowerCase()
+    return (
+      lower.includes("let's make sure it's you") ||
+      lower.includes('confirm your identity') ||
+      lower.includes('confirm identity') ||
+      lower.includes('verification code') ||
+      lower.includes('one-time code')
+    )
+  } catch {
+    return false
+  }
+}
+
+const is_authenticated = async (page) => {
+  const url = page.url()
+  const on_secure_site =
     url.includes('/web/auth/dashboard') ||
     url.includes('/account/activity') ||
     url.includes('/web/auth/')
-  )
+
+  if (!on_secure_site) {
+    return false
+  }
+
+  // Exclude 2FA/identity confirmation pages
+  if (await is_on_2fa_page(page)) {
+    return false
+  }
+
+  return true
 }
 
 const attempt_login = async ({ page, credentials }) => {
@@ -37,7 +64,7 @@ const attempt_login = async ({ page, credentials }) => {
   })
   await wait(DIALOG_WAIT_TIME)
 
-  if (is_authenticated(page.url())) {
+  if (await is_authenticated(page)) {
     log('Already authenticated via session cookies')
     return true
   }
@@ -74,56 +101,138 @@ const attempt_login = async ({ page, credentials }) => {
     log('Navigation timeout after login submit')
   }
 
-  if (is_authenticated(page.url())) {
+  await wait(DIALOG_WAIT_TIME)
+
+  if (await is_authenticated(page)) {
     return true
   }
 
-  // May need 2FA -- return false to trigger manual wait
+  // 2FA or other verification needed -- return false to trigger manual wait
+  if (await is_on_2fa_page(page)) {
+    log('2FA required -- complete verification in the browser window')
+  }
   return false
 }
 
 const wait_for_authentication = async (page) => {
-  log('Waiting for manual authentication -- complete login/2FA in the browser window')
+  log('Waiting for manual authentication -- complete login/2FA in the browser window (up to 3 minutes)')
   const auth_start = Date.now()
+  let last_url = ''
   while (Date.now() - auth_start < AUTH_WAIT_TIMEOUT) {
-    if (is_authenticated(page.url())) {
+    const current_url = page.url()
+    if (current_url !== last_url) {
+      log('URL changed: %s', current_url)
+      last_url = current_url
+    }
+
+    const on_2fa = await is_on_2fa_page(page)
+    if (!on_2fa && (
+      current_url.includes('/web/auth/dashboard') ||
+      current_url.includes('/account/activity') ||
+      current_url.includes('/web/auth/')
+    )) {
+      log('Authentication detected (URL: %s, 2FA: %s)', current_url, on_2fa)
       return true
     }
+
     await wait(DIALOG_WAIT_TIME)
   }
+  log('Authentication timeout. Last URL: %s', page.url())
   return false
 }
 
 const navigate_to_activity = async (page) => {
-  log('Waiting for dashboard to load')
-  await wait(DIALOG_WAIT_TIME * 3)
+  log('Waiting for dashboard SPA to render')
+  log('Current URL: %s', page.url())
 
-  // Look for credit card account link on the dashboard
-  log('Looking for credit card account on dashboard')
-  try {
-    const account_links = page.locator('a')
-    const count = await account_links.count()
-    for (let i = 0; i < count; i++) {
-      const link = account_links.nth(i)
-      const text = (await link.textContent()) || ''
-      const href = (await link.getAttribute('href')) || ''
-      const lower_text = text.trim().toLowerCase()
-      if (
-        lower_text.includes('credit card') ||
-        lower_text.includes('freedom') ||
-        lower_text.includes('sapphire') ||
-        href.includes('activity')
-      ) {
-        log(`Found account link: "${text.trim()}" href="${href}"`)
-        await link.click()
-        await wait(DIALOG_WAIT_TIME * 3)
-        return true
+  // Handle any interstitials (demographics confirmation, etc.)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const url = page.url()
+    if (url.includes('demographics') || url.includes('campaign')) {
+      log('Interstitial detected: %s -- looking for dismiss/skip button', url)
+      const dismiss = page.locator('button:has-text("Not now"), button:has-text("Skip"), button:has-text("Close"), button:has-text("Later"), [aria-label="Close"]').first()
+      if (await dismiss.count()) {
+        await dismiss.click()
+        await wait(DIALOG_WAIT_TIME)
+      } else {
+        // Try pressing Escape
+        await page.keyboard.press('Escape')
+        await wait(DIALOG_WAIT_TIME)
       }
+    } else {
+      break
     }
-  } catch (err) {
-    log(`Could not find account link: ${err.message}`)
   }
 
+  // Wait for SPA to render account tiles (Chase dashboard is a heavy SPA)
+  // Poll for account-related elements to appear
+  log('Waiting for account tiles to render...')
+  let found_accounts = false
+  for (let i = 0; i < 10; i++) {
+    await wait(DIALOG_WAIT_TIME)
+    const link_count = await page.locator('a[href]').count()
+    log('Poll %d: %d links on page, URL: %s', i + 1, link_count, page.url())
+    if (link_count > 10) {
+      found_accounts = true
+      break
+    }
+  }
+
+  if (!found_accounts) {
+    log('Dashboard may not have fully rendered')
+  }
+
+  log('Page title: %s', await page.title())
+
+  // Collect all links
+  const all_links = page.locator('a')
+  const link_count = await all_links.count()
+  const visible_links = []
+  for (let i = 0; i < Math.min(link_count, 80); i++) {
+    const link = all_links.nth(i)
+    const text = ((await link.textContent()) || '').trim().replace(/\s+/g, ' ').substring(0, 80)
+    const href = (await link.getAttribute('href')) || ''
+    if (text && text.length > 1) {
+      visible_links.push({ text, href, index: i })
+    }
+  }
+  for (const { text, href } of visible_links.slice(0, 30)) {
+    log('  Link: "%s" -> %s', text, href)
+  }
+
+  // Strategy 1: Find credit card account link
+  log('Looking for credit card account on dashboard')
+  const account_keywords = [
+    'credit card', 'freedom', 'sapphire', 'slate', 'ink',
+    'amazon', 'marriott', 'southwest', 'united', 'aeroplan',
+    'last statement', 'current balance', 'minimum payment'
+  ]
+  for (const { text, index } of visible_links) {
+    const lower_text = text.toLowerCase()
+    if (account_keywords.some((kw) => lower_text.includes(kw))) {
+      log('Found account link: "%s"', text)
+      const el = all_links.nth(index)
+      await el.click()
+      await wait(DIALOG_WAIT_TIME * 3)
+      log('After click, URL: %s', page.url())
+      return true
+    }
+  }
+
+  // Strategy 2: Click "See activity & statements" or similar
+  for (const { text, index } of visible_links) {
+    const lower_text = text.toLowerCase()
+    if (lower_text.includes('activity') || lower_text.includes('statement')) {
+      log('Found activity/statement link: "%s"', text)
+      const el = all_links.nth(index)
+      await el.click()
+      await wait(DIALOG_WAIT_TIME * 3)
+      log('After click, URL: %s', page.url())
+      return true
+    }
+  }
+
+  log('Could not find account or activity link on dashboard')
   return false
 }
 
