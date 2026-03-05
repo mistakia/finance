@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, schwab, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
@@ -118,7 +118,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.schwab
+    const result = await get_connection_credentials({ connection_type: 'schwab', public_key: publicKey })
+    const { credentials } = result
     await import_schwab_accounts({ credentials, publicKey, cli: true })
   } catch (err) {
     error = err

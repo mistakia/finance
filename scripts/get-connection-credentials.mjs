@@ -25,48 +25,10 @@ const get_credentials_from_api = async ({ connection_type, public_key }) => {
   return { credentials, session: match.session }
 }
 
-const get_credentials_from_config = ({ connection_type }) => {
-  // map connection_type to config path
-  const config_map = {
-    'ally-bank': config.links?.ally_bank,
-    'ally-invest': config.links?.ally,
-    robinhood: config.links?.robinhood,
-    peerstreet: config.links?.peerstreet,
-    gemini: config.links?.gemini,
-    bitcoin: config.links?.bitcoin,
-    litecoin: config.links?.litecoin,
-    nano: config.links?.nano,
-    stellar: config.links?.stellar,
-    ethereum: config.links?.ethereum,
-    wealthfront: config.links?.wealthfront,
-    groundfloor: config.links?.groundfloor,
-    schwab: config.links?.schwab,
-    interactive_brokers: config.links?.interactive_brokers,
-    koinly: config.koinly
-  }
-
-  const credentials = config_map[connection_type]
-  if (!credentials) {
-    return null
-  }
-
-  return { credentials, session: null }
-}
-
 export const get_connection_credentials = async ({ connection_type, public_key }) => {
-  try {
-    const result = await get_credentials_from_api({ connection_type, public_key })
-    if (result) {
-      log(`loaded credentials for ${connection_type} from database`)
-      return result
-    }
-  } catch (err) {
-    log(`API unavailable, falling back to config: ${err.message}`)
-  }
-
-  const result = get_credentials_from_config({ connection_type })
+  const result = await get_credentials_from_api({ connection_type, public_key })
   if (result) {
-    log(`loaded credentials for ${connection_type} from config`)
+    log(`loaded credentials for ${connection_type} from database`)
     return result
   }
 

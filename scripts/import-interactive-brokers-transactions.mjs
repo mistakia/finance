@@ -3,7 +3,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { isMain } from '#libs-shared'
 import { interactive_brokers } from '#libs-server'
 import { parse_transactions } from '../libs-server/parsers/interactive-brokers.mjs'
@@ -48,7 +48,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.interactive_brokers
+    const result = await get_connection_credentials({ connection_type: 'interactive_brokers', public_key: publicKey })
+    const { credentials } = result
     await run({ credentials, publicKey })
   } catch (err) {
     error = err

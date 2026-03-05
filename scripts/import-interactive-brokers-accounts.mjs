@@ -8,6 +8,7 @@ import config from '#config'
 import { isMain, addAsset } from '#libs-shared'
 import { interactive_brokers } from '#libs-server'
 import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-interactive-brokers-accounts')
@@ -377,9 +378,9 @@ const import_interactive_brokers_accounts = async ({
   }
 }
 
-const cleanup_containers = async () => {
+const cleanup_containers = async ({ credentials }) => {
   try {
-    const { host, docker_port = 2375 } = config.links.interactive_brokers
+    const { host, docker_port = 2375 } = credentials
     const containers = await interactive_brokers.get_docker_containers({
       host,
       port: docker_port
@@ -404,19 +405,25 @@ const cleanup_containers = async () => {
   }
 }
 
+let cached_credentials = null
+
 // Setup cleanup handlers
 const setup_cleanup_handlers = () => {
   // Handle SIGTERM
   process.on('SIGTERM', async () => {
     log('SIGTERM received, cleaning up...')
-    await cleanup_containers()
+    if (cached_credentials) {
+      await cleanup_containers({ credentials: cached_credentials })
+    }
     process.exit(0)
   })
 
   // Handle SIGINT (Ctrl+C)
   process.on('SIGINT', async () => {
     log('SIGINT received, cleaning up...')
-    await cleanup_containers()
+    if (cached_credentials) {
+      await cleanup_containers({ credentials: cached_credentials })
+    }
     process.exit(0)
   })
 }
@@ -432,7 +439,9 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.interactive_brokers
+    const result = await get_connection_credentials({ connection_type: 'interactive_brokers', public_key: publicKey })
+    const { credentials } = result
+    cached_credentials = credentials
     await import_interactive_brokers_accounts({
       publicKey,
       credentials,
@@ -452,8 +461,8 @@ const main = async () => {
    */
 
   // If keep_alive is not set, clean up containers before exit
-  if (!argv.keep_alive) {
-    await cleanup_containers()
+  if (!argv.keep_alive && cached_credentials) {
+    await cleanup_containers({ credentials: cached_credentials })
   }
 
   process.exit()

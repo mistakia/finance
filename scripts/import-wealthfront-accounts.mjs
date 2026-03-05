@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, wealthfront, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-wealthfront-accounts')
@@ -111,7 +111,8 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const credentials = config.links.wealthfront
+    const result = await get_connection_credentials({ connection_type: 'wealthfront', public_key: publicKey })
+    const { credentials } = result
     await import_wealthfront_accounts({ credentials, publicKey, cli: true })
   } catch (err) {
     error = err

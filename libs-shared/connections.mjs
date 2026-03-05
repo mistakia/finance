@@ -118,5 +118,61 @@ export const CONNECTIONS = [
     jobs: ['interactive_brokers/accounts'],
     params: ['host', 'docker_port', 'ibkr_port'],
     params_id: 'host'
+  },
+  {
+    id: 'fidelity',
+    name: 'Fidelity',
+    url: 'https://www.fidelity.com/',
+    jobs: ['fidelity/accounts'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'chase',
+    name: 'Chase',
+    url: 'https://www.chase.com/',
+    jobs: ['chase/transactions'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'capital-one',
+    name: 'Capital One',
+    url: 'https://www.capitalone.com/',
+    jobs: ['capital-one/transactions'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'american-express',
+    name: 'American Express',
+    url: 'https://www.americanexpress.com/',
+    jobs: ['american-express/transactions'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'zcash',
+    name: 'Zcash',
+    url: 'https://z.cash/',
+    jobs: ['zcash/accounts'],
+    params: ['address'],
+    params_id: 'address'
+  },
+  {
+    id: 'home-depot',
+    name: 'Home Depot',
+    url: 'https://www.homedepot.com/',
+    jobs: ['home-depot/enrichment'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'amazon',
+    name: 'Amazon',
+    url: 'https://www.amazon.com/',
+    jobs: ['amazon/enrichment'],
+    params: ['email', 'password'],
+    params_id: 'email'
   }
 ]

@@ -5,7 +5,7 @@ import debug from 'debug'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
-import config from '#config'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { isMain, allyBank } from '#libs-shared'
 import { import_file } from './import-transactions.mjs'
 
@@ -40,7 +40,8 @@ const main = async () => {
 
   log(`Download directory: ${year_download_dir}`)
 
-  const credentials = config.links.ally_bank
+  const result = await get_connection_credentials({ connection_type: 'ally-bank', public_key: public_key })
+  const { credentials } = result
   const accounts = await allyBank.getBalances({
     publicKey: public_key,
     cli: true,

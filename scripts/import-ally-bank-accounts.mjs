@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, allyBank, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-bank')
@@ -57,7 +57,8 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const credentials = config.links.ally_bank
+    const result = await get_connection_credentials({ connection_type: 'ally-bank', public_key: publicKey })
+    const { credentials } = result
     const download_dir = argv.downloadDir || argv['download-dir']
     await run({ credentials, publicKey, cli: true, download_dir })
   } catch (err) {

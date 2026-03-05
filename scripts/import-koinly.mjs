@@ -30,7 +30,7 @@ import path from 'path'
 import os from 'os'
 
 import db from '#db'
-import config from '#config'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { isMain, wait } from '#libs-shared'
 import { parse_transactions } from '../libs-server/parsers/koinly.mjs'
 
@@ -203,7 +203,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.koinly
+    const result = await get_connection_credentials({ connection_type: 'koinly', public_key: publicKey })
+    const { credentials } = result
     await run({ credentials, publicKey })
   } catch (err) {
     error = err

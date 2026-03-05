@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, litecoin, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-litecoin-account')
@@ -42,7 +42,8 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const credentials = config.links.litecoin
+    const result = await get_connection_credentials({ connection_type: 'litecoin', public_key: publicKey })
+    const { credentials } = result
     await import_litecoin_account({ credentials, publicKey })
   } catch (err) {
     error = err

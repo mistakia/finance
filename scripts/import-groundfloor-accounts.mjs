@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, groundfloor, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-groundfloor-accounts')
@@ -79,7 +79,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.groundfloor
+    const result = await get_connection_credentials({ connection_type: 'groundfloor', public_key: publicKey })
+    const { credentials } = result
     await import_groundfloor_accounts({ credentials, publicKey })
   } catch (err) {
     error = err

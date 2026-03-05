@@ -3,7 +3,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { isMain, stellar, addAsset } from '#libs-shared'
 import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
@@ -63,7 +63,8 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const credentials = config.links.stellar
+    const result = await get_connection_credentials({ connection_type: 'stellar', public_key: publicKey })
+    const { credentials } = result
     await import_stellar_accounts({ credentials, publicKey })
   } catch (err) {
     error = err

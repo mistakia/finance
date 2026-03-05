@@ -6,7 +6,7 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { isMain } from '#libs-shared'
 import { download_transactions } from '../libs-shared/capital-one.mjs'
 import { parse_transactions } from '../libs-server/parsers/capital-one.mjs'
@@ -110,7 +110,8 @@ const main = async () => {
     const from_date = argv.from || `${current_year}-01-01`
     const to_date = argv.to || new Date().toISOString().split('T')[0]
 
-    const credentials = config.links.capital_one
+    const result = await get_connection_credentials({ connection_type: 'capital-one', public_key: publicKey })
+    const { credentials } = result
     await run({ credentials, publicKey, from_date, to_date })
   } catch (err) {
     error = err

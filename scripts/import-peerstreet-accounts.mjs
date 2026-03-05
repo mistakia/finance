@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, peerstreet, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-peerstreet-accounts')
@@ -83,7 +83,8 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const credentials = config.links.peerstreet
+    const result = await get_connection_credentials({ connection_type: 'peerstreet', public_key: publicKey })
+    const { credentials } = result
     await run({ credentials, publicKey })
   } catch (err) {
     error = err

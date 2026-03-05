@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, allyInvest, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-invest')
@@ -73,7 +73,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.ally
+    const result = await get_connection_credentials({ connection_type: 'ally-invest', public_key: publicKey })
+    const { credentials } = result
     await run({ credentials, publicKey })
   } catch (err) {
     error = err
