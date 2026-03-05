@@ -32,14 +32,6 @@ export const CONNECTIONS = [
     params_id: 'portfolio_token'
   },
   {
-    id: 'peerstreet',
-    name: 'Peerstreet',
-    url: 'https://www.peerstreet.com/',
-    jobs: ['peerstreet/accounts'],
-    params: ['username', 'password'],
-    params_id: 'username'
-  },
-  {
     id: 'gemini',
     name: 'Gemini',
     jobs: ['gemini/accounts'],
