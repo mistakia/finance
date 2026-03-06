@@ -208,6 +208,11 @@ export const download_transactions = async ({
       log('No period selector found, proceeding with default range')
     }
 
+    // Set up download event listener BEFORE clicking submit
+    const download_promise = page
+      .waitForEvent('download', { timeout: DOWNLOAD_TIMEOUT })
+      .catch(() => null)
+
     // Click download button
     const submit = page.locator('#btnDownload, button:has-text("Download"), [data-testid="download-submit"]').first()
     if (await submit.count()) {
@@ -217,23 +222,30 @@ export const download_transactions = async ({
       log('No download button found')
     }
 
-    // Wait for the CSV file to appear
-    log('Waiting for CSV file download...')
-    const downloaded_file = await wait_for_csv_file(download_dir, DOWNLOAD_TIMEOUT)
-
-    if (!downloaded_file) {
-      throw new Error('Downloaded file not found after waiting')
-    }
-
-    // Rename to structured filename
     const target_filename = create_target_filename(from_date, to_date)
-    const downloaded_path = path.join(download_dir, downloaded_file)
     const target_path = path.join(download_dir, target_filename)
 
-    fs.renameSync(downloaded_path, target_path)
-    log('Renamed %s to %s', downloaded_file, target_filename)
+    // Wait for Playwright download event
+    log('Waiting for download event...')
+    const download = await download_promise
 
-    return target_filename
+    if (download) {
+      await download.saveAs(target_path)
+      log('Saved download as %s', target_filename)
+      return target_filename
+    }
+
+    // Fallback: check download_dir for any new CSV files
+    log('No Playwright download event -- checking directory for CSV files')
+    const downloaded_file = await wait_for_csv_file(download_dir, DOWNLOAD_TIMEOUT)
+    if (downloaded_file) {
+      const downloaded_path = path.join(download_dir, downloaded_file)
+      fs.renameSync(downloaded_path, target_path)
+      log('Found and renamed %s to %s', downloaded_file, target_filename)
+      return target_filename
+    }
+
+    throw new Error('Download failed -- no CSV file received')
   } finally {
     await context.close()
     log('Browser closed')

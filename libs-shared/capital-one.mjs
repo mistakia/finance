@@ -9,40 +9,13 @@ const log = debug('capital-one')
 
 const DIALOG_WAIT_TIME = 3000
 const AUTH_WAIT_TIMEOUT = 180000
-const DOWNLOAD_TIMEOUT = 30000
-const DOWNLOAD_CHECK_INTERVAL = 1000
 
 const DEFAULT_PROFILE_DIR = path.join(os.homedir(), '.capital-one-stealth-profile')
 
-const DOWNLOADED_FILE_NAME_PATTERN = /^transaction.*\.csv$/i
+const API_BASE = '/web-api/protected/17463/credit-cards'
 
 const create_target_filename = (from_date, to_date) => {
   return `capital_one_credit_card_${from_date}_to_${to_date}.csv`
-}
-
-const wait_for_csv_file = async (download_dir, timeout) => {
-  const start_time = Date.now()
-  while (Date.now() - start_time < timeout) {
-    const files = fs.readdirSync(download_dir)
-    const csv_files = files
-      .filter(
-        (file) =>
-          DOWNLOADED_FILE_NAME_PATTERN.test(file) ||
-          (file.endsWith('.csv') && !file.endsWith('.crdownload'))
-      )
-      .map((file) => ({
-        name: file,
-        created: fs.statSync(path.join(download_dir, file)).birthtime
-      }))
-      .sort((a, b) => b.created - a.created)
-
-    if (csv_files.length > 0) {
-      return csv_files[0].name
-    }
-
-    await wait(DOWNLOAD_CHECK_INTERVAL)
-  }
-  return null
 }
 
 const is_authenticated = (url) => {
@@ -141,6 +114,246 @@ const wait_for_authentication = async (page) => {
   return false
 }
 
+const extract_account_id = (url) => {
+  // URL pattern: /Card/{encoded_account_id} or /Card/{encoded_account_id}/DownloadTransactions
+  const match = url.match(/\/Card\/([^/]+)/)
+  if (match) {
+    return match[1]
+  }
+  return null
+}
+
+const navigate_to_card = async (page) => {
+  log('Looking for credit card account link on dashboard')
+  const clickables = page.locator('a, button, [role="button"], [role="link"]')
+  const count = await clickables.count()
+
+  // Log dashboard elements
+  for (let i = 0; i < Math.min(count, 30); i++) {
+    const el = clickables.nth(i)
+    const text = ((await el.textContent()) || '').trim().replace(/\s+/g, ' ').substring(0, 80)
+    const href = (await el.getAttribute('href')) || ''
+    if (text && text.length > 1) {
+      log('  [%d] "%s" href="%s"', i, text, href.substring(0, 60))
+    }
+  }
+
+  // Find "View Account" buttons and identify which account they belong to
+  const view_account_indices = []
+  for (let i = 0; i < count; i++) {
+    const el = clickables.nth(i)
+    const text = ((await el.textContent()) || '').trim().toLowerCase()
+    if (text === 'view account') {
+      view_account_indices.push(i)
+    }
+  }
+
+  // Get text of element before each "View Account" to identify account type
+  for (const idx of view_account_indices) {
+    if (idx > 0) {
+      const prev = clickables.nth(idx - 1)
+      const prev_text = ((await prev.textContent()) || '').trim().toLowerCase()
+      if (prev_text.includes('checking') || prev_text.includes('savings') || prev_text.includes('money market')) {
+        log('Skipping non-card account: "%s"', prev_text)
+        continue
+      }
+      const display = ((await prev.textContent()) || '').trim().replace(/\s+/g, ' ').substring(0, 60)
+      log('Found credit card: "%s" -- clicking View Account', display)
+      await clickables.nth(idx).click()
+      await wait(DIALOG_WAIT_TIME * 3)
+      log('After card click, URL: %s', page.url())
+      return true
+    }
+  }
+
+  // Fallback: click any element with card number pattern
+  for (let i = 0; i < count; i++) {
+    const el = clickables.nth(i)
+    const text = ((await el.textContent()) || '').trim()
+    if (/\.\.\.\d{4}/.test(text) && !text.toLowerCase().includes('checking')) {
+      log('Clicking card element: "%s"', text)
+      await el.click()
+      await wait(DIALOG_WAIT_TIME * 3)
+      return true
+    }
+  }
+
+  return false
+}
+
+const dismiss_overlays = async (page) => {
+  // Dismiss CDK overlay backdrop if present
+  const overlay = page.locator('.cdk-overlay-backdrop')
+  if (await overlay.count()) {
+    log('CDK overlay detected -- clicking to dismiss')
+    await overlay.click({ force: true })
+    await wait(1000)
+  }
+
+  // Close any popups/modals
+  const close_btns = page.locator('[aria-label*="close" i], [aria-label*="dismiss" i], button:has-text("Not now"), button:has-text("Close"), button:has-text("Got it"), button:has-text("No thanks")')
+  const close_count = await close_btns.count()
+  for (let i = 0; i < close_count; i++) {
+    const btn = close_btns.nth(i)
+    if (await btn.isVisible()) {
+      const text = ((await btn.textContent()) || '').trim()
+      log('Dismissing overlay: "%s"', text)
+      await btn.click({ force: true })
+      await wait(1000)
+    }
+  }
+}
+
+const capture_tokens_from_requests = (page) => {
+  const tokens = { bus_evt_id: null, evt_synch_token: null }
+
+  page.on('request', (request) => {
+    const url = request.url()
+
+    // Capture tokens from URL parameters
+    const bus_match = url.match(/BUS_EVT_ID=(\d+)/)
+    if (bus_match) {
+      tokens.bus_evt_id = bus_match[1]
+      log('Captured BUS_EVT_ID from request: %s', tokens.bus_evt_id)
+    }
+
+    const evt_match = url.match(/EVT_SYNCH_TOKEN=(\d+)/)
+    if (evt_match) {
+      tokens.evt_synch_token = evt_match[1]
+      log('Captured EVT_SYNCH_TOKEN from request: %s', tokens.evt_synch_token)
+    }
+  })
+
+  page.on('response', async (response) => {
+    const url = response.url()
+    if (!url.includes('/credit-cards/')) return
+
+    try {
+      const text = await response.text()
+      // Try to extract tokens from JSON responses
+      const bus_match = text.match(/"BUS_EVT_ID"\s*:\s*"?(\d+)"?/)
+      if (bus_match) {
+        tokens.bus_evt_id = bus_match[1]
+        log('Captured BUS_EVT_ID from response: %s', tokens.bus_evt_id)
+      }
+      const evt_match = text.match(/"EVT_SYNCH_TOKEN"\s*:\s*"?(\d+)"?/)
+      if (evt_match) {
+        tokens.evt_synch_token = evt_match[1]
+        log('Captured EVT_SYNCH_TOKEN from response: %s', tokens.evt_synch_token)
+      }
+    } catch {
+      // Response may not be text
+    }
+  })
+
+  return tokens
+}
+
+const download_via_api = async ({ page, account_id, from_date, to_date, tokens }) => {
+  const encoded_id = encodeURIComponent(account_id)
+
+  // Build download URL matching the Capital One SPA pattern
+  const params = new URLSearchParams({
+    fromTransactionDate: from_date,
+    toTransactionDate: to_date,
+    documentFormatType: 'application/csv',
+    acceptLanguage: 'en-US',
+    'X-User-Action': 'ease.downloadTransactions'
+  })
+
+  // Add CSRF-like tokens if captured
+  if (tokens.bus_evt_id) {
+    params.set('BUS_EVT_ID', tokens.bus_evt_id)
+  }
+  if (tokens.evt_synch_token) {
+    params.set('EVT_SYNCH_TOKEN', tokens.evt_synch_token)
+  }
+
+  const url = `${API_BASE}/accounts/${encoded_id}/transactions/download?${params.toString()}`
+  log('Downloading via API: %s', url)
+
+  const result = await page.evaluate(async (fetch_url) => {
+    try {
+      const res = await fetch(fetch_url, {
+        headers: {
+          'accept': 'application/json;v=1',
+          'accept-language': 'en-US'
+        }
+      })
+      const content_type = res.headers.get('content-type') || ''
+      const body = await res.text()
+      return { status: res.status, body, content_type }
+    } catch (err) {
+      return { status: 0, body: '', error: err.message }
+    }
+  }, url)
+
+  log('API response: status=%d, content_type=%s, length=%d', result.status, result.content_type, result.body.length)
+
+  if (result.status === 200 && result.body.length > 0) {
+    // Verify it looks like CSV data
+    if (result.body.includes('Transaction Date') || result.body.includes('Posted Date') ||
+        result.body.includes('Date,') || (result.body.includes(',') && result.body.includes('\n'))) {
+      log('API returned CSV data (%d bytes)', result.body.length)
+      return result.body
+    }
+    log('API response does not look like CSV: %s', result.body.substring(0, 300))
+  }
+
+  if (result.error) {
+    log('API fetch error: %s', result.error)
+  }
+
+  return null
+}
+
+const navigate_to_download_page = async (page) => {
+  // Click "Download Transactions" link in the extensibility bar via JavaScript
+  // The link is in a hidden/collapsed container and cannot be clicked normally
+  const download_selectors = [
+    '[data-e2e*="extensibility-bar-link"] >> text=/download/i',
+    '.c1-ease-extensibility-bar__item >> text=/download/i'
+  ]
+
+  for (const sel of download_selectors) {
+    const locator = page.locator(sel).first()
+    try {
+      if (await locator.count()) {
+        log('Found download link: %s', sel)
+        await locator.evaluate((el) => {
+          const anchor = el.closest('a') || el.closest('[role="button"]') || el
+          anchor.click()
+        })
+        await wait(DIALOG_WAIT_TIME * 2)
+        log('After download link click, URL: %s', page.url())
+        return true
+      }
+    } catch {
+      continue
+    }
+  }
+
+  // Fallback: scan all elements
+  const all_elements = page.locator('a, button, [role="button"], [data-e2e]')
+  const count = await all_elements.count()
+  for (let i = 0; i < Math.min(count, 150); i++) {
+    const el = all_elements.nth(i)
+    const text = ((await el.textContent()) || '').trim().toLowerCase()
+    const e2e = (await el.getAttribute('data-e2e')) || ''
+    if (text.includes('download') && (text.includes('transaction') || e2e.includes('extensibility'))) {
+      log('Found download element via scan: "%s" data-e2e="%s"', text, e2e)
+      await el.evaluate((el) => {
+        const anchor = el.closest('a') || el
+        anchor.click()
+      })
+      await wait(DIALOG_WAIT_TIME * 2)
+      return true
+    }
+  }
+
+  return false
+}
+
 export const download_transactions = async ({
   download_dir,
   credentials,
@@ -179,6 +392,9 @@ export const download_transactions = async ({
 
   const page = await create_page(context)
 
+  // Set up token capture early
+  const tokens = capture_tokens_from_requests(page)
+
   try {
     let authenticated = await attempt_login({ page, credentials })
 
@@ -191,248 +407,70 @@ export const download_transactions = async ({
     }
 
     log('Authenticated successfully')
-
-    // Wait on the post-login page and let the SPA fully initialize
     log('Post-login URL: %s', page.url())
     await wait(DIALOG_WAIT_TIME * 3)
 
-    let el_count = await page.locator('a, button, [role="button"]').count()
-    log('Post-login page has %d clickable elements', el_count)
-
-    // Navigate to transactions by clicking through the dashboard SPA
-    // Direct URL navigation to /Card/transactions doesn't render the SPA content
-    log('Looking for credit card account link on dashboard')
-    const clickables = page.locator('a, button, [role="button"], [role="link"]')
-    const count = await clickables.count()
-
-    // Log dashboard elements to find account links
-    for (let i = 0; i < Math.min(count, 30); i++) {
-      const el = clickables.nth(i)
-      const text = ((await el.textContent()) || '').trim().replace(/\s+/g, ' ').substring(0, 80)
-      const href = (await el.getAttribute('href')) || ''
-      if (text && text.length > 1) {
-        log('  [%d] "%s" href="%s"', i, text, href.substring(0, 60))
-      }
-    }
-
-    // Find credit card account on dashboard
-    // Dashboard shows accounts with "View Account" buttons next to each
-    // Checking accounts show "Simply Checking", credit cards show card number ending
-    // Strategy: find a card-number-like element (ending in ...XXXX) that's NOT a checking account,
-    // then click its adjacent "View Account" button
-    let found_card = false
-
-    // First pass: look for "View Account" buttons and determine which account they belong to
-    const view_account_indices = []
-    for (let i = 0; i < count; i++) {
-      const el = clickables.nth(i)
-      const text = ((await el.textContent()) || '').trim().toLowerCase()
-      if (text === 'view account') {
-        view_account_indices.push(i)
-      }
-    }
-
-    // Get text of element before each "View Account" to identify the account type
-    for (const idx of view_account_indices) {
-      if (idx > 0) {
-        const prev = clickables.nth(idx - 1)
-        const prev_text = ((await prev.textContent()) || '').trim().toLowerCase()
-        // Skip checking accounts
-        if (prev_text.includes('checking') || prev_text.includes('savings') || prev_text.includes('money market')) {
-          log('Skipping non-card account: "%s"', prev_text)
-          continue
-        }
-        // This is likely a credit card
-        const display = ((await prev.textContent()) || '').trim().replace(/\s+/g, ' ').substring(0, 60)
-        log('Found credit card: "%s" -- clicking View Account', display)
-        await clickables.nth(idx).click()
-        await wait(DIALOG_WAIT_TIME * 3)
-        log('After card click, URL: %s', page.url())
-        found_card = true
-        break
-      }
-    }
-
+    // Navigate to credit card account
+    const found_card = await navigate_to_card(page)
     if (!found_card) {
-      // Fallback: click any element with card number pattern
-      for (let i = 0; i < count; i++) {
-        const el = clickables.nth(i)
-        const text = ((await el.textContent()) || '').trim()
-        if (/\.\.\.\d{4}/.test(text) && !text.toLowerCase().includes('checking')) {
-          log('Clicking card element: "%s"', text)
-          await el.click()
-          await wait(DIALOG_WAIT_TIME * 3)
-          found_card = true
-          break
-        }
-      }
-    }
-
-    if (!found_card) {
-      log('Could not find credit card account on dashboard')
       throw new Error('Credit card account not found on Capital One dashboard')
     }
 
-    // Now on card overview page -- dismiss any overlays (CDK overlay backdrop)
-    el_count = await page.locator('a, button, [role="button"]').count()
-    log('Card page has %d elements, URL: %s', el_count, page.url())
-
-    // Dismiss overlay if present
-    const overlay = page.locator('.cdk-overlay-backdrop')
-    if (await overlay.count()) {
-      log('CDK overlay detected -- clicking to dismiss')
-      await overlay.click({ force: true })
-      await wait(1000)
+    // Extract account ID from card page URL
+    const account_id = extract_account_id(page.url())
+    if (!account_id) {
+      throw new Error('Could not extract account ID from URL: ' + page.url())
     }
+    log('Account ID: %s', account_id)
 
-    // Also try closing any popups/modals
-    const close_btns = page.locator('[aria-label*="close" i], [aria-label*="dismiss" i], button:has-text("Not now"), button:has-text("Close"), button:has-text("Got it"), button:has-text("No thanks")')
-    const close_count = await close_btns.count()
-    for (let i = 0; i < close_count; i++) {
-      const btn = close_btns.nth(i)
-      if (await btn.isVisible()) {
-        const text = ((await btn.textContent()) || '').trim()
-        log('Dismissing overlay: "%s"', text)
-        await btn.click({ force: true })
-        await wait(1000)
-      }
-    }
+    // Dismiss any overlays on the card page
+    await dismiss_overlays(page)
 
-    // Click "Payments & expenses" or "Transactions" tab
-    const tab_patterns = ['payment', 'expense', 'transaction', 'activity', 'statement']
-    const tabs = page.locator('a, button, [role="tab"]')
-    const tab_count = await tabs.count()
-    for (let i = 0; i < tab_count; i++) {
-      const tab = tabs.nth(i)
-      const text = ((await tab.textContent()) || '').trim().toLowerCase()
-      if (tab_patterns.some((p) => text.includes(p))) {
-        log('Clicking tab: "%s"', text)
-        await tab.click({ timeout: 15000 })
-        await wait(DIALOG_WAIT_TIME * 2)
-        log('After tab click, URL: %s', page.url())
-        break
-      }
-    }
-
-    // Wait for the transactions page SPA to render
-    log('Waiting for transactions SPA to render...')
-    for (let poll = 0; poll < 10; poll++) {
+    // Navigate to download page to trigger token-bearing API calls
+    // The SPA makes valid-download-dates and valid-download-file-types calls
+    // which may contain the CSRF tokens we need
+    const navigated = await navigate_to_download_page(page)
+    if (navigated) {
+      log('Navigated to download page, waiting for API calls to capture tokens...')
       await wait(DIALOG_WAIT_TIME)
-      el_count = await page.locator('a, button, [role="button"]').count()
-      log('Poll %d: %d elements, URL: %s', poll + 1, el_count, page.url())
-      if (el_count > 30) break
     }
 
-    // Look for download link/button
-    log('Looking for download control on transactions page (URL: %s)', page.url())
+    // Try API-based download (primary strategy)
+    log('Attempting API-based download')
+    const csv_data = await download_via_api({
+      page,
+      account_id,
+      from_date,
+      to_date,
+      tokens
+    })
 
-    const download_selectors = [
-      '[data-testid="download-transactions"]',
-      'a[href*="download"]',
-      'button[aria-label*="download" i]',
-      'a[aria-label*="download" i]',
-      '[data-testid*="download"]'
-    ]
+    if (!csv_data) {
+      // Try without tokens (they may not be required)
+      log('API download with tokens failed, trying without tokens')
+      const csv_data_no_tokens = await download_via_api({
+        page,
+        account_id,
+        from_date,
+        to_date,
+        tokens: {}
+      })
 
-    let download_el = null
-    for (const sel of download_selectors) {
-      const locator = page.locator(sel).first()
-      if (await locator.count()) {
-        download_el = locator
-        log('Found download control: %s', sel)
-        break
+      if (!csv_data_no_tokens) {
+        throw new Error('API-based download failed -- no CSV data received')
       }
+
+      const target_filename = create_target_filename(from_date, to_date)
+      const target_path = path.join(download_dir, target_filename)
+      fs.writeFileSync(target_path, csv_data_no_tokens)
+      log('Saved %s (%d bytes)', target_filename, csv_data_no_tokens.length)
+      return target_filename
     }
 
-    if (!download_el) {
-      // Scan all clickable elements for download-related text/attributes
-      const clickables = page.locator('a, button, [role="button"]')
-      const count = await clickables.count()
-      log('Scanning %d clickable elements for download...', count)
-      for (let i = 0; i < Math.min(count, 100); i++) {
-        const el = clickables.nth(i)
-        const text = ((await el.textContent()) || '').trim().replace(/\s+/g, ' ').substring(0, 80)
-        const aria = (await el.getAttribute('aria-label')) || ''
-        const href = (await el.getAttribute('href')) || ''
-        const testid = (await el.getAttribute('data-testid')) || ''
-        if (text.toLowerCase().includes('download') || aria.toLowerCase().includes('download') ||
-            href.includes('download') || testid.includes('download')) {
-          log('  Found candidate [%d]: text="%s" aria="%s" href="%s" testid="%s"', i, text, aria, href, testid)
-          download_el = el
-          break
-        }
-      }
-    }
-
-    if (!download_el) {
-      log('No download control found on transactions page')
-      // Log page URL and a sample of elements for debugging
-      const all_btns = page.locator('a, button')
-      const btn_count = await all_btns.count()
-      log('Page has %d links/buttons, first 15:', btn_count)
-      for (let i = 0; i < Math.min(btn_count, 15); i++) {
-        const text = ((await all_btns.nth(i).textContent()) || '').trim().replace(/\s+/g, ' ').substring(0, 60)
-        if (text) log('  "%s"', text)
-      }
-      throw new Error('Download control not found on Capital One transactions page')
-    }
-
-    await download_el.click()
-    log('Clicked download control')
-    await wait(DIALOG_WAIT_TIME)
-
-    // Select CSV format if format selector exists
-    const format_select = page.locator('#format-select, select[name*="format"]')
-    if (await format_select.count()) {
-      await format_select.selectOption('csv')
-      log('Selected CSV format')
-      await wait(1000)
-    } else {
-      log('No format selector found, proceeding with default')
-    }
-
-    // Select date range if selector exists
-    const date_range_select = page.locator('#date-range-select, select[name*="date"]')
-    if (await date_range_select.count()) {
-      // Try to select a broad range option
-      const options = await date_range_select.evaluate((el) =>
-        Array.from(el.options).map((o) => ({ value: o.value, text: o.text.trim() }))
-      )
-      log('Date range options: %O', options)
-
-      const custom_opt = options.find((o) => /custom|all|year/i.test(o.value + o.text))
-      if (custom_opt) {
-        await date_range_select.selectOption(custom_opt.value)
-        log('Selected date range: %s', custom_opt.text)
-      }
-      await wait(1000)
-    } else {
-      log('No date range selector found, proceeding with default range')
-    }
-
-    // Click download submit button
-    const submit = page.locator('[data-testid="download-submit"], button:has-text("Download"), button[type="submit"]').first()
-    if (await submit.count()) {
-      log('Clicking download submit')
-      await submit.click()
-    }
-
-    // Wait for the CSV file to appear
-    log('Waiting for CSV file download...')
-    const downloaded_file = await wait_for_csv_file(download_dir, DOWNLOAD_TIMEOUT)
-
-    if (!downloaded_file) {
-      throw new Error('Downloaded file not found after waiting')
-    }
-
-    // Rename to structured filename
     const target_filename = create_target_filename(from_date, to_date)
-    const downloaded_path = path.join(download_dir, downloaded_file)
     const target_path = path.join(download_dir, target_filename)
-
-    fs.renameSync(downloaded_path, target_path)
-    log('Renamed %s to %s', downloaded_file, target_filename)
-
+    fs.writeFileSync(target_path, csv_data)
+    log('Saved %s (%d bytes)', target_filename, csv_data.length)
     return target_filename
   } finally {
     await context.close()
