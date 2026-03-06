@@ -36,7 +36,31 @@ const attempt_login = async ({ page, credentials }) => {
   await email_locator.fill(credentials.username)
   await wait(1000)
 
-  const password_locator = page.locator('#password')
+  // Home Depot may have a multi-step login (email first, then password)
+  let password_locator = page.locator('#password')
+  if (!(await password_locator.isVisible().catch(() => false))) {
+    // Try submitting email first
+    const continue_button = page.locator('button[type="submit"]')
+    if (await continue_button.count()) {
+      await continue_button.click()
+      log('Submitted email, waiting for password step')
+      await wait(DIALOG_WAIT_TIME)
+    }
+
+    // Wait for password field -- may have different selector after email step
+    password_locator = page.locator('#password, input[type="password"]')
+    try {
+      await password_locator.waitFor({ timeout: 15000 })
+    } catch {
+      log('Password field not found after email submission. Current URL: %s', page.url())
+      const visible_text = await page.locator('body').innerText().catch(() => '')
+      if (visible_text.includes('captcha') || visible_text.includes('robot') || visible_text.includes('verify')) {
+        log('Captcha or verification detected -- requires manual completion')
+      }
+      return false
+    }
+  }
+
   await password_locator.fill(credentials.password)
   await wait(1000)
 
