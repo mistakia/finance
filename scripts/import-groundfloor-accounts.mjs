@@ -3,8 +3,9 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, groundfloor, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-groundfloor-accounts')
@@ -67,6 +68,21 @@ const import_groundfloor_accounts = async ({ credentials, publicKey }) => {
   if (inserts.length) {
     log(`saving ${inserts.length} groundfloor holdings`)
     await db('holdings').insert(inserts).onConflict('link').merge()
+
+    const positions = inserts.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      cost_basis: h.cost_basis
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'groundfloor',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 
@@ -79,7 +95,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.groundfloor
+    const result = await get_connection_credentials({ connection_type: 'groundfloor', public_key: publicKey })
+    const { credentials } = result
     await import_groundfloor_accounts({ credentials, publicKey })
   } catch (err) {
     error = err

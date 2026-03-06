@@ -12,7 +12,7 @@ const parse_date = (date_str) => {
   return date_str
 }
 
-const generate_transaction_id = ({ transaction, institution }) => {
+const generate_transaction_id = ({ transaction, institution, index = 0 }) => {
   const components = [
     institution,
     transaction['Transaction Date'],
@@ -20,7 +20,8 @@ const generate_transaction_id = ({ transaction, institution }) => {
     transaction.Amount,
     transaction.Description
   ].filter(Boolean)
-  return components.join('_')
+  const base = components.join('_')
+  return index > 0 ? `${base}_${index}` : base
 }
 
 export const parse_transactions = async ({ file_path, owner }) => {
@@ -38,6 +39,7 @@ export const parse_transactions = async ({ file_path, owner }) => {
   }
 
   const transactions = []
+  const seen_links = new Map()
 
   for (const record of records) {
     if (!record || !record['Transaction Date'] || !record.Amount) continue
@@ -47,9 +49,15 @@ export const parse_transactions = async ({ file_path, owner }) => {
 
     const date = parse_date(record['Transaction Date'])
     const unix_timestamp = Math.floor(dayjs(date).valueOf() / 1000)
+
+    // Handle duplicate transactions (same date, amount, description) by appending index
+    const base_id = generate_transaction_id({ transaction: record, institution })
+    const dup_count = seen_links.get(base_id) || 0
+    seen_links.set(base_id, dup_count + 1)
     const transaction_id = generate_transaction_id({
       transaction: record,
-      institution
+      institution,
+      index: dup_count
     })
 
     const merchant_name = finance_config.format_merchant_name({

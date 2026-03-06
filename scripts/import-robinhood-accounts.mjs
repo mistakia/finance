@@ -4,7 +4,6 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import {
   isMain,
   getSession,
@@ -12,6 +11,7 @@ import {
   robinhood,
   addAsset
 } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
@@ -117,9 +117,10 @@ const main = async () => {
     }
 
     const session = await getSession()
-    const credentials = config.links.robinhood
-    const result = await run({ session, credentials, publicKey, cli: true })
-    await saveSession(result)
+    const result = await get_connection_credentials({ connection_type: 'robinhood', public_key: publicKey })
+    const { credentials } = result
+    const run_result = await run({ session, credentials, publicKey, cli: true })
+    await saveSession(run_result)
   } catch (err) {
     error = err
     console.log(error)

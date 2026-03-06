@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, addAsset, ethereum, wait } from '#libs-shared'
+import { get_all_connection_credentials } from './get-connection-credentials.mjs'
 import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
@@ -87,8 +87,14 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const credentials = config.links.ethereum
-    await run({ credentials, publicKey })
+    const results = await get_all_connection_credentials({ connection_type: 'ethereum', public_key: publicKey })
+    if (!results.length) {
+      console.log('no ethereum connections found')
+      return
+    }
+    for (const { credentials } of results) {
+      await run({ credentials, publicKey })
+    }
   } catch (err) {
     error = err
     console.log(error)

@@ -3,8 +3,8 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, fidelity } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { parse_transactions } from '../libs-server/parsers/fidelity.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
@@ -52,11 +52,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.fidelity
-    if (!credentials || !credentials.username || !credentials.password) {
-      console.log('Missing Fidelity credentials in config')
-      return
-    }
+    const result = await get_connection_credentials({ connection_type: 'fidelity', public_key: publicKey })
+    const { credentials } = result
 
     await run({ credentials, publicKey })
   } catch (err) {

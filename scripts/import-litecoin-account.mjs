@@ -3,8 +3,9 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, litecoin, addAsset } from '#libs-shared'
+import { get_all_connection_credentials } from './get-connection-credentials.mjs'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-litecoin-account')
@@ -31,6 +32,16 @@ const import_litecoin_account = async ({ credentials, publicKey }) => {
 
     log('saving ltc holding')
     await db('holdings').insert(insert).onConflict('link').merge()
+
+    const assertions = create_balance_assertions({
+      positions: [{ symbol: 'LTC', quantity: balance, address: credentials.address }],
+      institution: 'litecoin',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 
@@ -42,8 +53,14 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const credentials = config.links.litecoin
-    await import_litecoin_account({ credentials, publicKey })
+    const results = await get_all_connection_credentials({ connection_type: 'litecoin', public_key: publicKey })
+    if (!results.length) {
+      console.log('no litecoin connections found')
+      return
+    }
+    for (const { credentials } of results) {
+      await import_litecoin_account({ credentials, publicKey })
+    }
   } catch (err) {
     error = err
     console.log(error)

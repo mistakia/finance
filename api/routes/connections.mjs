@@ -100,6 +100,8 @@ router.post('/', async (req, res) => {
       })
       .onConflict('id')
       .merge({
+        public_key,
+        connection_type,
         encrypted_params,
         encrypted_session,
         updated_at: db.fn.now()

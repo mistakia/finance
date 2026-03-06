@@ -1,6 +1,30 @@
 import fetch from 'node-fetch'
 import config from '#config'
 
+const graphql_query = async ({ token, query, variables, operationName }) => {
+  const body = JSON.stringify({
+    query,
+    ...(variables ? { variables } : {}),
+    ...(operationName ? { operationName } : {})
+  })
+  const res = await fetch(config.groundfloor_api, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      authorization: `Bearer ${token}`
+    },
+    body
+  })
+
+  const data = await res.json()
+
+  if (data && data.data) {
+    return data.data
+  }
+
+  return null
+}
+
 export const getStairsAccount = async ({ token }) => {
   const query = `
 query YieldInvestorProfile {
@@ -46,23 +70,8 @@ fragment yieldInvestorProfileFragment on YieldInvestorProfile {
   __typename
 }
   `
-  const body = JSON.stringify({ query })
-  const res = await fetch(config.groundfloor_api, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body
-  })
-
-  const data = await res.json()
-
-  if (data && data.data) {
-    return data.data.yieldInvestorProfile
-  }
-
-  return null
+  const data = await graphql_query({ token, query })
+  return data ? data.yieldInvestorProfile : null
 }
 
 export const getUserAccounts = async ({ token }) => {
@@ -90,24 +99,43 @@ fragment accountFragment on Account {
   type
 }
   `
-  const body = JSON.stringify({ query })
+  const data = await graphql_query({ token, query })
+  return data ? data.fetchUserByClient : null
+}
 
-  const res = await fetch(config.groundfloor_api, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body
-  })
+export const getTransactionHistory = async ({ token }) => {
+  const user_data = await getUserAccounts({ token })
 
-  const data = await res.json()
-
-  if (data && data.data) {
-    return data.data.fetchUserByClient
+  if (!user_data) {
+    return null
   }
 
-  return null
+  const investor_account = user_data.myAccounts.find(
+    (a) => a.type === 'INVESTOR'
+  )
+  if (!investor_account) return null
+
+  const query = `
+query transactionHistory($accountSecureId: ID!) {
+  transactionHistory(accountSecureId: $accountSecureId) {
+    id
+    type
+    amount
+    createdAt
+    description
+    status
+    loanId
+    loanName
+  }
+}
+  `
+  const data = await graphql_query({
+    token,
+    query,
+    variables: { accountSecureId: investor_account.id },
+    operationName: 'transactionHistory'
+  })
+  return data ? data.transactionHistory : null
 }
 
 export const getGroundfloorBalances = async ({ token }) => {
@@ -120,6 +148,8 @@ export const getGroundfloorBalances = async ({ token }) => {
   const investor_account = user_data.myAccounts.find(
     (a) => a.type === 'INVESTOR'
   )
+  if (!investor_account) return null
+
   const query = `
 query startPageAccountSummary($accountSecureId: ID!) {
   startPageAccountSummary(accountSecureId: $accountSecureId) {
@@ -129,25 +159,11 @@ query startPageAccountSummary($accountSecureId: ID!) {
   }
 }
   `
-  const body = JSON.stringify({
+  const data = await graphql_query({
+    token,
     query,
     variables: { accountSecureId: investor_account.id },
     operationName: 'startPageAccountSummary'
   })
-  const res = await fetch(config.groundfloor_api, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body
-  })
-
-  const data = await res.json()
-
-  if (data && data.data) {
-    return data.data.startPageAccountSummary
-  }
-
-  return null
+  return data ? data.startPageAccountSummary : null
 }

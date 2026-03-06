@@ -32,14 +32,6 @@ export const CONNECTIONS = [
     params_id: 'portfolio_token'
   },
   {
-    id: 'peerstreet',
-    name: 'Peerstreet',
-    url: 'https://www.peerstreet.com/',
-    jobs: ['peerstreet/accounts'],
-    params: ['username', 'password'],
-    params_id: 'username'
-  },
-  {
     id: 'gemini',
     name: 'Gemini',
     jobs: ['gemini/accounts'],
@@ -118,5 +110,85 @@ export const CONNECTIONS = [
     jobs: ['interactive_brokers/accounts'],
     params: ['host', 'docker_port', 'ibkr_port'],
     params_id: 'host'
+  },
+  {
+    id: 'fidelity',
+    name: 'Fidelity',
+    url: 'https://www.fidelity.com/',
+    jobs: ['fidelity/accounts'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'chase',
+    name: 'Chase',
+    url: 'https://www.chase.com/',
+    jobs: ['chase/transactions'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'capital-one',
+    name: 'Capital One',
+    url: 'https://www.capitalone.com/',
+    jobs: ['capital-one/transactions'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'american-express',
+    name: 'American Express',
+    url: 'https://www.americanexpress.com/',
+    jobs: ['american-express/transactions'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'zcash',
+    name: 'Zcash',
+    url: 'https://z.cash/',
+    jobs: ['zcash/accounts'],
+    params: ['address'],
+    params_id: 'address'
+  },
+  {
+    id: 'home-depot',
+    name: 'Home Depot',
+    url: 'https://www.homedepot.com/',
+    jobs: ['home-depot/enrichment'],
+    params: ['username', 'password'],
+    params_id: 'username'
+  },
+  {
+    id: 'amazon',
+    name: 'Amazon',
+    url: 'https://www.amazon.com/',
+    jobs: ['amazon/enrichment'],
+    params: ['email', 'password'],
+    params_id: 'email'
+  },
+  {
+    id: 'solana',
+    name: 'Solana',
+    url: 'https://solana.com/',
+    jobs: ['solana/accounts'],
+    params: ['address'],
+    params_id: 'address'
+  },
+  {
+    id: 'kraken',
+    name: 'Kraken',
+    url: 'https://www.kraken.com/',
+    jobs: ['kraken/accounts'],
+    params: ['key', 'secret'],
+    params_id: 'key'
+  },
+  {
+    id: 'binance-us',
+    name: 'Binance.US',
+    url: 'https://www.binance.us/',
+    jobs: ['binance-us/accounts'],
+    params: ['key', 'secret'],
+    params_id: 'key'
   }
 ]

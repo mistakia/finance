@@ -10,7 +10,6 @@ export { default as addAsset } from './add-asset.mjs'
 export { default as getType } from './get-type.mjs'
 export * as allyInvest from './ally-invest.mjs'
 export * as allyBank from './ally-bank.mjs'
-export * as peerstreet from './peerstreet.mjs'
 export * as gemini from './gemini.mjs'
 export * as bitcoin from './bitcoin.mjs'
 export * as nano from './nano.mjs'
@@ -22,6 +21,7 @@ export * as stellar from './stellar.mjs'
 export * as litecoin from './litecoin.mjs'
 export * as finnhub from './finnhub.mjs'
 export * as fidelity from './fidelity.mjs'
+export * as zcash from './zcash.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')

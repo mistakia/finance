@@ -3,8 +3,9 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import config from '#config'
 import { isMain, allyInvest, addAsset } from '#libs-shared'
+import { get_connection_credentials } from './get-connection-credentials.mjs'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-ally-invest')
@@ -59,6 +60,21 @@ const run = async ({ credentials, publicKey }) => {
 
     await db('holdings').insert(inserts).onConflict('link').merge()
     log(`inserted ${inserts.length} ally invest holdings`)
+
+    const positions = inserts.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      cost_basis: h.cost_basis
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'ally-invest',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 
@@ -73,7 +89,8 @@ const main = async () => {
       return
     }
 
-    const credentials = config.links.ally
+    const result = await get_connection_credentials({ connection_type: 'ally-invest', public_key: publicKey })
+    const { credentials } = result
     await run({ credentials, publicKey })
   } catch (err) {
     error = err

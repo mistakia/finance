@@ -156,7 +156,7 @@ export default [
   // Investments
   {
     pattern:
-      /peerstreet|vanguard|fidelity|schwab|robinhood|wealthfront|coinbase|kraken|treas 310|treasury|composer/i,
+      /vanguard|fidelity|schwab|robinhood|wealthfront|coinbase|kraken|treas 310|treasury|composer/i,
     categories: ['investments']
   },
 
