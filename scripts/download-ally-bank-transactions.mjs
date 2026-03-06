@@ -15,7 +15,7 @@ debug.enable('download-ally-bank-transactions,ally-bank')
 
 const SOURCE_DIR = path.join(
   os.homedir(),
-  'user-base/finance/source-exports/ally-bank'
+  'user-base/data/finance/ally-bank'
 )
 
 const main = async () => {

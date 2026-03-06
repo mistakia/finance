@@ -17,7 +17,7 @@ debug.enable('download-capital-one,capital-one')
 
 const SOURCE_DIR = path.join(
   os.homedir(),
-  'user-base/finance/source-exports/capital-one'
+  'user-base/data/finance/capital-one'
 )
 
 const import_csv_files = async ({ directory, owner }) => {

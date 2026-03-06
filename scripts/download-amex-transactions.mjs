@@ -17,7 +17,7 @@ debug.enable('download-amex,american-express')
 
 const SOURCE_DIR = path.join(
   os.homedir(),
-  'user-base/finance/source-exports/american-express'
+  'user-base/data/finance/american-express'
 )
 
 const import_csv_files = async ({ directory, owner }) => {
