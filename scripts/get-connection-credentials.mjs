@@ -35,6 +35,26 @@ export const get_connection_credentials = async ({ connection_type, public_key }
   return null
 }
 
+export const get_all_connection_credentials = async ({ connection_type, public_key }) => {
+  const api_url = get_api_url(config)
+  const url = `${api_url}/connections?publicKey=${public_key}`
+
+  const connections = await fetch_json(url)
+  const matches = connections.filter((c) => c.connection_type === connection_type)
+
+  if (!matches.length) {
+    return []
+  }
+
+  return matches.map((match) => {
+    const credentials = {}
+    for (const param of match.params) {
+      credentials[param.field] = param.value
+    }
+    return { credentials, session: match.session }
+  })
+}
+
 const main = async () => {
   const args = process.argv.slice(2)
   const connection_type = args.find((a) => !a.startsWith('--'))

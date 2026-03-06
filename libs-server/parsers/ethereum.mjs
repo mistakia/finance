@@ -82,3 +82,43 @@ export const parse_token_transactions = ({ data, owner, address }) => {
     })
   })
 }
+
+export const parse_internal_transactions = ({ data, owner, address }) => {
+  return data.map((tx) => {
+    const amount = convert_wei_to_eth(tx.value)
+    const tx_id = `${tx.hash}_internal_${tx.traceId || 0}`
+
+    return build_transaction({
+      tx, owner, address,
+      tx_id, amount, symbol: 'ETH',
+      source_file: 'ethereum-etherscan-txlistinternal'
+    })
+  })
+}
+
+export const parse_beacon_withdrawals = ({ data, owner, address }) => {
+  return data.map((tx) => {
+    const amount = convert_wei_to_eth(tx.amount)
+    const date = dayjs.unix(parseInt(tx.timestamp, 10))
+    const tx_id = `beacon_${tx.withdrawalIndex}`
+    const institution = 'ethereum'
+    const account_link = `/${owner}/${institution}/wallet/${address}`
+
+    return {
+      link: `/${owner}/${institution}/wallet/${address}/tx/${tx_id}`,
+      transaction_type: 'staking_income',
+      transaction_unix: date.unix(),
+      transaction_date: date.format('YYYY-MM-DD'),
+      tx_id,
+      description: `Beacon chain withdrawal ${amount} ETH`,
+      original_data: tx,
+      source_file: 'ethereum-etherscan-beacon',
+      from_link: `/${owner}/${institution}/beacon/validator/${tx.validatorIndex}`,
+      from_amount: -parseFloat(amount),
+      from_symbol: 'ETH',
+      to_link: account_link,
+      to_amount: parseFloat(amount),
+      to_symbol: 'ETH'
+    }
+  })
+}

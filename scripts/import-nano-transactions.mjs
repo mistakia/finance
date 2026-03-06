@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import { isMain, nano } from '#libs-shared'
-import { get_connection_credentials } from './get-connection-credentials.mjs'
+import { get_all_connection_credentials } from './get-connection-credentials.mjs'
 import { parse_transactions } from '../libs-server/parsers/nano.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
@@ -37,9 +37,14 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const result = await get_connection_credentials({ connection_type: 'nano', public_key: publicKey })
-    const { credentials } = result
-    await run({ credentials, publicKey })
+    const results = await get_all_connection_credentials({ connection_type: 'nano', public_key: publicKey })
+    if (!results.length) {
+      console.log('no nano connections found')
+      return
+    }
+    for (const { credentials } of results) {
+      await run({ credentials, publicKey })
+    }
   } catch (err) {
     console.log(err)
   }

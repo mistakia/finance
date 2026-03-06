@@ -30,5 +30,25 @@ export const getTokenTransactions = async ({ address }) => {
   return []
 }
 
+export const getInternalTransactions = async ({ address }) => {
+  const url = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${config.etherscan_api || config.ethplorer_api || ''}`
+  const res = await fetch(url)
+  const json = await res.json()
+  if (json && json.status === '1' && json.result) {
+    return json.result
+  }
+  return []
+}
+
+export const getBeaconWithdrawals = async ({ address }) => {
+  const url = `https://api.etherscan.io/api?module=account&action=txsBeaconWithdrawal&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${config.etherscan_api || config.ethplorer_api || ''}`
+  const res = await fetch(url)
+  const json = await res.json()
+  if (json && json.status === '1' && json.result) {
+    return json.result
+  }
+  return []
+}
+
 export const convert = (input, decimals) =>
   BigNumber(input).shiftedBy(-decimals).toFixed(decimals, 1)

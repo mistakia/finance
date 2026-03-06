@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
 import { isMain, litecoin, addAsset } from '#libs-shared'
-import { get_connection_credentials } from './get-connection-credentials.mjs'
+import { get_all_connection_credentials } from './get-connection-credentials.mjs'
 import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
@@ -53,9 +53,14 @@ const main = async () => {
       console.log('missing --public-key')
       return
     }
-    const result = await get_connection_credentials({ connection_type: 'litecoin', public_key: publicKey })
-    const { credentials } = result
-    await import_litecoin_account({ credentials, publicKey })
+    const results = await get_all_connection_credentials({ connection_type: 'litecoin', public_key: publicKey })
+    if (!results.length) {
+      console.log('no litecoin connections found')
+      return
+    }
+    for (const { credentials } of results) {
+      await import_litecoin_account({ credentials, publicKey })
+    }
   } catch (err) {
     error = err
     console.log(error)

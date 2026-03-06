@@ -166,5 +166,29 @@ export const CONNECTIONS = [
     jobs: ['amazon/enrichment'],
     params: ['email', 'password'],
     params_id: 'email'
+  },
+  {
+    id: 'solana',
+    name: 'Solana',
+    url: 'https://solana.com/',
+    jobs: ['solana/accounts'],
+    params: ['address'],
+    params_id: 'address'
+  },
+  {
+    id: 'kraken',
+    name: 'Kraken',
+    url: 'https://www.kraken.com/',
+    jobs: ['kraken/accounts'],
+    params: ['key', 'secret'],
+    params_id: 'key'
+  },
+  {
+    id: 'binance-us',
+    name: 'Binance.US',
+    url: 'https://www.binance.us/',
+    jobs: ['binance-us/accounts'],
+    params: ['key', 'secret'],
+    params_id: 'key'
   }
 ]
