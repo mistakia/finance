@@ -9,40 +9,11 @@ const log = debug('american-express')
 
 const DIALOG_WAIT_TIME = 3000
 const AUTH_WAIT_TIMEOUT = 180000
-const DOWNLOAD_TIMEOUT = 30000
-const DOWNLOAD_CHECK_INTERVAL = 1000
 
 const DEFAULT_PROFILE_DIR = path.join(os.homedir(), '.amex-stealth-profile')
 
-const DOWNLOADED_FILE_NAME_PATTERN = /^ofx.*\.csv$|^activity.*\.csv$/i
-
 const create_target_filename = (from_date, to_date) => {
   return `american_express_card_${from_date}_to_${to_date}.csv`
-}
-
-const wait_for_csv_file = async (download_dir, timeout) => {
-  const start_time = Date.now()
-  while (Date.now() - start_time < timeout) {
-    const files = fs.readdirSync(download_dir)
-    const csv_files = files
-      .filter(
-        (file) =>
-          DOWNLOADED_FILE_NAME_PATTERN.test(file) ||
-          (file.endsWith('.csv') && !file.endsWith('.crdownload'))
-      )
-      .map((file) => ({
-        name: file,
-        created: fs.statSync(path.join(download_dir, file)).birthtime
-      }))
-      .sort((a, b) => b.created - a.created)
-
-    if (csv_files.length > 0) {
-      return csv_files[0].name
-    }
-
-    await wait(DOWNLOAD_CHECK_INTERVAL)
-  }
-  return null
 }
 
 const is_authenticated = (url) => {
@@ -112,6 +83,128 @@ const wait_for_authentication = async (page) => {
   return false
 }
 
+const extract_account_key = async (page) => {
+  // Set up request interception to capture account_key from SPA API calls
+  let captured_key = null
+  const capture_handler = (request) => {
+    const req_url = request.url()
+    const key_match = req_url.match(/account_key=([A-F0-9]{20,})/)
+    if (key_match) {
+      captured_key = key_match[1]
+      log('Captured account_key from request: %s', captured_key)
+    }
+  }
+
+  page.on('request', capture_handler)
+
+  // Navigate to activity page -- the SPA will make API calls containing account_key
+  log('Navigating to activity page to extract account_key')
+  await page.goto('https://global.americanexpress.com/activity', {
+    waitUntil: 'domcontentloaded',
+    timeout: 60000
+  })
+
+  // Wait for SPA to load and make API calls
+  for (let poll = 0; poll < 10; poll++) {
+    await wait(DIALOG_WAIT_TIME)
+    if (captured_key) break
+    log('Waiting for account_key... poll %d', poll + 1)
+  }
+
+  page.off('request', capture_handler)
+
+  if (captured_key) {
+    return captured_key
+  }
+
+  // Check URL for account_key parameter
+  const url = new URL(page.url())
+  const url_key = url.searchParams.get('account_key')
+  if (url_key && url_key.length > 10) {
+    log('Extracted account_key from URL: %s', url_key)
+    return url_key
+  }
+
+  // Fallback: extract from page HTML content (avoids eval which Amex blocks)
+  const html = await page.content()
+  const html_match = html.match(/account_key[=:]["' ]+([A-F0-9]{20,})/i)
+  if (html_match) {
+    log('Extracted account_key from page HTML: %s', html_match[1])
+    return html_match[1]
+  }
+
+  log('Could not extract account_key')
+  return null
+}
+
+const download_via_api = async ({ page, account_key, to_date }) => {
+  // Build download URL matching the Amex SPA pattern
+  const params = new URLSearchParams({
+    file_format: 'csv',
+    limit: 'ALL',
+    statement_end_date: to_date,
+    additional_fields: 'true',
+    status: 'posted',
+    account_key,
+    client_id: 'AmexAPI'
+  })
+
+  const url = `https://global.americanexpress.com/api/servicing/v1/financials/documents?${params.toString()}`
+  log('Downloading via API: %s', url)
+
+  // Amex blocks eval in their SPA, so page.evaluate(fetch) won't work.
+  // Instead, navigate directly to the API URL -- the browser session cookies
+  // will be sent automatically. The response is the CSV file content.
+  let csv_body = null
+
+  // Set up response capture before navigation
+  const response_promise = page.waitForResponse(
+    (response) => response.url().includes('/financials/documents'),
+    { timeout: 30000 }
+  ).catch(() => null)
+
+  // Navigate to the download URL
+  await page.goto(url, {
+    waitUntil: 'domcontentloaded',
+    timeout: 30000
+  }).catch(() => {
+    // Navigation may fail if it triggers a download instead of page load
+  })
+
+  const api_response = await response_promise
+  if (api_response) {
+    const status = api_response.status()
+    csv_body = await api_response.text().catch(() => null)
+    log('API response: status=%d, length=%d', status, csv_body ? csv_body.length : 0)
+  }
+
+  if (!csv_body) {
+    // Fallback: try to get the page content directly (browser may have rendered the CSV)
+    csv_body = await page.content().catch(() => null)
+    if (csv_body) {
+      // Strip any HTML wrapper if the browser rendered the CSV as HTML
+      const pre_match = csv_body.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i)
+      if (pre_match) {
+        csv_body = pre_match[1]
+      } else if (csv_body.startsWith('<!DOCTYPE') || csv_body.startsWith('<html')) {
+        // The page rendered as HTML, not CSV -- extract text content
+        csv_body = csv_body.replace(/<[^>]+>/g, '').trim()
+      }
+    }
+  }
+
+  if (csv_body && csv_body.length > 0) {
+    if (csv_body.includes('Date') || csv_body.includes('Amount') ||
+        (csv_body.includes(',') && csv_body.includes('\n'))) {
+      log('API returned CSV data (%d bytes)', csv_body.length)
+      return csv_body
+    }
+    log('API response does not look like CSV: %s', csv_body.substring(0, 300))
+  }
+
+  return null
+}
+
 export const download_transactions = async ({
   download_dir,
   credentials,
@@ -163,89 +256,29 @@ export const download_transactions = async ({
 
     log('Authenticated successfully')
 
-    // Navigate directly to activity download page
-    log('Navigating to activity download page')
-    await page.goto('https://global.americanexpress.com/activity/download', {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000
+    // Extract account_key from the activity page
+    const account_key = await extract_account_key(page)
+    if (!account_key) {
+      throw new Error('Could not determine Amex account key')
+    }
+
+    // Try API-based download (primary strategy)
+    log('Attempting API-based download')
+    const csv_data = await download_via_api({
+      page,
+      account_key,
+      to_date
     })
-    await wait(DIALOG_WAIT_TIME * 2)
 
-    // Select CSV format
-    const format_select = page.locator('#selectfiletype, select[name*="format"]')
-    if (await format_select.count()) {
-      const options = await format_select.evaluate((el) =>
-        Array.from(el.options).map((o) => ({ value: o.value, text: o.text.trim() }))
-      )
-      log('Format options: %O', options)
-
-      const csv_opt = options.find((o) => /csv/i.test(o.value + o.text))
-      if (csv_opt) {
-        await format_select.selectOption(csv_opt.value)
-        log('Selected CSV format')
-      }
-      await wait(1000)
-    } else {
-      log('No format selector found, proceeding with default')
-    }
-
-    // Select date range/period
-    const period_select = page.locator('#selectperiod, select[name*="period"], select[name*="date"]')
-    if (await period_select.count()) {
-      const options = await period_select.evaluate((el) =>
-        Array.from(el.options).map((o) => ({ value: o.value, text: o.text.trim() }))
-      )
-      log('Period options: %O', options)
-
-      // Prefer YTD or custom range
-      const target = options.find((o) => /year.*date|ytd|custom|all/i.test(o.value + o.text))
-      if (target) {
-        await period_select.selectOption(target.value)
-        log('Selected period: %s', target.text)
-      }
-      await wait(1000)
-    } else {
-      log('No period selector found, proceeding with default range')
-    }
-
-    // Set up download event listener BEFORE clicking submit
-    const download_promise = page
-      .waitForEvent('download', { timeout: DOWNLOAD_TIMEOUT })
-      .catch(() => null)
-
-    // Click download button
-    const submit = page.locator('#btnDownload, button:has-text("Download"), [data-testid="download-submit"]').first()
-    if (await submit.count()) {
-      log('Clicking download button')
-      await submit.click()
-    } else {
-      log('No download button found')
+    if (!csv_data) {
+      throw new Error('API-based download failed -- no CSV data received')
     }
 
     const target_filename = create_target_filename(from_date, to_date)
     const target_path = path.join(download_dir, target_filename)
-
-    // Wait for Playwright download event
-    log('Waiting for download event...')
-    const download = await download_promise
-
-    if (download) {
-      await download.saveAs(target_path)
-      log('Saved download as %s', target_filename)
-      return target_filename
-    }
-
-    // Fallback: check download_dir for any new CSV files
-    log('No Playwright download event -- checking directory for CSV files')
-    const downloaded_file = await wait_for_csv_file(download_dir, DOWNLOAD_TIMEOUT)
-    if (downloaded_file) {
-      const downloaded_path = path.join(download_dir, downloaded_file)
-      fs.renameSync(downloaded_path, target_path)
-      log('Found and renamed %s to %s', downloaded_file, target_filename)
-      return target_filename
-    }
-
-    throw new Error('Download failed -- no CSV file received')
+    fs.writeFileSync(target_path, csv_data)
+    log('Saved %s (%d bytes)', target_filename, csv_data.length)
+    return target_filename
   } finally {
     await context.close()
     log('Browser closed')
