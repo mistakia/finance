@@ -1,32 +1,23 @@
 import debug from 'debug'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 
-import { getPage } from './puppeteer.mjs'
-import { wait } from '#libs-shared'
+import { launch_persistent_context, create_page, wait } from './stealth-browser.mjs'
 
 const log = debug('american-express')
 
-// Constants for timeouts and intervals
+const DIALOG_WAIT_TIME = 3000
+const AUTH_WAIT_TIMEOUT = 180000
 const DOWNLOAD_TIMEOUT = 30000
 const DOWNLOAD_CHECK_INTERVAL = 1000
-const PAGE_LOAD_TIMEOUT = 60000
-const DIALOG_WAIT_TIME = 3000
-const INITIAL_PAGE_WAIT = 10000
-const MOUSE_MOVE_WAIT = 1000
 
-// Constants for file handling
+const DEFAULT_PROFILE_DIR = path.join(os.homedir(), '.amex-stealth-profile')
+
 const DOWNLOADED_FILE_NAME_PATTERN = /^ofx.*\.csv$|^activity.*\.csv$/i
 
-// Constants for selectors
-const SELECTORS = {
-  USERNAME_INPUT: '#eliloUserID',
-  PASSWORD_INPUT: '#eliloPassword',
-  SIGN_IN_BUTTON: '#loginSubmit',
-  DOWNLOAD_LINK: 'a[title="Download your transactions"]',
-  PERIOD_SELECT: '#selectperiod',
-  FORMAT_SELECT: '#selectfiletype',
-  DOWNLOAD_SUBMIT: '#btnDownload'
+const create_target_filename = (from_date, to_date) => {
+  return `american_express_card_${from_date}_to_${to_date}.csv`
 }
 
 const wait_for_csv_file = async (download_dir, timeout) => {
@@ -54,8 +45,71 @@ const wait_for_csv_file = async (download_dir, timeout) => {
   return null
 }
 
-const create_target_filename = (from_date, to_date) => {
-  return `american_express_card_${from_date}_to_${to_date}.csv`
+const is_authenticated = (url) => {
+  return (
+    url.includes('/dashboard') ||
+    url.includes('/activity') ||
+    url.includes('/summary')
+  )
+}
+
+const attempt_login = async ({ page, credentials }) => {
+  log('Navigating to American Express login')
+  await page.goto('https://www.americanexpress.com/en-us/account/login', {
+    waitUntil: 'domcontentloaded',
+    timeout: 60000
+  })
+  await wait(DIALOG_WAIT_TIME * 2)
+
+  if (is_authenticated(page.url())) {
+    log('Already authenticated via session cookies')
+    return true
+  }
+
+  const username_input = page.locator('#eliloUserID')
+  try {
+    await username_input.waitFor({ timeout: 15000 })
+  } catch {
+    log('No login form found')
+    return false
+  }
+
+  await username_input.fill(credentials.username)
+  await wait(1000)
+
+  const password_input = page.locator('#eliloPassword')
+  await password_input.fill(credentials.password)
+  await wait(1000)
+
+  const signin_button = page.locator('#loginSubmit')
+  await signin_button.click()
+  log('Submitted login form')
+
+  try {
+    await page.waitForURL(
+      (url) => is_authenticated(url.toString()),
+      { timeout: 30000 }
+    )
+    return true
+  } catch {
+    log('Did not reach dashboard after login -- may need 2FA')
+  }
+
+  return is_authenticated(page.url())
+}
+
+const wait_for_authentication = async (page) => {
+  log('Waiting for manual authentication (2FA) -- up to 3 minutes')
+  const start = Date.now()
+  while (Date.now() - start < AUTH_WAIT_TIMEOUT) {
+    if (is_authenticated(page.url())) {
+      log('Authentication detected (URL: %s)', page.url())
+      return true
+    }
+    await wait(DIALOG_WAIT_TIME)
+  }
+  log('Authentication timeout. Last URL: %s', page.url())
+  return false
 }
 
 export const download_transactions = async ({
@@ -70,12 +124,9 @@ export const download_transactions = async ({
   }
 
   if (!credentials || !credentials.username || !credentials.password) {
-    throw new Error(
-      'American Express credentials (username, password) are required'
-    )
+    throw new Error('American Express credentials (username, password) are required')
   }
 
-  // Set default dates if not provided
   if (!from_date) {
     const current_year = new Date().getFullYear()
     from_date = `${current_year}-01-01`
@@ -85,112 +136,90 @@ export const download_transactions = async ({
     to_date = new Date().toISOString().split('T')[0]
   }
 
-  // Ensure download directory exists
   if (!fs.existsSync(download_dir)) {
     fs.mkdirSync(download_dir, { recursive: true })
   }
 
-  log('Launching browser')
-  const { page, browser } = await getPage(
-    'https://www.americanexpress.com/en-us/account/login',
-    {
-      webdriver: false,
-      chrome: false,
-      notifications: false,
-      plugins: false,
-      languages: false,
-      user_data_dir
-    }
-  )
+  const profile_dir = user_data_dir || DEFAULT_PROFILE_DIR
+
+  log('Launching stealth browser with persistent profile: %s', profile_dir)
+  const context = await launch_persistent_context({
+    user_data_dir: profile_dir,
+    headless: false
+  })
+
+  const page = await create_page(context)
 
   try {
-    await wait(INITIAL_PAGE_WAIT)
+    let authenticated = await attempt_login({ page, credentials })
 
-    // Set download behavior
-    const client = await page.createCDPSession()
-    await client.send('Browser.setDownloadBehavior', {
-      behavior: 'allow',
-      downloadPath: download_dir,
-      eventsEnabled: true
-    })
-
-    // Login
-    log('Entering credentials')
-    await page.waitForSelector(SELECTORS.USERNAME_INPUT, {
-      timeout: PAGE_LOAD_TIMEOUT
-    })
-    await page.type(SELECTORS.USERNAME_INPUT, credentials.username)
-    await page.mouse.move(800, 300)
-    await wait(MOUSE_MOVE_WAIT)
-    await page.type(SELECTORS.PASSWORD_INPUT, credentials.password)
-    await wait(MOUSE_MOVE_WAIT)
-    await page.click(SELECTORS.SIGN_IN_BUTTON)
-    log('Submitted login form')
-
-    await page.waitForNavigation({
-      waitUntil: 'networkidle0',
-      timeout: PAGE_LOAD_TIMEOUT
-    })
-
-    // Handle 2FA if needed - pause for manual intervention
-    log('Waiting for dashboard (handle 2FA manually if prompted)')
-    const dashboard_timeout = 120000
-    const dashboard_start = Date.now()
-    while (Date.now() - dashboard_start < dashboard_timeout) {
-      const url = page.url()
-      if (
-        url.includes('/dashboard') ||
-        url.includes('/activity') ||
-        url.includes('/summary')
-      ) {
-        break
-      }
-      await wait(DIALOG_WAIT_TIME)
+    if (!authenticated) {
+      authenticated = await wait_for_authentication(page)
     }
-    log('Detected authenticated page')
 
-    // Navigate to statements/activity download page
+    if (!authenticated) {
+      throw new Error('Authentication timeout -- could not reach American Express dashboard')
+    }
+
+    log('Authenticated successfully')
+
+    // Navigate directly to activity download page
     log('Navigating to activity download page')
-    await page.goto(
-      'https://global.americanexpress.com/activity/download',
-      { waitUntil: 'networkidle0', timeout: PAGE_LOAD_TIMEOUT }
-    )
-    await wait(DIALOG_WAIT_TIME)
+    await page.goto('https://global.americanexpress.com/activity/download', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    })
+    await wait(DIALOG_WAIT_TIME * 2)
 
     // Select CSV format
-    try {
-      await page.waitForSelector(SELECTORS.FORMAT_SELECT, { timeout: 5000 })
-      await page.select(SELECTORS.FORMAT_SELECT, 'csv')
-      log('Selected CSV format')
-      await wait(DOWNLOAD_CHECK_INTERVAL)
-    } catch {
+    const format_select = page.locator('#selectfiletype, select[name*="format"]')
+    if (await format_select.count()) {
+      const options = await format_select.evaluate((el) =>
+        Array.from(el.options).map((o) => ({ value: o.value, text: o.text.trim() }))
+      )
+      log('Format options: %O', options)
+
+      const csv_opt = options.find((o) => /csv/i.test(o.value + o.text))
+      if (csv_opt) {
+        await format_select.selectOption(csv_opt.value)
+        log('Selected CSV format')
+      }
+      await wait(1000)
+    } else {
       log('No format selector found, proceeding with default')
     }
 
-    // Select date range
-    try {
-      await page.waitForSelector(SELECTORS.PERIOD_SELECT, { timeout: 5000 })
-      await page.select(SELECTORS.PERIOD_SELECT, 'custom')
-      log('Selected custom date range')
-      await wait(DOWNLOAD_CHECK_INTERVAL)
-    } catch {
+    // Select date range/period
+    const period_select = page.locator('#selectperiod, select[name*="period"], select[name*="date"]')
+    if (await period_select.count()) {
+      const options = await period_select.evaluate((el) =>
+        Array.from(el.options).map((o) => ({ value: o.value, text: o.text.trim() }))
+      )
+      log('Period options: %O', options)
+
+      // Prefer YTD or custom range
+      const target = options.find((o) => /year.*date|ytd|custom|all/i.test(o.value + o.text))
+      if (target) {
+        await period_select.selectOption(target.value)
+        log('Selected period: %s', target.text)
+      }
+      await wait(1000)
+    } else {
       log('No period selector found, proceeding with default range')
     }
 
-    // Click download
-    try {
-      await page.waitForSelector(SELECTORS.DOWNLOAD_SUBMIT, { timeout: 5000 })
-      await page.click(SELECTORS.DOWNLOAD_SUBMIT)
-      log('Clicked download button')
-    } catch {
-      log('No download submit button found, download may have started')
+    // Click download button
+    const submit = page.locator('#btnDownload, button:has-text("Download"), [data-testid="download-submit"]').first()
+    if (await submit.count()) {
+      log('Clicking download button')
+      await submit.click()
+    } else {
+      log('No download button found')
     }
 
-    // Wait for the file
-    const downloaded_file = await wait_for_csv_file(
-      download_dir,
-      DOWNLOAD_TIMEOUT
-    )
+    // Wait for the CSV file to appear
+    log('Waiting for CSV file download...')
+    const downloaded_file = await wait_for_csv_file(download_dir, DOWNLOAD_TIMEOUT)
 
     if (!downloaded_file) {
       throw new Error('Downloaded file not found after waiting')
@@ -202,11 +231,11 @@ export const download_transactions = async ({
     const target_path = path.join(download_dir, target_filename)
 
     fs.renameSync(downloaded_path, target_path)
-    log(`Renamed ${downloaded_file} to ${target_filename}`)
+    log('Renamed %s to %s', downloaded_file, target_filename)
 
     return target_filename
   } finally {
-    await browser.close()
+    await context.close()
     log('Browser closed')
   }
 }
