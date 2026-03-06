@@ -83,67 +83,56 @@ const wait_for_authentication = async (page) => {
   return false
 }
 
-const extract_account_key = async (page) => {
-  // Set up request interception to capture account_key from SPA API calls
-  let captured_key = null
-  const capture_handler = (request) => {
-    const req_url = request.url()
-    const key_match = req_url.match(/account_key=([A-F0-9]{20,})/)
-    if (key_match) {
-      captured_key = key_match[1]
-      log('Captured account_key from request: %s', captured_key)
+const download_csv = async ({ context, page, from_date, to_date }) => {
+  // Navigate to activity page to capture account_token header and account_key
+  log('Navigating to activity page')
+  let account_token = null
+  let all_api_headers = {}
+  const header_handler = (request) => {
+    const url = request.url()
+    if (!url.includes('americanexpress.com/api/')) return
+    const headers = request.headers()
+    if (headers['account_token'] && !account_token) {
+      account_token = headers['account_token']
+      all_api_headers = { ...headers }
+      log('Captured account_token from: %s', url.substring(0, 100))
     }
   }
+  page.on('request', header_handler)
 
-  page.on('request', capture_handler)
-
-  // Navigate to activity page -- the SPA will make API calls containing account_key
-  log('Navigating to activity page to extract account_key')
   await page.goto('https://global.americanexpress.com/activity', {
     waitUntil: 'domcontentloaded',
     timeout: 60000
   })
+  await wait(DIALOG_WAIT_TIME * 3)
+  page.off('request', header_handler)
 
-  // Wait for SPA to load and make API calls
-  for (let poll = 0; poll < 10; poll++) {
-    await wait(DIALOG_WAIT_TIME)
-    if (captured_key) break
-    log('Waiting for account_key... poll %d', poll + 1)
-  }
-
-  page.off('request', capture_handler)
-
-  if (captured_key) {
-    return captured_key
-  }
-
-  // Check URL for account_key parameter
-  const url = new URL(page.url())
-  const url_key = url.searchParams.get('account_key')
-  if (url_key && url_key.length > 10) {
-    log('Extracted account_key from URL: %s', url_key)
-    return url_key
-  }
-
-  // Fallback: extract from page HTML content (avoids eval which Amex blocks)
+  // Extract account_key from page HTML (eval is blocked by Amex SPA)
   const html = await page.content()
-  const html_match = html.match(/account_key[=:]["' ]+([A-F0-9]{20,})/i)
-  if (html_match) {
-    log('Extracted account_key from page HTML: %s', html_match[1])
-    return html_match[1]
+  let account_key = null
+  for (const pattern of [/account_key["':=\s]+["']?([A-F0-9]{20,})/i, /accountKey["':=\s]+["']?([A-F0-9]{20,})/i]) {
+    const match = html.match(pattern)
+    if (match) {
+      account_key = match[1]
+      log('Extracted account_key from HTML: %s', account_key)
+      break
+    }
   }
 
-  log('Could not extract account_key')
-  return null
-}
+  if (!account_key || !account_token) {
+    log('Missing account_key=%s or account_token=%s', !!account_key, !!account_token)
+    return null
+  }
 
-const download_via_api = async ({ page, account_key, to_date }) => {
-  // Build download URL matching the Amex SPA pattern
+  // Build the download URL using the exact format the Amex SPA uses:
+  // /api/servicing/v1/financials/documents?file_format=csv&limit=ALL
+  //   &start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&status=posted
+  //   &account_key=<hex>&client_id=AmexAPI
   const params = new URLSearchParams({
     file_format: 'csv',
     limit: 'ALL',
-    statement_end_date: to_date,
-    additional_fields: 'true',
+    start_date: from_date,
+    end_date: to_date,
     status: 'posted',
     account_key,
     client_id: 'AmexAPI'
@@ -152,54 +141,29 @@ const download_via_api = async ({ page, account_key, to_date }) => {
   const url = `https://global.americanexpress.com/api/servicing/v1/financials/documents?${params.toString()}`
   log('Downloading via API: %s', url)
 
-  // Amex blocks eval in their SPA, so page.evaluate(fetch) won't work.
-  // Instead, navigate directly to the API URL -- the browser session cookies
-  // will be sent automatically. The response is the CSV file content.
-  let csv_body = null
-
-  // Set up response capture before navigation
-  const response_promise = page.waitForResponse(
-    (response) => response.url().includes('/financials/documents'),
-    { timeout: 30000 }
-  ).catch(() => null)
-
-  // Navigate to the download URL
-  await page.goto(url, {
-    waitUntil: 'domcontentloaded',
-    timeout: 30000
-  }).catch(() => {
-    // Navigation may fail if it triggers a download instead of page load
-  })
-
-  const api_response = await response_promise
-  if (api_response) {
-    const status = api_response.status()
-    csv_body = await api_response.text().catch(() => null)
-    log('API response: status=%d, length=%d', status, csv_body ? csv_body.length : 0)
-  }
-
-  if (!csv_body) {
-    // Fallback: try to get the page content directly (browser may have rendered the CSV)
-    csv_body = await page.content().catch(() => null)
-    if (csv_body) {
-      // Strip any HTML wrapper if the browser rendered the CSV as HTML
-      const pre_match = csv_body.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i)
-      if (pre_match) {
-        csv_body = pre_match[1]
-      } else if (csv_body.startsWith('<!DOCTYPE') || csv_body.startsWith('<html')) {
-        // The page rendered as HTML, not CSV -- extract text content
-        csv_body = csv_body.replace(/<[^>]+>/g, '').trim()
-      }
+  // Use Playwright's APIRequestContext which runs outside the page context
+  // (bypassing Amex's eval monkeypatch) but shares session cookies.
+  // Forward the captured API headers -- the Amex API validates account_token.
+  const skip_keys = new Set(['host', 'sec-ch-ua', 'sec-ch-ua-mobile', 'sec-ch-ua-platform', 'sec-fetch-dest', 'sec-fetch-mode', 'sec-fetch-site', 'accept-encoding', 'accept-language', 'connection', 'content-length', 'content-type'])
+  const headers = {}
+  for (const [key, value] of Object.entries(all_api_headers)) {
+    if (!skip_keys.has(key)) {
+      headers[key] = value
     }
   }
+  headers['accept'] = 'text/csv, application/csv, */*'
 
-  if (csv_body && csv_body.length > 0) {
-    if (csv_body.includes('Date') || csv_body.includes('Amount') ||
-        (csv_body.includes(',') && csv_body.includes('\n'))) {
-      log('API returned CSV data (%d bytes)', csv_body.length)
-      return csv_body
-    }
-    log('API response does not look like CSV: %s', csv_body.substring(0, 300))
+  const response = await context.request.fetch(url, { headers })
+  const status = response.status()
+  const body = await response.text()
+  log('API response: status=%d, length=%d', status, body.length)
+
+  if (status >= 200 && status < 300 && body.length > 50) {
+    return body
+  }
+
+  if (status >= 400) {
+    log('API error: %s', body.substring(0, 300))
   }
 
   return null
@@ -256,22 +220,15 @@ export const download_transactions = async ({
 
     log('Authenticated successfully')
 
-    // Extract account_key from the activity page
-    const account_key = await extract_account_key(page)
-    if (!account_key) {
-      throw new Error('Could not determine Amex account key')
-    }
-
-    // Try API-based download (primary strategy)
-    log('Attempting API-based download')
-    const csv_data = await download_via_api({
+    const csv_data = await download_csv({
+      context,
       page,
-      account_key,
+      from_date,
       to_date
     })
 
     if (!csv_data) {
-      throw new Error('API-based download failed -- no CSV data received')
+      throw new Error('Download failed -- no CSV data received')
     }
 
     const target_filename = create_target_filename(from_date, to_date)
