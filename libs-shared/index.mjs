@@ -21,6 +21,7 @@ export * as stellar from './stellar.mjs'
 export * as litecoin from './litecoin.mjs'
 export * as finnhub from './finnhub.mjs'
 export * as fidelity from './fidelity.mjs'
+export * as zcash from './zcash.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')

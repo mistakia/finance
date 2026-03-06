@@ -3,12 +3,7 @@ import prompt from 'prompt'
 import { getPage } from './puppeteer.mjs'
 import websocket_prompt from '#root/api/prompt.mjs'
 
-export const getBalances = async ({
-  publicKey,
-  email,
-  password,
-  cli = false
-}) => {
+const login = async ({ publicKey, email, password, cli = false }) => {
   const { page, browser } = await getPage('https://www.wealthfront.com/login', {
     webdriver: false,
     chrome: false,
@@ -36,19 +31,14 @@ export const getBalances = async ({
   })
 
   await elementHandle.press('Enter')
-
   await page.waitForTimeout(5000)
-  // disabled for now as it seems to hang
-  // await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 })
 
-  // check if security step is needed
   const isSecurityStep = await page.evaluate(
     (el) => el && el.innerText.includes('We texted you'),
     await page.$('div[role="main"]')
   )
 
   if (isSecurityStep) {
-    // enter security code
     const inputs = ['code']
     let code
     if (cli) {
@@ -64,6 +54,17 @@ export const getBalances = async ({
     await elementHandle2.type(code)
     await elementHandle2.press('Enter')
   }
+
+  return { page, browser }
+}
+
+export const getBalances = async ({
+  publicKey,
+  email,
+  password,
+  cli = false
+}) => {
+  const { page, browser } = await login({ publicKey, email, password, cli })
 
   const dashboard_api_response = await page.waitForResponse(
     'https://www.wealthfront.com/api/wealthfront_accounts/get_account_overviews_and_transfer_eligibilities_for_user',
@@ -130,4 +131,26 @@ export const getBalances = async ({
   await browser.close()
 
   return [...cash_accounts, ...investment_accounts]
+}
+
+export const getTransactions = async ({
+  publicKey,
+  email,
+  password,
+  cli = false
+}) => {
+  const { page, browser } = await login({ publicKey, email, password, cli })
+
+  await page.goto('https://www.wealthfront.com/activity')
+
+  const activity_response = await page.waitForResponse(
+    (response) => response.url().includes('/api/') && response.url().includes('activity'),
+    { timeout: 30000 }
+  )
+
+  const data = await activity_response.json()
+
+  await browser.close()
+
+  return data
 }

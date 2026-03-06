@@ -8,6 +8,7 @@
   },
   "coingecko_api": "",
   "ethplorer_api": "",
+  "etherscan_api": "",
   "alphavantage": "",
   "finnhub_api_key": "",
   "postgres": {

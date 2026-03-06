@@ -2,11 +2,12 @@ import OAuth from 'oauth-1.0a'
 import fetch from 'node-fetch'
 import crypto from 'crypto'
 
-export const getAccounts = async ({
+const ally_fetch = async ({
   consumer_key,
   consumer_secret,
   oauth_key,
-  oauth_secret
+  oauth_secret,
+  url
 }) => {
   const oauth = OAuth({
     consumer: {
@@ -19,17 +20,10 @@ export const getAccounts = async ({
     }
   })
 
-  const request_data = {
-    url: 'https://devapi.invest.ally.com/v1/accounts.json',
-    method: 'GET'
-  }
+  const request_data = { url, method: 'GET' }
+  const token = { key: oauth_key, secret: oauth_secret }
 
-  const token = {
-    key: oauth_key,
-    secret: oauth_secret
-  }
-
-  const res = await fetch(request_data.url, {
+  const res = await fetch(url, {
     headers: oauth.toHeader(oauth.authorize(request_data, token))
   })
 
@@ -38,4 +32,18 @@ export const getAccounts = async ({
   }
 
   return null
+}
+
+export const getAccounts = async (credentials) => {
+  return ally_fetch({
+    ...credentials,
+    url: 'https://devapi.invest.ally.com/v1/accounts.json'
+  })
+}
+
+export const getTransactions = async ({ account_id, ...credentials }) => {
+  return ally_fetch({
+    ...credentials,
+    url: `https://devapi.invest.ally.com/v1/accounts/${account_id}/history.json`
+  })
 }

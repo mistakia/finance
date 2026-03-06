@@ -42,6 +42,17 @@ export const getAccounts = async ({ key, secret }) => {
   return data
 }
 
+export const getMyTrades = async ({ key, secret, symbol = 'btcusd' }) => {
+  const response = await requestPrivate({
+    key,
+    secret,
+    endpoint: '/mytrades',
+    params: { symbol, limit_trades: 500 }
+  })
+  const data = await response.json()
+  return data
+}
+
 export const getEarnBalances = async ({ key, secret }) => {
   const accounts = await getAccounts({ key, secret })
   const params = {

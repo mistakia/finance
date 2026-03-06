@@ -5,6 +5,7 @@ import { hideBin } from 'yargs/helpers'
 import db from '#db'
 import { isMain, wealthfront, addAsset } from '#libs-shared'
 import { get_connection_credentials } from './get-connection-credentials.mjs'
+import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-wealthfront-accounts')
@@ -100,6 +101,22 @@ const import_wealthfront_accounts = async ({
 
     await db('holdings').insert(inserts).onConflict('link').merge()
     log(`saved ${inserts.length} wealthfront holdings`)
+
+    const positions = inserts.map((h) => ({
+      symbol: h.symbol,
+      quantity: h.quantity,
+      account_id: h.link.split('/')[4] || 'default',
+      account_type: h.link.split('/')[3] || 'brokerage'
+    }))
+    const assertions = create_balance_assertions({
+      positions,
+      institution: 'wealthfront',
+      owner: publicKey
+    })
+    if (assertions.length) {
+      await db('transactions').insert(assertions).onConflict('link').merge()
+      log(`Inserted ${assertions.length} balance assertions`)
+    }
   }
 }
 
