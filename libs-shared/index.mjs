@@ -22,6 +22,9 @@ export * as litecoin from './litecoin.mjs'
 export * as finnhub from './finnhub.mjs'
 export * as fidelity from './fidelity.mjs'
 export * as zcash from './zcash.mjs'
+export * as kraken from './kraken.mjs'
+export * as binanceUs from './binance-us.mjs'
+export * as solana from './solana.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const session_path = path.join(__dirname, '../session.json')

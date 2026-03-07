@@ -3,55 +3,60 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 import db from '#db'
-import { isMain, gemini, addAsset } from '#libs-shared'
+import { isMain, kraken, addAsset } from '#libs-shared'
 import { get_connection_credentials } from './get-connection-credentials.mjs'
 import { create_balance_assertions } from '../libs-server/parsers/balance-assertion.mjs'
 
 const argv = yargs(hideBin(process.argv)).argv
-const log = debug('import-gemini-accounts')
-debug.enable('import-gemini-accounts')
+const log = debug('import-kraken-accounts')
+debug.enable('import-kraken-accounts')
 
 const run = async ({ credentials, publicKey }) => {
-  const balances = await gemini.getEarnBalances({
-    ...credentials
-  })
-
+  const balances = await kraken.getBalances({ ...credentials })
   const inserts = []
 
-  for (const balance of balances) {
-    const asset = await addAsset({
-      asset_type: 'loan_crypto',
-      symbol: balance.currency,
+  for (const [asset, info] of Object.entries(balances || {})) {
+    const symbol = kraken.normalizeAssetSymbol(asset)
+    const quantity = parseFloat(info.balance || 0)
+    if (quantity === 0) continue
+
+    const asset_record = await addAsset({
+      asset_type: 'crypto',
+      symbol,
       update: true
     })
 
     inserts.push({
-      link: `/${publicKey}/gemini-earn/${balance.currency}`,
-      name: `Gemini Earn ${balance.currency}`,
+      link: `/${publicKey}/kraken/${symbol}`,
+      name: `Kraken ${symbol}`,
       cost_basis: null,
-      quantity: balance.balance,
-      symbol: balance.currency,
-      asset_link: asset.link
+      quantity,
+      symbol,
+      asset_link: asset_record.link
     })
   }
 
-  // Staking balances
-  const staking_balances = await gemini.getStakingBalances({ ...credentials })
-  if (Array.isArray(staking_balances)) {
-    for (const balance of staking_balances) {
-      const asset = await addAsset({
+  // Earn allocations
+  const earn = await kraken.getEarnAllocations({ ...credentials })
+  if (earn && Array.isArray(earn.items)) {
+    for (const item of earn.items) {
+      const symbol = kraken.normalizeAssetSymbol(item.native_asset)
+      const quantity = parseFloat(item.amount_allocated?.total?.native || 0)
+      if (quantity === 0) continue
+
+      const asset_record = await addAsset({
         asset_type: 'crypto',
-        symbol: balance.currency,
+        symbol,
         update: true
       })
 
       inserts.push({
-        link: `/${publicKey}/gemini-staking/${balance.currency}`,
-        name: `Gemini Staking ${balance.currency}`,
+        link: `/${publicKey}/kraken-earn/${symbol}`,
+        name: `Kraken Earn ${symbol}`,
         cost_basis: null,
-        quantity: balance.balance,
-        symbol: balance.currency,
-        asset_link: asset.link
+        quantity,
+        symbol,
+        asset_link: asset_record.link
       })
     }
   }
@@ -60,14 +65,13 @@ const run = async ({ credentials, publicKey }) => {
     log(`saving ${inserts.length} holdings`)
     await db('holdings').insert(inserts).onConflict('link').merge()
 
-    // Emit balance assertions
     const positions = inserts.map((h) => ({
       symbol: h.symbol,
       quantity: h.quantity
     }))
     const assertions = create_balance_assertions({
       positions,
-      institution: 'gemini',
+      institution: 'kraken',
       owner: publicKey
     })
     if (assertions.length) {
@@ -78,28 +82,22 @@ const run = async ({ credentials, publicKey }) => {
 }
 
 const main = async () => {
-  let error
   try {
     const publicKey = argv.publicKey
     if (!publicKey) {
       console.log('missing --public-key')
       return
     }
-    const result = await get_connection_credentials({ connection_type: 'gemini', public_key: publicKey })
+    const result = await get_connection_credentials({
+      connection_type: 'kraken',
+      public_key: publicKey
+    })
     const { credentials } = result
     await run({ credentials, publicKey })
   } catch (err) {
-    error = err
-    console.log(error)
+    console.log(err)
   }
 
-  /* await db('jobs').insert({
-   *   type: constants.jobs.EXAMPLE,
-   *   succ: error ? 0 : 1,
-   *   reason: error ? error.message : null,
-   *   timestamp: Math.round(Date.now() / 1000)
-   * })
-   */
   process.exit()
 }
 
