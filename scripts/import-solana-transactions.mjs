@@ -14,9 +14,16 @@ const argv = yargs(hideBin(process.argv)).argv
 const log = debug('import-solana-transactions')
 debug.enable('import-solana-transactions')
 
+const insert_transactions = async (transactions) => {
+  if (!transactions.length) return
+  await db('transactions')
+    .insert(transactions)
+    .onConflict('link')
+    .merge()
+}
+
 const run = async ({ credentials, publicKey }) => {
-  const address = credentials.address
-  const all_transactions = []
+  const address = credentials.address.split('/')[0]
 
   // Transaction history via Helius Enhanced API
   const txs = await solana.getTransactions({ address })
@@ -27,42 +34,49 @@ const run = async ({ credentials, publicKey }) => {
       owner: publicKey,
       address
     })
-    all_transactions.push(...parsed)
+    if (parsed.length) {
+      await insert_transactions(parsed)
+      log(`Inserted ${parsed.length} transactions`)
+    }
   }
 
   // Staking rewards
   const stake_accounts = await solana.getStakeAccounts({ address })
   if (stake_accounts.length) {
     log(`Found ${stake_accounts.length} stake accounts`)
+    const epoch_info = await solana.getEpochInfo()
+    const current_epoch = epoch_info.epoch
+    log(`Current epoch: ${current_epoch}`)
     for (const account of stake_accounts) {
       const stake_address = account.pubkey
-      const rewards = await solana.getStakingRewards({
-        stakeAccount: stake_address,
-        startEpoch: 400,
-        endEpoch: 700
-      })
-      if (rewards.length) {
-        log(`Fetched ${rewards.length} staking rewards for ${stake_address}`)
-        const parsed = parse_staking_rewards({
-          data: rewards,
-          owner: publicKey,
-          address: stake_address
+      const activation_epoch = parseInt(
+        account.account?.data?.parsed?.info?.stake?.delegation
+          ?.activationEpoch || '0',
+        10
+      )
+      const start_epoch = activation_epoch || Math.max(0, current_epoch - 300)
+      log(`Stake ${stake_address}: fetching rewards from epoch ${start_epoch} to ${current_epoch}`)
+      try {
+        const rewards = await solana.getStakingRewards({
+          stakeAccount: stake_address,
+          startEpoch: start_epoch,
+          endEpoch: current_epoch
         })
-        all_transactions.push(...parsed)
+        if (rewards.length) {
+          log(`Fetched ${rewards.length} staking rewards for ${stake_address}`)
+          const parsed = parse_staking_rewards({
+            data: rewards,
+            owner: publicKey,
+            address: stake_address
+          })
+          await insert_transactions(parsed)
+          log(`Inserted ${parsed.length} staking rewards`)
+        }
+      } catch (err) {
+        log(`Error fetching staking rewards for ${stake_address}: ${err.message}`)
       }
     }
   }
-
-  if (!all_transactions.length) {
-    log('no transactions found')
-    return
-  }
-
-  await db('transactions')
-    .insert(all_transactions)
-    .onConflict('link')
-    .merge()
-  log(`Inserted ${all_transactions.length} solana transactions`)
 }
 
 const main = async () => {

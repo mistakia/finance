@@ -12,7 +12,7 @@ const log = debug('import-solana-accounts')
 debug.enable('import-solana-accounts')
 
 const run = async ({ credentials, publicKey }) => {
-  const address = credentials.address
+  const address = credentials.address.split('/')[0]
   const inserts = []
 
   // SOL balance
@@ -44,11 +44,17 @@ const run = async ({ credentials, publicKey }) => {
       Math.pow(10, token.token_info?.decimals || 0)
     if (quantity === 0) continue
 
-    const asset = await addAsset({
-      asset_type: 'crypto',
-      symbol,
-      update: true
-    })
+    let asset
+    try {
+      asset = await addAsset({
+        asset_type: 'crypto',
+        symbol,
+        update: true
+      })
+    } catch (err) {
+      log(`Skipping unsupported token: ${symbol}`)
+      continue
+    }
 
     inserts.push({
       link: `/${publicKey}/solana/wallet/${address}/${symbol}`,

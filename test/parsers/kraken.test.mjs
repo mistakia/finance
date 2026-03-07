@@ -96,7 +96,7 @@ describe('kraken ledger parser', () => {
     const result = parse_ledger_entries({ data, owner: 'testuser' })
 
     const tx = result[0]
-    tx.transaction_type.should.equal('staking_income')
+    tx.transaction_type.should.equal('income')
     tx.to_symbol.should.equal('ETH')
     tx.to_amount.should.equal(0.001)
   })
@@ -107,7 +107,7 @@ describe('kraken ledger parser', () => {
     ])
     const result = parse_ledger_entries({ data, owner: 'testuser' })
 
-    result[0].transaction_type.should.equal('staking_income')
+    result[0].transaction_type.should.equal('income')
   })
 
   it('should parse a transfer', () => {
@@ -190,7 +190,7 @@ describe('kraken trade parser', () => {
     const data = Object.fromEntries([make_trade('T004', { fee: '0' })])
     const result = parse_trades({ data, owner: 'testuser' })
 
-    chai.expect(result[0].fee_amount).to.be.undefined
+    chai.expect(result[0].fee_amount).to.be.null
   })
 
   it('should generate correct trade link', () => {

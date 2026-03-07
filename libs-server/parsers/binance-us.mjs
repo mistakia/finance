@@ -54,11 +54,9 @@ export const parse_trades = ({ data, owner }) => {
       transaction.to_symbol = quote
     }
 
-    if (commission > 0) {
-      transaction.fee_amount = commission
-      transaction.fee_symbol = commission_asset
-      transaction.fee_link = account_link
-    }
+    transaction.fee_amount = commission > 0 ? commission : null
+    transaction.fee_symbol = commission > 0 ? commission_asset : null
+    transaction.fee_link = commission > 0 ? account_link : null
 
     transactions.push(transaction)
   }
@@ -127,11 +125,9 @@ export const parse_withdrawals = ({ data, owner }) => {
       source_file: 'binance-us-api'
     }
 
-    if (fee > 0) {
-      transaction.fee_amount = fee
-      transaction.fee_symbol = coin
-      transaction.fee_link = account_link
-    }
+    transaction.fee_amount = fee > 0 ? fee : null
+    transaction.fee_symbol = fee > 0 ? coin : null
+    transaction.fee_link = fee > 0 ? account_link : null
 
     transactions.push(transaction)
   }
@@ -154,7 +150,7 @@ export const parse_staking_rewards = ({ data, owner }) => {
 
     transactions.push({
       link: `${account_link}/tx/${tx_id}`,
-      transaction_type: 'staking_income',
+      transaction_type: 'income',
       transaction_unix: date.unix(),
       transaction_date: date.format('YYYY-MM-DD'),
       tx_id,

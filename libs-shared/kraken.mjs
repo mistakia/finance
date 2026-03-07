@@ -27,7 +27,8 @@ const SYMBOL_MAP = {
 export const normalizeAssetSymbol = (symbol) => {
   if (!symbol) return symbol
   // Strip .S, .B, .F, .M suffixes (staking/bonded/flexible/margin variants)
-  const stripped = symbol.replace(/\.[SBFM]$/, '')
+  // Strip trailing digits from migration symbols (ATOM21, DOT28, etc.)
+  const stripped = symbol.replace(/\.[SBFM]$/, '').replace(/\d+$/, '')
   if (SYMBOL_MAP[stripped]) return SYMBOL_MAP[stripped]
   // 4-char symbols starting with X or Z that aren't in the map
   if (stripped.length === 4 && (stripped[0] === 'X' || stripped[0] === 'Z')) {

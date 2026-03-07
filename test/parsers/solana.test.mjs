@@ -190,7 +190,7 @@ describe('solana staking rewards parser', () => {
 
     result.should.have.length(1)
     const tx = result[0]
-    tx.transaction_type.should.equal('staking_income')
+    tx.transaction_type.should.equal('income')
     tx.to_amount.should.equal(0.05)
     tx.to_symbol.should.equal('SOL')
     tx.link.should.equal('/testuser/solana/staking/stakeAddr1/epoch/500')

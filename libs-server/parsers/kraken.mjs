@@ -37,7 +37,7 @@ const ledger_type_to_transaction_type = (type) => {
       return 'transfer'
     case 'staking':
     case 'dividend':
-      return 'staking_income'
+      return 'income'
     default:
       return 'transfer'
   }
@@ -72,7 +72,7 @@ export const parse_ledger_entries = ({ data, owner }) => {
       source_file: 'kraken-api'
     }
 
-    if (transaction_type === 'staking_income') {
+    if (transaction_type === 'income') {
       transaction.from_link = null
       transaction.from_amount = null
       transaction.from_symbol = symbol
@@ -95,11 +95,9 @@ export const parse_ledger_entries = ({ data, owner }) => {
       transaction.to_symbol = symbol
     }
 
-    if (fee > 0) {
-      transaction.fee_amount = fee
-      transaction.fee_symbol = symbol
-      transaction.fee_link = account_link
-    }
+    transaction.fee_amount = fee > 0 ? fee : null
+    transaction.fee_symbol = fee > 0 ? symbol : null
+    transaction.fee_link = fee > 0 ? account_link : null
 
     transactions.push(transaction)
   }
@@ -150,11 +148,9 @@ export const parse_trades = ({ data, owner }) => {
       transaction.to_symbol = quote
     }
 
-    if (fee > 0) {
-      transaction.fee_amount = fee
-      transaction.fee_symbol = quote
-      transaction.fee_link = account_link
-    }
+    transaction.fee_amount = fee > 0 ? fee : null
+    transaction.fee_symbol = fee > 0 ? quote : null
+    transaction.fee_link = fee > 0 ? account_link : null
 
     transactions.push(transaction)
   }

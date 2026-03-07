@@ -162,7 +162,7 @@ describe('ethereum beacon withdrawal parser', () => {
 
     result.should.have.length(1)
     const tx = result[0]
-    tx.transaction_type.should.equal('staking_income')
+    tx.transaction_type.should.equal('income')
     tx.to_link.should.equal('/testuser/ethereum/wallet/0xreceiver')
     tx.to_amount.should.equal(32)
     tx.to_symbol.should.equal('ETH')

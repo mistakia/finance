@@ -20,11 +20,17 @@ const run = async ({ credentials, publicKey }) => {
     const quantity = parseFloat(info.balance || 0)
     if (quantity === 0) continue
 
-    const asset_record = await addAsset({
-      asset_type: 'crypto',
-      symbol,
-      update: true
-    })
+    let asset_record
+    try {
+      asset_record = await addAsset({
+        asset_type: 'crypto',
+        symbol,
+        update: true
+      })
+    } catch (err) {
+      log(`Skipping unsupported asset: ${symbol} (${asset})`)
+      continue
+    }
 
     inserts.push({
       link: `/${publicKey}/kraken/${symbol}`,
@@ -44,11 +50,17 @@ const run = async ({ credentials, publicKey }) => {
       const quantity = parseFloat(item.amount_allocated?.total?.native || 0)
       if (quantity === 0) continue
 
-      const asset_record = await addAsset({
-        asset_type: 'crypto',
-        symbol,
-        update: true
-      })
+      let asset_record
+      try {
+        asset_record = await addAsset({
+          asset_type: 'crypto',
+          symbol,
+          update: true
+        })
+      } catch (err) {
+        log(`Skipping unsupported earn asset: ${symbol}`)
+        continue
+      }
 
       inserts.push({
         link: `/${publicKey}/kraken-earn/${symbol}`,

@@ -57,11 +57,9 @@ export const parse_transactions = ({ data, owner, address }) => {
         source_file: 'helius-api'
       }
 
-      if (fee > 0) {
-        transaction.fee_amount = fee
-        transaction.fee_symbol = 'SOL'
-        transaction.fee_link = account_link
-      }
+      transaction.fee_amount = fee > 0 ? fee : null
+      transaction.fee_symbol = fee > 0 ? 'SOL' : null
+      transaction.fee_link = fee > 0 ? account_link : null
 
       transactions.push(transaction)
       continue
@@ -104,11 +102,9 @@ export const parse_transactions = ({ data, owner, address }) => {
         transaction.to_symbol = 'SOL'
       }
 
-      if (fee > 0 && is_sender) {
-        transaction.fee_amount = fee
-        transaction.fee_symbol = 'SOL'
-        transaction.fee_link = account_link
-      }
+      transaction.fee_amount = (fee > 0 && is_sender) ? fee : null
+      transaction.fee_symbol = (fee > 0 && is_sender) ? 'SOL' : null
+      transaction.fee_link = (fee > 0 && is_sender) ? account_link : null
 
       transactions.push(transaction)
     }
@@ -152,6 +148,10 @@ export const parse_transactions = ({ data, owner, address }) => {
         transaction.to_symbol = symbol
       }
 
+      transaction.fee_amount = null
+      transaction.fee_symbol = null
+      transaction.fee_link = null
+
       transactions.push(transaction)
     }
   }
@@ -173,7 +173,7 @@ export const parse_staking_rewards = ({ data, owner, address }) => {
 
     transactions.push({
       link: `/${owner}/${institution}/staking/${stakeAccount}/epoch/${epoch}`,
-      transaction_type: 'staking_income',
+      transaction_type: 'income',
       transaction_unix: reward.effectiveSlot
         ? Math.floor(reward.effectiveSlot / 2.5)
         : dayjs().unix(),

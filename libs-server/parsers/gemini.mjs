@@ -62,11 +62,9 @@ export const parse_transactions = ({ data, owner }) => {
       transaction.to_symbol = quote
     }
 
-    if (fee > 0) {
-      transaction.fee_amount = fee
-      transaction.fee_symbol = fee_currency
-      transaction.fee_link = account_link
-    }
+    transaction.fee_amount = fee > 0 ? fee : null
+    transaction.fee_symbol = fee > 0 ? fee_currency : null
+    transaction.fee_link = fee > 0 ? account_link : null
 
     transactions.push(transaction)
   }
@@ -119,14 +117,10 @@ export const parse_transfers = ({ data, owner }) => {
       transaction.to_symbol = currency
     }
 
-    if (transfer.feeAmount) {
-      const fee = parseFloat(transfer.feeAmount)
-      if (fee > 0) {
-        transaction.fee_amount = fee
-        transaction.fee_symbol = currency
-        transaction.fee_link = account_link
-      }
-    }
+    const fee = transfer.feeAmount ? parseFloat(transfer.feeAmount) : 0
+    transaction.fee_amount = fee > 0 ? fee : null
+    transaction.fee_symbol = fee > 0 ? currency : null
+    transaction.fee_link = fee > 0 ? account_link : null
 
     transactions.push(transaction)
   }
@@ -147,7 +141,7 @@ export const parse_staking_history = ({ data, owner }) => {
 
     let transaction_type
     if (type === 'interest') {
-      transaction_type = 'staking_income'
+      transaction_type = 'income'
     } else {
       transaction_type = 'transfer'
     }
@@ -168,7 +162,7 @@ export const parse_staking_history = ({ data, owner }) => {
       source_file: 'gemini-api'
     }
 
-    if (transaction_type === 'staking_income') {
+    if (transaction_type === 'income') {
       transaction.from_link = null
       transaction.from_amount = null
       transaction.from_symbol = currency

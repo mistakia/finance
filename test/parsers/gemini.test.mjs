@@ -64,7 +64,7 @@ describe('gemini parser', () => {
       owner: 'testuser'
     })
 
-    chai.expect(result[0].fee_amount).to.be.undefined
+    chai.expect(result[0].fee_amount).to.be.null
   })
 
   it('should extract symbol pair correctly', () => {
@@ -184,7 +184,7 @@ describe('gemini staking history parser', () => {
 
     result.should.have.length(1)
     const tx = result[0]
-    tx.transaction_type.should.equal('staking_income')
+    tx.transaction_type.should.equal('income')
     tx.to_link.should.equal('/testuser/gemini/staking/default/ETH')
     tx.to_amount.should.equal(0.00025)
     tx.to_symbol.should.equal('ETH')

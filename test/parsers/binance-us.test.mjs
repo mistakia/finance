@@ -62,7 +62,7 @@ describe('binance-us trade parser', () => {
       owner: 'testuser'
     })
 
-    chai.expect(result[0].fee_amount).to.be.undefined
+    chai.expect(result[0].fee_amount).to.be.null
   })
 
   it('should generate correct link', () => {
@@ -146,7 +146,7 @@ describe('binance-us withdrawal parser', () => {
       owner: 'testuser'
     })
 
-    chai.expect(result[0].fee_amount).to.be.undefined
+    chai.expect(result[0].fee_amount).to.be.null
   })
 
   it('should handle empty data', () => {
@@ -170,7 +170,7 @@ describe('binance-us staking rewards parser', () => {
 
     result.should.have.length(1)
     const tx = result[0]
-    tx.transaction_type.should.equal('staking_income')
+    tx.transaction_type.should.equal('income')
     tx.to_link.should.equal('/testuser/binance-us/exchange/default/SOL')
     tx.to_amount.should.equal(0.05)
     chai.expect(tx.from_link).to.be.null

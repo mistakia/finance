@@ -106,7 +106,7 @@ export const parse_beacon_withdrawals = ({ data, owner, address }) => {
 
     return {
       link: `/${owner}/${institution}/wallet/${address}/tx/${tx_id}`,
-      transaction_type: 'staking_income',
+      transaction_type: 'income',
       transaction_unix: date.unix(),
       transaction_date: date.format('YYYY-MM-DD'),
       tx_id,
