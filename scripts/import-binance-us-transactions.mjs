@@ -39,64 +39,87 @@ const run = async ({ credentials, publicKey }) => {
 
   // Trades per symbol pair
   for (const symbol of pairs) {
-    const trades = await binanceUs.getMyTrades({ ...credentials, symbol })
-    if (trades.length) {
-      log(`Fetched ${trades.length} trades for ${symbol}`)
-      const parsed = parse_trades({ data: trades, owner: publicKey })
-      all_transactions.push(...parsed)
+    try {
+      const trades = await binanceUs.getMyTrades({ ...credentials, symbol })
+      if (trades.length) {
+        log(`Fetched ${trades.length} trades for ${symbol}`)
+        const parsed = parse_trades({ data: trades, owner: publicKey })
+        all_transactions.push(...parsed)
+      }
+    } catch (err) {
+      if (err.message.includes('-1121')) continue // invalid symbol
+      throw err
     }
   }
 
+  // Insert trades before continuing to deposits/withdrawals
+  if (all_transactions.length) {
+    await db('transactions')
+      .insert(all_transactions)
+      .onConflict('link')
+      .merge()
+    log(`Inserted ${all_transactions.length} trades`)
+  }
+
   // Deposits
-  const deposits = await binanceUs.getDeposits({ ...credentials })
-  if (deposits.length) {
-    log(`Fetched ${deposits.length} deposits`)
-    const parsed = parse_deposits({ data: deposits, owner: publicKey })
-    all_transactions.push(...parsed)
+  try {
+    const deposits = await binanceUs.getDeposits({ ...credentials })
+    if (deposits.length) {
+      log(`Fetched ${deposits.length} deposits`)
+      const parsed = parse_deposits({ data: deposits, owner: publicKey })
+      await db('transactions').insert(parsed).onConflict('link').merge()
+      log(`Inserted ${parsed.length} deposits`)
+    }
+  } catch (err) {
+    log(`Error fetching deposits: ${err.message}`)
   }
 
   // Withdrawals
-  const withdrawals = await binanceUs.getWithdrawals({ ...credentials })
-  if (withdrawals.length) {
-    log(`Fetched ${withdrawals.length} withdrawals`)
-    const parsed = parse_withdrawals({ data: withdrawals, owner: publicKey })
-    all_transactions.push(...parsed)
+  try {
+    const withdrawals = await binanceUs.getWithdrawals({ ...credentials })
+    if (withdrawals.length) {
+      log(`Fetched ${withdrawals.length} withdrawals`)
+      const parsed = parse_withdrawals({ data: withdrawals, owner: publicKey })
+      await db('transactions').insert(parsed).onConflict('link').merge()
+      log(`Inserted ${parsed.length} withdrawals`)
+    }
+  } catch (err) {
+    log(`Error fetching withdrawals: ${err.message}`)
   }
 
   // Staking rewards (both STAKING and SAVINGS)
   for (const product of ['STAKING', 'SAVINGS']) {
-    const rewards = await binanceUs.getStakingRewards({
-      ...credentials,
-      product
-    })
-    if (rewards.length) {
-      log(`Fetched ${rewards.length} ${product} rewards`)
-      const parsed = parse_staking_rewards({ data: rewards, owner: publicKey })
-      all_transactions.push(...parsed)
+    try {
+      const rewards = await binanceUs.getStakingRewards({
+        ...credentials,
+        product
+      })
+      if (rewards.length) {
+        log(`Fetched ${rewards.length} ${product} rewards`)
+        const parsed = parse_staking_rewards({ data: rewards, owner: publicKey })
+        await db('transactions').insert(parsed).onConflict('link').merge()
+        log(`Inserted ${parsed.length} ${product} rewards`)
+      }
+    } catch (err) {
+      log(`Error fetching ${product} rewards: ${err.message}`)
     }
   }
 
   // Distributions (airdrops, rebates)
-  const distributions = await binanceUs.getDistributions({ ...credentials })
-  if (distributions.length) {
-    log(`Fetched ${distributions.length} distributions`)
-    const parsed = parse_staking_rewards({
-      data: distributions,
-      owner: publicKey
-    })
-    all_transactions.push(...parsed)
+  try {
+    const distributions = await binanceUs.getDistributions({ ...credentials })
+    if (distributions.length) {
+      log(`Fetched ${distributions.length} distributions`)
+      const parsed = parse_staking_rewards({
+        data: distributions,
+        owner: publicKey
+      })
+      await db('transactions').insert(parsed).onConflict('link').merge()
+      log(`Inserted ${parsed.length} distributions`)
+    }
+  } catch (err) {
+    log(`Error fetching distributions: ${err.message}`)
   }
-
-  if (!all_transactions.length) {
-    log('no transactions found')
-    return
-  }
-
-  await db('transactions')
-    .insert(all_transactions)
-    .onConflict('link')
-    .merge()
-  log(`Inserted ${all_transactions.length} binance-us transactions`)
 }
 
 const main = async () => {
